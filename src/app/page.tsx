@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { auth } from "@/auth";
 import Link from "next/link";
 import { getUserAccessiblePages } from "@/auth";

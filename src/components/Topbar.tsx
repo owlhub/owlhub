@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
@@ -60,7 +61,7 @@ export default function Topbar() {
         {/* Center: Navigation Menu */}
         <div className="flex-1 flex justify-center">
           {/* Dynamically render topbar menu items based on user roles */}
-          {getTopbarMenusForUser(isSuperUser, isAdmin).map((menu, index) => (
+          {getTopbarMenusForUser(isSuperUser, isAdmin).map((menu) => (
             <div 
               key={menu.path} 
               className={`relative ${
@@ -102,9 +103,11 @@ export default function Topbar() {
               style={{ color: 'var(--sidebar-text)' }}
             >
               {session.user.image ? (
-                <img 
+                <Image 
                   src={session.user.image} 
                   alt="Profile" 
+                  width={32}
+                  height={32}
                   className="w-8 h-8 rounded-full"
                 />
               ) : (

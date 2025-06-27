@@ -113,7 +113,7 @@ export default function Table<T>({
   selectedItems
 }: TableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
+  const rowsPerPage = defaultRowsPerPage;
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T | null;
     direction: 'ascending' | 'descending' | null;
