@@ -7,7 +7,7 @@ import ClientWrapper from "./ClientWrapper";
 export default async function PostureFindingDetailsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
@@ -21,9 +21,10 @@ export default async function PostureFindingDetailsPage({
   }
 
   // Fetch the integration security finding
+  const { id } = await params;
   const integrationSecurityFinding = await prisma.integrationSecurityFinding.findUnique({
     where: {
-      id: params.id,
+      id: id,
     },
     include: {
       integration: {
