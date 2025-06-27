@@ -124,8 +124,7 @@ export async function PATCH(
 
 // DELETE: Delete an integration
 export async function DELETE(
-  request: NextRequest,
-  context: { params: { id: string } }
+  params: { params: Promise<{ id: string }> }
 ) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
@@ -151,10 +150,11 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params.params;
     // Check if the integration exists
     const existingIntegration = await prisma.integration.findFirst({
       where: {
-        id: context.params.id
+        id: id
       }
     });
 
@@ -168,7 +168,7 @@ export async function DELETE(
     // Delete the integration
     await prisma.integration.delete({
       where: {
-        id: context.params.id
+        id: id
       }
     });
 
