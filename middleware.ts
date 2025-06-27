@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    const session = await auth({ req: request });
+    const session = await auth();
 
     // If the user is not logged in, redirect to the home page
     if (!session?.user) {
