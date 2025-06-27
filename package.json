@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "npx prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "make-first-user-super-user": "npx ts-node -P tsconfig.scripts.json scripts/makeFirstUserSuperUser.ts",
