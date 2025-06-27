@@ -10,7 +10,7 @@ type IntegrationMembership = {
     name: string;
     appType: {
       name: string;
-      icon?: string;
+      icon?: string | null;
     };
   };
 };
@@ -27,22 +27,22 @@ export default function IntegrationMembershipsTable({ memberships }: Integration
         {
           header: "Integration Name",
           accessor: (membership) => membership.integration.name,
-          sortKey: "integration.name",
           sortable: false,
         },
         {
           header: "Type",
           accessor: (membership) => (
             <div className="flex items-center">
-              <AppIcon 
-                iconName={membership.integration.appType.icon} 
-                size={20} 
-                className="mr-2" 
-              />
+                { membership.integration.appType.icon && (
+                    <AppIcon
+                        iconName={membership.integration.appType.icon}
+                        size={20}
+                        className="mr-2"
+                    />
+                )}
               {membership.integration.appType.name}
             </div>
           ),
-          sortKey: "integration.appType.name",
           sortable: false,
         }
       ]}
