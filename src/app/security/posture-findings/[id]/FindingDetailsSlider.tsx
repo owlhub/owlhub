@@ -396,7 +396,7 @@ export default function FindingDetailsSlider({
         defaultRowsPerPage={50}
         emptyMessage={`No ${activeTab} findings available`}
         className="overflow-x-auto"
-        onRowClick={null} // Disable row clicks to prevent interference with dropdown
+        // onRowClick={null} // Disable row clicks to prevent interference with dropdown
         selectable={true}
         onSelectionChange={handleSelectionChange}
         selectedItems={selectedFindings}
