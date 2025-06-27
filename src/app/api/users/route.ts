@@ -3,7 +3,7 @@ import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/auth";
 
 export async function GET(request: NextRequest) {
-  const session = await auth(request).catch(error => {
+  const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
   });

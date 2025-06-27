@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 
 // GET: Fetch all roles
 export async function GET(request: NextRequest) {
-  const session = await auth(request).catch(error => {
+  const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
   });
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
 
 // POST: Create a new role
 export async function POST(request: NextRequest) {
-  const session = await auth(request).catch(error => {
+  const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
   });

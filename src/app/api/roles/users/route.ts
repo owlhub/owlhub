@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 
 // POST: Attach a user to a role
 export async function POST(request: NextRequest) {
-  const session = await auth(request).catch(error => {
+  const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
   });
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE: Detach a user from a role
 export async function DELETE(request: NextRequest) {
-  const session = await auth(request).catch(error => {
+  const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
   });

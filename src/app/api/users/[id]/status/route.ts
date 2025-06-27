@@ -6,7 +6,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await auth(request).catch(error => {
+  const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
   });

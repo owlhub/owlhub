@@ -20,7 +20,7 @@ interface UpdateData {
 // PATCH: Update an integration
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
@@ -53,7 +53,7 @@ export async function PATCH(
     // Check if the integration exists
     const existingIntegration = await prisma.integration.findFirst({
       where: {
-        id: params.id
+        id: context.params.id
       },
       include: {
         appType: true
@@ -94,7 +94,7 @@ export async function PATCH(
     // Update the integration
     const updatedIntegration = await prisma.integration.update({
       where: {
-        id: params.id
+        id: context.params.id
       },
       data: updateData,
       include: {
@@ -125,7 +125,7 @@ export async function PATCH(
 // DELETE: Delete an integration
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
@@ -154,7 +154,7 @@ export async function DELETE(
     // Check if the integration exists
     const existingIntegration = await prisma.integration.findFirst({
       where: {
-        id: params.id
+        id: context.params.id
       }
     });
 
@@ -168,7 +168,7 @@ export async function DELETE(
     // Delete the integration
     await prisma.integration.delete({
       where: {
-        id: params.id
+        id: context.params.id
       }
     });
 

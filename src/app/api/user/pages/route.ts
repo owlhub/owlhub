@@ -3,7 +3,7 @@ import { getUserAccessiblePages } from "@/auth";
 import { auth } from "@/auth";
 
 export async function GET(request: NextRequest) {
-  const session = await auth(request);
+  const session = await auth();
 
   // Check if the user is authenticated
   if (!session?.user) {
