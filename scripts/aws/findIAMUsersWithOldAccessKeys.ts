@@ -59,8 +59,8 @@ export async function findIAMUsersWithOldAccessKeys(credentials: any, region: st
           const finding = {
             id: 'aws_iam_user_access_key_not_rotated',
             key: `aws-iam-access-key-not-rotated-${accessKey.AccessKeyId}`,
-            title: `IAM User ${user.UserName} with old Access Key`,
-            description: `IAM user ${user.UserName} has an access key (${accessKey.AccessKeyId}) that has not been rotated for more than 90 days.`,
+            title: `IAM User (${user.UserName}) with old Access Key`,
+            description: `IAM user (${user.UserName}) has an access key (${accessKey.AccessKeyId}) that has not been rotated for more than 90 days.`,
             additionalInfo: {
               userName: user.UserName,
               accessKeyId: accessKey.AccessKeyId,
