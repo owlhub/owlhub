@@ -32,7 +32,7 @@ export default function LoginPage() {
           setIsRedirecting(false);
         });
       }
-    }, 1000);
+    }, 10000);
 
     return () => clearTimeout(timer);
   }, [error, isRedirecting, session]);
