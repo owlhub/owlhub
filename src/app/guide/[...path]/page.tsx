@@ -6,6 +6,13 @@ import ReactMarkdown from 'react-markdown';
 import Link from 'next/link';
 import remarkGfm from 'remark-gfm';
 
+// Define custom props interface for the code component
+interface CodeComponentProps {
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+}
+
 export default function GuidePage() {
   const params = useParams();
   const [markdown, setMarkdown] = useState<string>('');
@@ -93,7 +100,7 @@ export default function GuidePage() {
             ol: ({...props}) => <ol {...props} className="list-decimal pl-6 mb-4" />,
             li: ({...props}) => <li {...props} className="mb-1" />,
             p: ({...props}) => <p {...props} className="mb-4" />,
-            code: ({inline, ...props}) => 
+            code: ({inline, ...props}: CodeComponentProps) => 
               inline ? <code {...props} className="bg-gray-100 px-1 py-0.5 rounded text-sm" /> 
                      : <code {...props} className="block bg-gray-100 p-4 rounded text-sm overflow-x-auto" />
           }}
