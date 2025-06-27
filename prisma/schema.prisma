@@ -1,0 +1,230 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String                 @id @default(cuid())
+  name                 String?
+  email                String                 @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  accounts             Account[]
+  sessions             Session[]
+  userRoles            UserRole[]
+  integrationMemberships IntegrationMembership[]
+  isSuperUser          Boolean                @default(false)
+  isActive             Boolean                @default(true)
+
+  @@map("user")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId], name: "provider_providerAccountId")
+  @@map("account")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_token")
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userRoles   UserRole[]
+  pageRoles   PageRole[]
+
+  @@map("role")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_role")
+}
+
+model Page {
+  id          String     @id @default(cuid())
+  path        String     @unique
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  pageRoles   PageRole[]
+
+  @@map("page")
+}
+
+model PageRole {
+  id        String   @id @default(cuid())
+  pageId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, roleId])
+  @@map("page_role")
+}
+
+model AppType {
+  id                    String                 @id @default(cuid())
+  name                  String                 @unique
+  description           String?
+  icon                  String?
+  configFields          String                 // JSON string of required config fields
+  guide                 String?                // Path to the guide markdown file
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  integrations          Integration[]
+  securityFindings      SecurityFinding[]
+  actions               Action[]
+  integrationMemberships IntegrationMembership[]
+
+  @@map("app_type")
+}
+
+model SecurityFinding {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  name         String
+  severity     String   // 'low', 'medium', 'high', 'critical'
+  description  String
+  appTypeId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  appType      AppType  @relation(fields: [appTypeId], references: [id])
+  integrations IntegrationSecurityFinding[]
+  integrationDetails IntegrationSecurityFindingDetails[]
+
+  @@map("app_type_secuirty_findings")
+}
+
+model Action {
+  id           String   @id @default(cuid())
+  name         String
+  description  String
+  appTypeId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  appType      AppType  @relation(fields: [appTypeId], references: [id])
+
+  @@map("action")
+}
+
+model Integration {
+  id                    String                 @id @default(cuid())
+  name                  String                 // User-defined name for this integration
+  appTypeId             String
+  config                String                 // JSON string of configuration values
+  isEnabled             Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  appType               AppType                @relation(fields: [appTypeId], references: [id])
+  integrationMemberships IntegrationMembership[]
+  securityFindings      IntegrationSecurityFinding[]
+  securityFindingDetails IntegrationSecurityFindingDetails[]
+
+  @@map("integration")
+}
+
+model IntegrationMembership {
+  id           String      @id @default(cuid())
+  integrationId String
+  appTypeId     String
+  userId        String
+  config        String?    // JSON string for additional info if required
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  appType       AppType     @relation(fields: [appTypeId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, userId], name: "integrationId_userId")
+  @@map("integration_membership")
+}
+
+model IntegrationSecurityFinding {
+  id                String      @id @default(cuid())
+  integrationId     String
+  securityFindingId String
+  activeCount       Int         @default(0)
+  hiddenCount       Int         @default(0)
+  lastDetectedAt    DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  integration       Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  securityFinding   SecurityFinding @relation(fields: [securityFindingId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, securityFindingId], name: "integrationId_securityFindingId")
+  @@map("integration_security_finding")
+}
+
+model IntegrationSecurityFindingDetails {
+  id                String      @id @default(cuid())
+  integrationId     String
+  securityFindingId String
+  key               String      @unique
+  description       String
+  hidden            Boolean     @default(false)
+  additionalInfo    String       // JSON data for additional information
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  integration       Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  securityFinding   SecurityFinding @relation(fields: [securityFindingId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId])
+  @@index([securityFindingId])
+  @@map("integration_security_finding_details")
+}

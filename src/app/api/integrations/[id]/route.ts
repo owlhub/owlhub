@@ -1,0 +1,168 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/src/lib/prisma";
+import { auth } from "@/auth";
+
+// PATCH: Update an integration
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await auth().catch(error => {
+    console.error("Auth error:", error);
+    return null;
+  });
+
+  // Check if the user is authenticated
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  // Only allow super users to update integrations
+  const isSuperUser = session.user.isSuperUser;
+
+  if (!isSuperUser) {
+    return NextResponse.json(
+      { error: "Forbidden" },
+      { status: 403 }
+    );
+  }
+
+  try {
+    // Parse the request body
+    const body = await request.json();
+    const { name, config, isEnabled } = body;
+
+    // Check if the integration exists
+    const existingIntegration = await prisma.integration.findFirst({
+      where: {
+        id: params.id
+      },
+      include: {
+        appType: true
+      }
+    });
+
+    if (!existingIntegration) {
+      return NextResponse.json(
+        { error: "Integration not found" },
+        { status: 404 }
+      );
+    }
+
+    // Prepare update data
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (isEnabled !== undefined) updateData.isEnabled = isEnabled;
+
+    // If config is provided, validate it against the app type's configFields
+    if (config !== undefined) {
+      const configFields = JSON.parse(existingIntegration.appType.configFields);
+      const requiredFields = configFields
+        .filter((field: any) => field.required)
+        .map((field: any) => field.name);
+
+      // Check if all required fields are present in the config
+      const missingFields = requiredFields.filter(field => !config[field]);
+      if (missingFields.length > 0) {
+        return NextResponse.json(
+          { error: `Missing required fields: ${missingFields.join(', ')}` },
+          { status: 400 }
+        );
+      }
+
+      updateData.config = JSON.stringify(config);
+    }
+
+    // Update the integration
+    const updatedIntegration = await prisma.integration.update({
+      where: {
+        id: params.id
+      },
+      data: updateData,
+      include: {
+        appType: true
+      }
+    });
+
+    // Transform the config from JSON string to object
+    const transformedIntegration = {
+      ...updatedIntegration,
+      config: JSON.parse(updatedIntegration.config),
+      appType: {
+        ...updatedIntegration.appType,
+        configFields: JSON.parse(updatedIntegration.appType.configFields)
+      }
+    };
+
+    return NextResponse.json({ integration: transformedIntegration });
+  } catch (error) {
+    console.error("Error updating integration:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE: Delete an integration
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await auth().catch(error => {
+    console.error("Auth error:", error);
+    return null;
+  });
+
+  // Check if the user is authenticated
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  // Only allow super users to delete integrations
+  const isSuperUser = session.user.isSuperUser;
+
+  if (!isSuperUser) {
+    return NextResponse.json(
+      { error: "Forbidden" },
+      { status: 403 }
+    );
+  }
+
+  try {
+    // Check if the integration exists
+    const existingIntegration = await prisma.integration.findFirst({
+      where: {
+        id: params.id
+      }
+    });
+
+    if (!existingIntegration) {
+      return NextResponse.json(
+        { error: "Integration not found" },
+        { status: 404 }
+      );
+    }
+
+    // Delete the integration
+    await prisma.integration.delete({
+      where: {
+        id: params.id
+      }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting integration:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,151 @@
+import { 
+  IAMClient, 
+  ListUsersCommand, 
+  ListUsersCommandOutput,
+  ListAccessKeysCommand, 
+  ListAccessKeysCommandOutput,
+  GetAccessKeyLastUsedCommand,
+  GetAccessKeyLastUsedCommandOutput
+} from '@aws-sdk/client-iam';
+
+/**
+ * Find IAM users with access keys not rotated for more than 90 days
+ * @param credentials - AWS credentials
+ * @param region - AWS region
+ * @returns Array of security findings
+ */
+export async function findIAMUsersWithOldAccessKeys(credentials: any, region: string) {
+  try {
+    console.log('Finding IAM users with access keys not rotated for more than 90 days');
+
+    const iamClient = new IAMClient({
+      region,
+      credentials: {
+        accessKeyId: credentials.accessKeyId,
+        secretAccessKey: credentials.secretAccessKey,
+        sessionToken: credentials.sessionToken
+      }
+    });
+
+    // Get all IAM users
+    const users = await getAllIAMUsers(iamClient);
+    console.log(`Found ${users.length} IAM users`);
+
+    const findings: any[] = [];
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    // Check each user's access keys
+    for (const user of users) {
+      // Skip if UserName is undefined
+      if (!user.UserName) continue;
+
+      const accessKeys = await getUserAccessKeys(iamClient, user.UserName);
+
+      for (const accessKey of accessKeys) {
+        // Skip if CreateDate is undefined
+        if (!accessKey.CreateDate) continue;
+
+        const createDate = new Date(accessKey.CreateDate);
+
+        // Check if the access key is older than 90 days
+        if (createDate < ninetyDaysAgo) {
+          // Skip if AccessKeyId is undefined
+          if (!accessKey.AccessKeyId) continue;
+
+          // Get last used info for the access key
+          const lastUsedInfo = await getAccessKeyLastUsed(iamClient, accessKey.AccessKeyId);
+
+          const finding = {
+            id: 'aws_iam_user_access_key_not_rotated',
+            key: `aws-iam-access-key-not-rotated-${accessKey.AccessKeyId}`,
+            title: `IAM User ${user.UserName} with old Access Key`,
+            description: `IAM user ${user.UserName} has an access key (${accessKey.AccessKeyId}) that has not been rotated for more than 90 days.`,
+            additionalInfo: {
+              userName: user.UserName,
+              accessKeyId: accessKey.AccessKeyId,
+              createDate: createDate.toISOString(),
+              status: accessKey.Status,
+              lastUsed: lastUsedInfo?.LastUsedDate ? new Date(lastUsedInfo.LastUsedDate).toISOString() : 'Never',
+              lastUsedService: lastUsedInfo?.ServiceName || 'N/A',
+              lastUsedRegion: lastUsedInfo?.Region || 'N/A',
+              ageInDays: Math.floor((new Date().getTime() - createDate.getTime()) / (1000 * 60 * 60 * 24))
+            }
+          };
+
+          findings.push(finding);
+        }
+      }
+    }
+
+    console.log(`Found ${findings.length} IAM users with old access keys`);
+    return findings;
+  } catch (error) {
+    console.error('Error finding IAM users with old access keys:', error);
+    return [];
+  }
+}
+
+/**
+ * Get all IAM users
+ * @param iamClient - IAM client
+ * @returns Array of IAM users
+ */
+async function getAllIAMUsers(iamClient: IAMClient) {
+  try {
+    const users = [];
+    let marker;
+
+    do {
+      const command: ListUsersCommand = new ListUsersCommand({ Marker: marker });
+      const response: ListUsersCommandOutput = await iamClient.send(command);
+
+      if (response.Users) {
+        users.push(...response.Users);
+      }
+
+      marker = response.Marker;
+    } while (marker);
+
+    return users;
+  } catch (error) {
+    console.error('Error getting IAM users:', error);
+    return [];
+  }
+}
+
+/**
+ * Get access keys for an IAM user
+ * @param iamClient - IAM client
+ * @param userName - IAM user name
+ * @returns Array of access keys
+ */
+async function getUserAccessKeys(iamClient: IAMClient, userName: string) {
+  try {
+    const command: ListAccessKeysCommand = new ListAccessKeysCommand({ UserName: userName });
+    const response: ListAccessKeysCommandOutput = await iamClient.send(command);
+
+    return response.AccessKeyMetadata || [];
+  } catch (error) {
+    console.error(`Error getting access keys for user ${userName}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Get last used info for an access key
+ * @param iamClient - IAM client
+ * @param accessKeyId - Access key ID
+ * @returns Last used info
+ */
+async function getAccessKeyLastUsed(iamClient: IAMClient, accessKeyId: string) {
+  try {
+    const command: GetAccessKeyLastUsedCommand = new GetAccessKeyLastUsedCommand({ AccessKeyId: accessKeyId });
+    const response: GetAccessKeyLastUsedCommandOutput = await iamClient.send(command);
+
+    return response.AccessKeyLastUsed;
+  } catch (error) {
+    console.error(`Error getting last used info for access key ${accessKeyId}:`, error);
+    return null;
+  }
+}
