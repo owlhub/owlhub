@@ -23,7 +23,7 @@ interface Finding {
     id: string;
     name: string;
     appType: {
-      icon: string;
+      icon: string | null;
     };
   };
   securityFinding: {
@@ -176,7 +176,9 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
       header: "Integration",
       accessor: (finding: Finding) => (
         <div className="flex items-center">
-          <AppIcon iconName={finding.integration.appType.icon} size={20} className="mr-2" />
+          {finding.integration.appType.icon && (
+              <AppIcon iconName={finding.integration.appType.icon} size={20} className="mr-2" />
+          )}
           {finding.integration.name}
         </div>
       ),

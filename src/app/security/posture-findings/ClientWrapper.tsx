@@ -18,7 +18,7 @@ interface Finding {
     id: string;
     name: string;
     appType: {
-      icon: string;
+      icon: string | null;
     };
   };
   securityFinding: {

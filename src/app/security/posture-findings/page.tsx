@@ -36,6 +36,12 @@ export default async function PostureFindingsPage() {
     }
   });
 
+  // Convert Date objects to strings for the findings
+  const formattedFindings = findings.map(finding => ({
+    ...finding,
+    lastDetectedAt: finding.lastDetectedAt ? finding.lastDetectedAt.toISOString() : null
+  }));
+
   // Extract unique integrations for the filter
   const uniqueIntegrations = Array.from(
     new Map(
@@ -59,7 +65,7 @@ export default async function PostureFindingsPage() {
 
       <p className="mb-4">Review and take action against security issues found in your application or cloud</p>
 
-      <ClientWrapper findings={findings} integrations={uniqueIntegrations} />
+      <ClientWrapper findings={formattedFindings} integrations={uniqueIntegrations} />
     </div>
   );
 }
