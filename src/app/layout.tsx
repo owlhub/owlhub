@@ -61,7 +61,7 @@ export default async function RootLayout({
               <main className="flex-1 overflow-auto">
                 <div className="min-h-full" style={{ background: 'var(--background)' }}>
                   {/* Breadcrumb - visible at the top of main content area */}
-                  {/*isAuthenticated && <Breadcrumb /> */}
+                  {isAuthenticated && <Breadcrumb />}
                   {children}
                 </div>
               </main>
