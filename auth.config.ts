@@ -16,6 +16,11 @@ function CustomPrismaAdapter(p: typeof prisma) {
       }
       const user = await adapter.createUser(data);
 
+      // If user creation failed, throw an error
+      if (!user) {
+        throw new Error("Failed to create user");
+      }
+
       // Check if this is the first user (count should be 1 if this is the first user)
       const userCount = await p.user.count();
 
@@ -51,9 +56,16 @@ function CustomPrismaAdapter(p: typeof prisma) {
         });
 
         // Return the updated user
-        return await p.user.findUnique({
+        const updatedUser = await p.user.findUnique({
           where: { id: user.id },
         });
+
+        // If we couldn't find the updated user, throw an error
+        if (!updatedUser) {
+          throw new Error("Failed to retrieve updated user");
+        }
+
+        return updatedUser;
       }
 
       return user;
