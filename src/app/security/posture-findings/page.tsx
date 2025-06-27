@@ -1,5 +1,4 @@
 import { auth } from "@/auth";
-import Link from "next/link";
 import { prisma } from "@/src/lib/prisma";
 import ClientWrapper from "./ClientWrapper";
 import { redirect } from "next/navigation";

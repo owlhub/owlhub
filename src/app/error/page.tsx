@@ -7,7 +7,7 @@ import Link from "next/link";
 export default function ErrorPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [errorDetails, setErrorDetails] = useState({
+  const [errorDetails] = useState({
     error: searchParams.get("error") || "Unknown error",
     description: searchParams.get("error_description") || "An unknown error occurred during authentication."
   });

@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/auth";
 
+// Define interface for where clause
+interface WhereClause {
+  integrationId: string;
+  securityFindingId: string;
+  hidden?: boolean;
+  [key: string]: unknown;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
@@ -32,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build the query
-    const whereClause: any = {
+    const whereClause: WhereClause = {
       integrationId,
       securityFindingId,
     };

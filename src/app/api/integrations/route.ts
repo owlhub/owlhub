@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/auth";
 
+// Define interface for config fields
+interface ConfigField {
+  name: string;
+  required: boolean;
+  [key: string]: unknown;
+}
+
 // GET: Fetch all integrations (application-wide)
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
@@ -109,10 +116,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate the config against the app type's configFields
-    const configFields = JSON.parse(appType.configFields);
+    const configFields = JSON.parse(appType.configFields) as ConfigField[];
     const requiredFields = configFields
-      .filter((field: any) => field.required)
-      .map((field: any) => field.name);
+      .filter((field: ConfigField) => field.required)
+      .map((field: ConfigField) => field.name);
 
     // Check if all required fields are present in the config
     const missingFields = requiredFields.filter(field => !config[field]);

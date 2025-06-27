@@ -9,11 +9,17 @@ interface User {
   email: string;
 }
 
+interface Page {
+  id: string;
+  name: string;
+  path: string;
+}
+
 interface Role {
   id: string;
   name: string;
   description?: string;
-  pages: any[];
+  pages: Page[];
   users: User[];
   createdAt: string;
   updatedAt: string;
@@ -94,7 +100,7 @@ export default function RoleManagement() {
       setNewRoleName("");
       setNewRoleDescription("");
       setSuccessMessage("Role created successfully");
-      
+
       // Refresh the page to show the new role
       router.refresh();
     } catch (err) {
@@ -135,8 +141,8 @@ export default function RoleManagement() {
         throw new Error(errorData.error || "Failed to attach user to role");
       }
 
-      const data = await response.json();
-      
+      await response.json();
+
       // Update the roles state to include the new user
       const updatedRoles = roles.map(role => {
         if (role.id === selectedRole.id) {
@@ -150,11 +156,11 @@ export default function RoleManagement() {
         }
         return role;
       });
-      
+
       setRoles(updatedRoles);
       setSelectedUser("");
       setSuccessMessage("User attached to role successfully");
-      
+
       // Refresh the page to show the updated role
       router.refresh();
     } catch (err) {
@@ -187,10 +193,10 @@ export default function RoleManagement() {
         }
         return role;
       });
-      
+
       setRoles(updatedRoles);
       setSuccessMessage("User detached from role successfully");
-      
+
       // Refresh the page to show the updated role
       router.refresh();
     } catch (err) {

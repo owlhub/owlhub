@@ -33,6 +33,9 @@ interface Finding {
   };
 }
 
+// Define a type for nested sort keys
+type NestedSortKey = string | keyof Finding | `${'integration' | 'securityFinding'}.${string}`;
+
 interface FilterState {
   status: string[];
   severity: string[];
@@ -51,13 +54,8 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
   const [filteredFindings, setFilteredFindings] = useState<Finding[]>(findings);
   const [selectedFindings, setSelectedFindings] = useState<Finding[]>([]);
 
-  // Apply filters when they change
-  useEffect(() => {
-    applyFilters(filters);
-  }, [filters, findings]);
-
   // Function to apply filters to the findings data
-  const applyFilters = (filterState: FilterState) => {
+  const applyFilters = useCallback((filterState: FilterState) => {
     let result = [...findings];
 
     // Filter by status (active/hidden)
@@ -107,7 +105,12 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
     }
 
     setFilteredFindings(result);
-  };
+  }, [findings]);
+
+  // Apply filters when they change
+  useEffect(() => {
+    applyFilters(filters);
+  }, [filters, findings, applyFilters]);
 
   const handleRowClick = (finding: Finding) => {
     router.push(`/security/posture-findings/${finding.id}`);
@@ -145,7 +148,7 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
         </span>
       ),
       sortable: true,
-      sortKey: "securityFinding.severity" as any,
+      sortKey: "securityFinding.severity" as NestedSortKey,
       width: "100px",
     },
     {
@@ -156,7 +159,7 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
         </Link>
       ),
       sortable: true,
-      sortKey: "securityFinding.name" as any,
+      sortKey: "securityFinding.name" as NestedSortKey,
       width: "250px",
     },
     {
@@ -168,7 +171,7 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
         </div>
       ),
       sortable: true,
-      sortKey: "integration.name" as any,
+      sortKey: "integration.name" as NestedSortKey,
       width: "200px",
     },
     {

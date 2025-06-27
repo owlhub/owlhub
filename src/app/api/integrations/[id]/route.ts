@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/auth";
 
+// Define interface for config fields
+interface ConfigField {
+  name: string;
+  required: boolean;
+  [key: string]: unknown;
+}
+
+// Define interface for update data
+interface UpdateData {
+  name?: string;
+  isEnabled?: boolean;
+  config?: string;
+  [key: string]: unknown;
+}
+
 // PATCH: Update an integration
 export async function PATCH(
   request: NextRequest,
@@ -53,16 +68,16 @@ export async function PATCH(
     }
 
     // Prepare update data
-    const updateData: any = {};
+    const updateData: UpdateData = {};
     if (name !== undefined) updateData.name = name;
     if (isEnabled !== undefined) updateData.isEnabled = isEnabled;
 
     // If config is provided, validate it against the app type's configFields
     if (config !== undefined) {
-      const configFields = JSON.parse(existingIntegration.appType.configFields);
+      const configFields = JSON.parse(existingIntegration.appType.configFields) as ConfigField[];
       const requiredFields = configFields
-        .filter((field: any) => field.required)
-        .map((field: any) => field.name);
+        .filter((field: ConfigField) => field.required)
+        .map((field: ConfigField) => field.name);
 
       // Check if all required fields are present in the config
       const missingFields = requiredFields.filter(field => !config[field]);

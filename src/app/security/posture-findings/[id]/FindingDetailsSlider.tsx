@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Table from "@/src/components/Table";
 
 interface FindingDetail {
@@ -13,8 +13,6 @@ interface FindingDetail {
 
 interface FindingDetailsSliderProps {
   findingDetails: Array<FindingDetail>;
-  integrationId: string;
-  securityFindingId: string;
   onCountsUpdate: (activeCount: number, hiddenCount: number) => void;
   activeTab: 'active' | 'hidden';
   onRefreshData: () => void;
@@ -22,8 +20,6 @@ interface FindingDetailsSliderProps {
 
 export default function FindingDetailsSlider({ 
   findingDetails: initialFindingDetails,
-  integrationId,
-  securityFindingId,
   onCountsUpdate,
   activeTab,
   onRefreshData

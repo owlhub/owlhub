@@ -192,7 +192,7 @@ export default function IntegrationsPage() {
         throw new Error('Failed to update integration configuration');
       }
 
-      const data = await response.json();
+      await response.json();
 
       // Update the UI with the new configuration
       setIntegrations(integrations.map(item => 
@@ -240,7 +240,7 @@ export default function IntegrationsPage() {
     } else {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, router]);
 
   if (!session?.user?.isSuperUser) {
     return (
@@ -316,7 +316,7 @@ export default function IntegrationsPage() {
         ]}
       >
         <p>
-          Are you sure you want to delete the integration "{confirmationIntegration?.name}"? This action cannot be undone.
+          Are you sure you want to delete the integration &quot;{confirmationIntegration?.name}&quot;? This action cannot be undone.
         </p>
       </Popup>
 
@@ -345,7 +345,7 @@ export default function IntegrationsPage() {
         ]}
       >
         <p>
-          Are you sure you want to {confirmationIntegration?.isEnabled ? 'disable' : 'enable'} the integration "{confirmationIntegration?.name}"?
+          Are you sure you want to {confirmationIntegration?.isEnabled ? 'disable' : 'enable'} the integration &quot;{confirmationIntegration?.name}&quot;?
         </p>
       </Popup>
 

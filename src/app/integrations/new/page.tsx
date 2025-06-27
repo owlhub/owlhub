@@ -119,7 +119,7 @@ export default function NewIntegrationPage() {
     } else {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, router]);
 
   // Get the selected app type
   const selectedAppType = appTypes.find(appType => appType.id === selectedAppTypeId);
