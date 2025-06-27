@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
@@ -44,9 +44,11 @@ export async function PATCH(
       );
     }
 
+    const { id } = await params;
+
     // Check if the user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     if (!existingUser) {
@@ -58,7 +60,7 @@ export async function PATCH(
 
     // Update the user's isActive status
     const updatedUser = await prisma.user.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { isActive: body.isActive },
     });
 
