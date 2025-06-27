@@ -11,6 +11,9 @@ function CustomPrismaAdapter(p: typeof prisma) {
     ...adapter,
     createUser: async (data: any) => {
       // Create the user first
+      if (!adapter.createUser) {
+        throw new Error("createUser method is not defined in the adapter");
+      }
       const user = await adapter.createUser(data);
 
       // Check if this is the first user (count should be 1 if this is the first user)

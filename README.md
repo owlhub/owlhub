@@ -492,6 +492,97 @@ jobs:
 
 This workflow runs on pushes to main/master branches, pull requests to main/master branches, and can be triggered manually. It checks if all migrations have been deployed and fails the workflow if there are pending migrations.
 
+### Docker Deployment
+
+The application includes a Dockerfile for containerized deployment. The Docker image is automatically built and pushed to GitHub Container Registry (GHCR) using GitHub Actions.
+
+#### Using the Docker Image
+
+You can pull the latest Docker image from GHCR:
+
+```bash
+docker pull ghcr.io/[your-github-username]/owlhub:latest
+```
+
+To run the container:
+
+```bash
+docker run -p 3000:3000 \
+  -e DATABASE_URL="postgresql://username:password@host:5432/owlhub" \
+  -e NEXTAUTH_URL="http://localhost:3000" \
+  -e NEXTAUTH_SECRET="your-secret-key" \
+  -e OIDC_ISSUER="https://your-oidc-provider.com" \
+  -e OIDC_CLIENT_ID="your-client-id" \
+  -e OIDC_CLIENT_SECRET="your-client-secret" \
+  ghcr.io/[your-github-username]/owlhub:latest
+```
+
+#### GitHub Actions Workflow
+
+The repository includes a GitHub Actions workflow (`.github/workflows/docker-build-push.yml`) that automatically builds and pushes the Docker image to GitHub Container Registry:
+
+```yaml
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+```
+
+This workflow:
+- Triggers on pushes to the main branch and manual workflow dispatch
+- Sets up Docker Buildx for efficient builds
+- Logs in to GitHub Container Registry using the built-in GITHUB_TOKEN
+- Extracts metadata for proper tagging (including SHA, branch/tag references, and latest)
+- Builds and pushes the Docker image with caching for faster builds
+
 ### Deploying to Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
