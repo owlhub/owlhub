@@ -8,7 +8,7 @@ import IntegrationMembershipsTable from "./IntegrationMembershipsTable";
 export default async function UserDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
@@ -45,8 +45,9 @@ export default async function UserDetailPage({
   }
 
   // Fetch the user by ID
+  const { id } = await params;
   const user = await prisma.user.findUnique({
-    where: { id: params.id },
+    where: { id: id },
     include: {
       userRoles: {
         include: {
