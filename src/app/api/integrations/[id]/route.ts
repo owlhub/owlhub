@@ -124,6 +124,7 @@ export async function PATCH(
 
 // DELETE: Delete an integration
 export async function DELETE(
+  request: NextRequest,
   params: { params: Promise<{ id: string }> }
 ) {
   const session = await auth().catch(error => {
