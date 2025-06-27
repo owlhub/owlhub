@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, ReactNode } from 'react';
 import AppIcon from "@/src/components/AppIcon";
 import Link from "next/link";
 import Table from "@/src/components/Table";
@@ -35,6 +35,16 @@ interface Finding {
 
 // Define a type for nested sort keys
 type NestedSortKey = string | keyof Finding | `${'integration' | 'securityFinding'}.${string}`;
+
+// Define a custom column type that allows for NestedSortKey in sortKey
+interface FindingColumn {
+  header: string;
+  accessor: keyof Finding | ((item: Finding) => ReactNode);
+  className?: string;
+  sortable?: boolean;
+  sortKey?: keyof Finding | NestedSortKey;
+  width?: string;
+}
 
 interface FilterState {
   status: string[];
@@ -121,7 +131,7 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
     console.log('Selected findings:', selected.length);
   }, []);
 
-  const columns = [
+  const columns: FindingColumn[] = [
     {
       header: "Severity",
       accessor: (finding: Finding) => (
@@ -226,7 +236,14 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
     </div>
       <Table
         data={filteredFindings}
-        columns={columns}
+        columns={columns as unknown as {
+          header: string;
+          accessor: keyof Finding | ((item: Finding) => ReactNode);
+          className?: string;
+          sortable?: boolean;
+          sortKey?: keyof Finding;
+          width?: string;
+        }[]}
         onRowClick={handleRowClick}
         keyExtractor={(finding) => finding.id}
         defaultRowsPerPage={10}
