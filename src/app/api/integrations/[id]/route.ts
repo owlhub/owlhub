@@ -20,7 +20,7 @@ interface UpdateData {
 // PATCH: Update an integration
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  params: { params: Promise<{ id: string }> }
 ) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
@@ -50,10 +50,11 @@ export async function PATCH(
     const body = await request.json();
     const { name, config, isEnabled } = body;
 
+    const { id } = await params.params;
     // Check if the integration exists
     const existingIntegration = await prisma.integration.findFirst({
       where: {
-        id: context.params.id
+        id: id
       },
       include: {
         appType: true
@@ -94,7 +95,7 @@ export async function PATCH(
     // Update the integration
     const updatedIntegration = await prisma.integration.update({
       where: {
-        id: context.params.id
+        id: id
       },
       data: updateData,
       include: {
