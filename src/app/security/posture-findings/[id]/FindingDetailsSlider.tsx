@@ -13,13 +13,19 @@ interface FindingDetail {
 
 interface FindingDetailsSliderProps {
   findingDetails: Array<FindingDetail>;
+  integrationId: string;
+  securityFindingId: string;
   onCountsUpdate: (activeCount: number, hiddenCount: number) => void;
   activeTab: 'active' | 'hidden';
-  onRefreshData: () => void;
+  onRefreshData: () => Promise<void>;
 }
 
 export default function FindingDetailsSlider({ 
   findingDetails: initialFindingDetails,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  integrationId,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  securityFindingId,
   onCountsUpdate,
   activeTab,
   onRefreshData
