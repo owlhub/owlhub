@@ -37,7 +37,7 @@ npm install
 yarn install
 ```
 
-3. Set up environment variables by copying `.env.local` and filling in the values:
+3. Set up environment variables by copying `.env` and filling in the values:
 
 ```
 NEXTAUTH_URL=http://localhost:3000
@@ -399,6 +399,56 @@ To learn more about the technologies used in this project:
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [NextAuth.js Documentation](https://next-auth.js.org/getting-started/introduction) - learn about NextAuth.js authentication.
 - [Prisma Documentation](https://www.prisma.io/docs) - learn about Prisma ORM.
+
+## Upcoming Features and Improvements
+
+OwlHub is continuously evolving with new features and improvements planned for future releases:
+
+### Enhanced Security Scanning
+
+- **AWS Security Scanning**: Expanded security scanning for AWS resources including:
+  - Detection of IAM users with access keys not rotated for more than 90 days
+  - Identification of security vulnerabilities in AWS configurations
+  - Comprehensive security posture assessment
+
+- **GitLab Security Scanning**: Enhanced security scanning for GitLab repositories including:
+  - Vulnerability detection in code repositories
+  - User access management and monitoring
+  - Integration with GitLab's security features
+
+### New Integrations
+
+- **GitHub Integration**: Connect and monitor GitHub repositories
+  - User management
+  - Repository scanning
+  - Security vulnerability detection
+
+- **Microsoft 365 Integration**: Connect and monitor Microsoft 365 resources
+  - User management
+  - Security configuration assessment
+  - Compliance monitoring
+
+- **Slack Integration**: Notifications and alerts through Slack
+  - Real-time security alerts
+  - Integration status updates
+  - User-friendly notifications
+
+### Platform Improvements
+
+- **Enhanced Dashboard**: Improved visualization of security findings
+  - Customizable widgets
+  - Interactive charts and graphs
+  - Filtering and sorting options
+
+- **Reporting System**: Comprehensive reporting capabilities
+  - Scheduled reports
+  - Exportable formats (PDF, CSV)
+  - Customizable report templates
+
+- **API Enhancements**: Expanded API capabilities
+  - More endpoints for integration management
+  - Improved documentation
+  - Authentication and authorization improvements
 
 ## Deployment
 
