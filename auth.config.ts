@@ -171,7 +171,7 @@ export const authConfig: NextAuthConfig = {
     strategy: "database",
     // Set a shorter maxAge to ensure the session is refreshed more frequently
     // This helps keep the session data in sync with the database
-    maxAge: 12 * 60 * 60, // 12 hours in seconds
+    maxAge: 1 * 60 * 60, // 12 hours in seconds
   },
   debug: process.env.NODE_ENV === "development",
 };
