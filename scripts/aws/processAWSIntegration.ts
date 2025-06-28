@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
-import { findIAMUsersWithOldAccessKeys } from './findIAMUsersWithOldAccessKeys';
+import { findIAMFindings } from './findIAMFindings';
+import { findACMFindings } from './findACMFindings';
 import {
   addIntegrationFindingDetails
 } from "../utils/common";
@@ -45,9 +46,16 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     console.log(`Successfully assumed role for integration: ${integration.name}`);
 
     // Find IAM users with access keys not rotated for more than 90 days
-    const foundAppFindings = await findIAMUsersWithOldAccessKeys(credentials, region);
+    const iamFindings = await findIAMFindings(credentials, region);
+    console.log(`Found ${iamFindings.length} IAM findings in AWS`);
 
-    console.log(`Found ${foundAppFindings.length} app findings in AWS`, foundAppFindings);
+    // Find ACM certificate issues (expired or expiring within 30 days) in all regions
+    const acmFindings = await findACMFindings(credentials, region);
+    console.log(`Found ${acmFindings.length} ACM findings in AWS`);
+
+    // Combine all findings
+    const foundAppFindings = [...iamFindings, ...acmFindings];
+    console.log(`Found ${foundAppFindings.length} total app findings in AWS`);
 
     // Create a new array with updated IDs to ensure changes persist
     const updatedAppFindings = foundAppFindings.map(foundAppFinding => {

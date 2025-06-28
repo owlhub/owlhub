@@ -1,11 +1,12 @@
 import NextAuth from "next-auth";
+import type { Session } from "next-auth";
 import { authConfig } from "@/auth.config";
 import { prisma } from "@/lib/prisma";
 
 export const { auth, signIn, signOut, handlers } = NextAuth(authConfig);
 
 // Helper function to check if a user has access to a specific page
-export async function hasPageAccess(session: any, userId: string, pagePath: string): Promise<boolean> {
+export async function hasPageAccess(session: Session | null, userId: string, pagePath: string): Promise<boolean> {
   console.log(session);
   if (!userId) return false;
 
@@ -62,7 +63,7 @@ export async function hasPageAccess(session: any, userId: string, pagePath: stri
 }
 
 // Helper function to get all pages a user has access to
-export async function getUserAccessiblePages(userId: string, session?: any): Promise<string[]> {
+export async function getUserAccessiblePages(userId: string, session?: Session | null): Promise<string[]> {
   if (!userId) return [];
 
   // Check if the user is a super user from the session

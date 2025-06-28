@@ -10,13 +10,14 @@ import {
 
 /**
  * Find IAM users with access keys not rotated for more than 90 days
+ * and IAM users with access keys that are inactive for over 90 days
  * @param credentials - AWS credentials
  * @param region - AWS region
  * @returns Array of security findings
  */
-export async function findIAMUsersWithOldAccessKeys(credentials: any, region: string) {
+export async function findIAMFindings(credentials: any, region: string) {
   try {
-    console.log('Finding IAM users with access keys not rotated for more than 90 days');
+    console.log('Finding IAM users with access keys not rotated for more than 90 days and inactive access keys over 90 days');
 
     const iamClient = new IAMClient({
       region,
@@ -32,6 +33,8 @@ export async function findIAMUsersWithOldAccessKeys(credentials: any, region: st
     console.log(`Found ${users.length} IAM users`);
 
     const findings: any[] = [];
+    const notRotatedFindings: any[] = [];
+    const inactiveFindings: any[] = [];
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
@@ -48,15 +51,15 @@ export async function findIAMUsersWithOldAccessKeys(credentials: any, region: st
 
         const createDate = new Date(accessKey.CreateDate);
 
+        // Skip if AccessKeyId is undefined
+        if (!accessKey.AccessKeyId) continue;
+
+        // Get last used info for the access key
+        const lastUsedInfo = await getAccessKeyLastUsed(iamClient, accessKey.AccessKeyId);
+
         // Check if the access key is older than 90 days
         if (createDate < ninetyDaysAgo) {
-          // Skip if AccessKeyId is undefined
-          if (!accessKey.AccessKeyId) continue;
-
-          // Get last used info for the access key
-          const lastUsedInfo = await getAccessKeyLastUsed(iamClient, accessKey.AccessKeyId);
-
-          const finding = {
+          const notRotatedFinding = {
             id: 'aws_iam_user_access_key_not_rotated',
             key: `aws-iam-access-key-not-rotated-${accessKey.AccessKeyId}`,
             title: `IAM User (${user.UserName}) with old Access Key`,
@@ -73,15 +76,48 @@ export async function findIAMUsersWithOldAccessKeys(credentials: any, region: st
             }
           };
 
-          findings.push(finding);
+          notRotatedFindings.push(notRotatedFinding);
+          findings.push(notRotatedFinding);
+        }
+
+        // Check if the access key is inactive and has been inactive for over 90 days
+        if (accessKey.Status === 'Inactive') {
+          // If we have last used info and it's older than 90 days, or if it was never used
+          const lastUsedDate = lastUsedInfo?.LastUsedDate ? new Date(lastUsedInfo.LastUsedDate) : null;
+          const isOldInactive = lastUsedDate ? lastUsedDate < ninetyDaysAgo : true;
+
+          if (isOldInactive) {
+            const inactiveFinding = {
+              id: 'aws_iam_access_key_inactive',
+              key: `aws-iam-access-key-inactive-${accessKey.AccessKeyId}`,
+              title: `IAM User (${user.UserName}) with Inactive Access Key`,
+              description: `IAM user (${user.UserName}) has an inactive access key (${accessKey.AccessKeyId}) that has been inactive for over 90 days.`,
+              additionalInfo: {
+                userName: user.UserName,
+                accessKeyId: accessKey.AccessKeyId,
+                createDate: createDate.toISOString(),
+                status: accessKey.Status,
+                lastUsed: lastUsedInfo?.LastUsedDate ? new Date(lastUsedInfo.LastUsedDate).toISOString() : 'Never',
+                lastUsedService: lastUsedInfo?.ServiceName || 'N/A',
+                lastUsedRegion: lastUsedInfo?.Region || 'N/A',
+                ageInDays: Math.floor((new Date().getTime() - createDate.getTime()) / (1000 * 60 * 60 * 24)),
+                inactiveDays: lastUsedDate ? 
+                  Math.floor((new Date().getTime() - lastUsedDate.getTime()) / (1000 * 60 * 60 * 24)) : 
+                  Math.floor((new Date().getTime() - createDate.getTime()) / (1000 * 60 * 60 * 24))
+              }
+            };
+
+            inactiveFindings.push(inactiveFinding);
+            findings.push(inactiveFinding);
+          }
         }
       }
     }
 
-    console.log(`Found ${findings.length} IAM users with old access keys`);
+    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys and ${inactiveFindings.length} IAM users with inactive access keys over 90 days`);
     return findings;
   } catch (error) {
-    console.error('Error finding IAM users with old access keys:', error);
+    console.error('Error finding IAM users with old or inactive access keys:', error);
     return [];
   }
 }

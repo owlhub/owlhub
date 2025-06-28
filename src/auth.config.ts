@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
-import { Role, User } from "@prisma/client";
+import { Role } from "@prisma/client";
 
 // Create a custom adapter that extends the PrismaAdapter
 function CustomPrismaAdapter(p: typeof prisma) {
@@ -9,7 +9,7 @@ function CustomPrismaAdapter(p: typeof prisma) {
 
   return {
     ...adapter,
-    createUser: async (data: any) => {
+    createUser: async (data: { email: string; emailVerified?: Date; name?: string; image?: string }) => {
       // Create the user first
       if (!adapter.createUser) {
         throw new Error("createUser method is not defined in the adapter");

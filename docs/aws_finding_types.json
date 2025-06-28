@@ -621,41 +621,5 @@
       "vendor": "Amazon Web Services",
       "severity": "Medium"
     },
-    {
-      "id": "d313bc0c-a2fb-41d8-b5a8-ef2704bb5570",
-      "name": "ACM Certificate Has Domain Wildcard",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "High"
-    },
-    {
-      "id": "cd93f2c1-9b07-4e6c-964c-79f3a64d56ac",
-      "name": "ACM Certificate Expires within 30 days",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
-    },
-    {
-      "id": "30ce0a22-eb3d-457d-bc59-6468f9bb4c4f",
-      "name": "ACM Certificate Expired",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Critical"
-    }
   ]
 }

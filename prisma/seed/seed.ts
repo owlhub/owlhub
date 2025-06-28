@@ -236,6 +236,34 @@ async function main() {
     ],
     'AWS': [
       {
+        "key": "aws_acm_certificate_expired",
+        "name": "ACM Certificate Expired",
+        "severity": "critical",
+        "description": "ACM certificates that have expired.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_acm_certificate_expires_within_30_days",
+        "name": "ACM Certificate Expires within 30 days",
+        "severity": "medium",
+        "description": "ACM certificates that are expiring within 30 days.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_acm_certificate_has_domain_wildcard",
+        "name": "ACM Certificate has Domain Wildcard",
+        "severity": "high",
+        "description": "ACM certificates that have a domain wildcard.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_access_key_inactive",
+        "name": "IAM Access Key Inactive over 90 Days",
+        "severity": "medium",
+        "description": "IAM user access keys that have been inactive for over 90 days and should be removed to reduce the attack surface.",
+        "type": "posture"
+      },
+      {
         "key": "aws_iam_user_access_key_not_rotated",
         "name": "IAM Access Key Not Rotated",
         "severity": "high",
