@@ -33,7 +33,7 @@ export default function UsersPage() {
 
         const data = await response.json();
         // Transform the data to match the expected format for UsersTable
-        const transformedUsers = data.users.map((user: any) => ({
+        const transformedUsers = data.users.map((user: { id: string; roles?: Role[] }) => ({
           ...user,
           userRoles: user.roles ? user.roles.map((role: Role) => ({
             id: `${user.id}-${role.id}`, // Generate a unique ID
