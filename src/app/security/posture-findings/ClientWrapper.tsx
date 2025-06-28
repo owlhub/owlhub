@@ -2,34 +2,16 @@
 
 import React, { useState } from 'react';
 import FilterSection from './FilterSection';
-import FindingsTable, { FilterState } from './FindingsTable';
+import FindingsTable, { FilterState, Finding as FindingsTableFinding } from './FindingsTable';
 
 interface Integration {
   id: string;
   name: string;
 }
 
-interface Finding {
-  id: string;
-  activeCount: number;
-  hiddenCount: number;
-  lastDetectedAt: string | null;
-  integration: {
-    id: string;
-    name: string;
-    app: {
-      icon: string | null;
-    };
-  };
-  appFinding: {
-    id: string;
-    name: string;
-    severity: string;
-  };
-}
 
 interface ClientWrapperProps {
-  findings: Finding[];
+  findings: FindingsTableFinding[];
   integrations: Integration[];
 }
 

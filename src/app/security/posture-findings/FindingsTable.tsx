@@ -260,4 +260,4 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
 }
 
 // Export the handleFilterChange function to be used by the FilterSection component
-export { type FilterState };
+export { type FilterState, type Finding };
