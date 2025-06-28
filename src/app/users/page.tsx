@@ -5,6 +5,7 @@ import Link from "next/link";
 import {useRouter} from "next/navigation";
 import UsersTable from "./components/UsersTable";
 import {useSession} from "next-auth/react";
+import { Role } from "@prisma/client";
 
 export default function UsersPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function UsersPage() {
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Fetch users from the API
@@ -32,9 +33,9 @@ export default function UsersPage() {
 
         const data = await response.json();
         // Transform the data to match the expected format for UsersTable
-        const transformedUsers = data.users.map(user => ({
+        const transformedUsers = data.users.map((user: any) => ({
           ...user,
-          userRoles: user.roles ? user.roles.map(role => ({
+          userRoles: user.roles ? user.roles.map((role: Role) => ({
             id: `${user.id}-${role.id}`, // Generate a unique ID
             role: role
           })) : []
@@ -43,7 +44,7 @@ export default function UsersPage() {
         setLoading(false);
       } catch (err) {
         console.error("Failed to fetch users:", err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : String(err));
         setLoading(false);
       }
     };
