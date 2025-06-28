@@ -147,9 +147,9 @@ export default function NewIntegrationPage() {
 
       // Separate app findings by type
       const allFindings = data.appFindings || [];
-      const posture = allFindings.filter(finding => finding.type === 'posture');
-      const billing = allFindings.filter(finding => finding.type === 'billing');
-      const other = allFindings.filter(finding => finding.type !== 'posture' && finding.type !== 'billing');
+      const posture = allFindings.filter((finding: AppFinding) => finding.type === 'posture');
+      const billing = allFindings.filter((finding: AppFinding) => finding.type === 'billing');
+      const other = allFindings.filter((finding: AppFinding) => finding.type !== 'posture' && finding.type !== 'billing');
 
       setPostureFindings(posture);
       setBillingFindings(billing);

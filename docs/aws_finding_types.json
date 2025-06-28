@@ -597,29 +597,5 @@
       "vendor": "Amazon Web Services",
       "severity": "Critical"
     },
-    {
-      "id": "d2caf571-4c99-4da7-a21c-4384f8cb4e5c",
-      "name": "IAM Access Key Not Rotated over 90 Days",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
-    },
-    {
-      "id": "37d1adb1-8e37-4708-a849-e06945c60802",
-      "name": "IAM Access Key Inactive over 90 Days",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
-    },
   ]
 }

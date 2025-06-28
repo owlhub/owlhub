@@ -257,16 +257,16 @@ async function main() {
         "type": "posture"
       },
       {
-        "key": "aws_iam_access_key_inactive",
+        "key": "aws_iam_access_key_inactive_90_days",
         "name": "IAM Access Key Inactive over 90 Days",
         "severity": "medium",
         "description": "IAM user access keys that have been inactive for over 90 days and should be removed to reduce the attack surface.",
         "type": "posture"
       },
       {
-        "key": "aws_iam_user_access_key_not_rotated",
-        "name": "IAM Access Key Not Rotated",
-        "severity": "high",
+        "key": "aws_iam_access_key_not_rotated_90_days",
+        "name": "IAM Access Key Not Rotated over 90 Days",
+        "severity": "medium",
         "description": "IAM user access keys that have not been rotated in over 90 days, increasing the risk of unauthorized access.",
         "type": "posture"
       },

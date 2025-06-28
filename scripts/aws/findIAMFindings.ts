@@ -60,8 +60,8 @@ export async function findIAMFindings(credentials: any, region: string) {
         // Check if the access key is older than 90 days
         if (createDate < ninetyDaysAgo) {
           const notRotatedFinding = {
-            id: 'aws_iam_user_access_key_not_rotated',
-            key: `aws-iam-access-key-not-rotated-${accessKey.AccessKeyId}`,
+            id: 'aws_iam_access_key_not_rotated_90_days',
+            key: `aws-iam-access-key-not-rotated-90-days-${accessKey.AccessKeyId}`,
             title: `IAM User (${user.UserName}) with old Access Key`,
             description: `IAM user (${user.UserName}) has an access key (${accessKey.AccessKeyId}) that has not been rotated for more than 90 days.`,
             additionalInfo: {
@@ -88,8 +88,8 @@ export async function findIAMFindings(credentials: any, region: string) {
 
           if (isOldInactive) {
             const inactiveFinding = {
-              id: 'aws_iam_access_key_inactive',
-              key: `aws-iam-access-key-inactive-${accessKey.AccessKeyId}`,
+              id: 'aws_iam_access_key_inactive_90_days',
+              key: `aws-iam-access-key-inactive-90-days-${accessKey.AccessKeyId}`,
               title: `IAM User (${user.UserName}) with Inactive Access Key`,
               description: `IAM user (${user.UserName}) has an inactive access key (${accessKey.AccessKeyId}) that has been inactive for over 90 days.`,
               additionalInfo: {
