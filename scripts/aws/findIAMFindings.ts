@@ -5,19 +5,25 @@ import {
   ListAccessKeysCommand, 
   ListAccessKeysCommandOutput,
   GetAccessKeyLastUsedCommand,
-  GetAccessKeyLastUsedCommandOutput
+  GetAccessKeyLastUsedCommandOutput,
+  GetUserCommand,
+  GetUserCommandOutput,
+  ListMFADevicesCommand,
+  ListMFADevicesCommandOutput
 } from '@aws-sdk/client-iam';
 
 /**
- * Find IAM users with access keys not rotated for more than 90 days
- * and IAM users with access keys that are inactive for over 90 days
+ * Find IAM users with access keys not rotated for more than 90 days,
+ * IAM users with access keys that are inactive for over 90 days,
+ * IAM users with passwords older than 90 days,
+ * and IAM users with console access but without MFA enabled
  * @param credentials - AWS credentials
  * @param region - AWS region
  * @returns Array of security findings
  */
 export async function findIAMFindings(credentials: any, region: string) {
   try {
-    console.log('Finding IAM users with access keys not rotated for more than 90 days and inactive access keys over 90 days');
+    console.log('Finding IAM users with access keys not rotated for more than 90 days, inactive access keys over 90 days, passwords older than 90 days, and console users without MFA enabled');
 
     const iamClient = new IAMClient({
       region,
@@ -35,13 +41,61 @@ export async function findIAMFindings(credentials: any, region: string) {
     const findings: any[] = [];
     const notRotatedFindings: any[] = [];
     const inactiveFindings: any[] = [];
+    const oldPasswordFindings: any[] = [];
+    const mfaDisabledFindings: any[] = [];
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    // Check each user's access keys
+    // Check each user's access keys and password age
     for (const user of users) {
       // Skip if UserName is undefined
       if (!user.UserName) continue;
+
+      // Get detailed user information including password last changed date
+      const userDetails = await getUserDetails(iamClient, user.UserName);
+
+      // Check if the user has a password (console access)
+      if (userDetails?.PasswordLastUsed) {
+        const passwordLastUsed = new Date(userDetails.PasswordLastUsed);
+
+        // Check if the password is older than 90 days
+        if (passwordLastUsed < ninetyDaysAgo) {
+          const oldPasswordFinding = {
+            id: 'aws_iam_user_password_older_90_days',
+            key: `aws-iam-user-password-older-90-days-${user.UserName}`,
+            title: `IAM User (${user.UserName}) with Old Password`,
+            description: `IAM user (${user.UserName}) has a password that has not been changed for more than 90 days.`,
+            additionalInfo: {
+              userName: user.UserName,
+              passwordLastUsed: passwordLastUsed.toISOString(),
+              ageInDays: Math.floor((new Date().getTime() - passwordLastUsed.getTime()) / (1000 * 60 * 60 * 24))
+            }
+          };
+
+          oldPasswordFindings.push(oldPasswordFinding);
+          findings.push(oldPasswordFinding);
+        }
+
+        // Check if the user has MFA enabled
+        const hasMFA = await userHasMFA(iamClient, user.UserName);
+
+        // Create a finding if the user doesn't have MFA enabled
+        if (!hasMFA) {
+          const mfaDisabledFinding = {
+            id: 'aws_iam_user_mfa_disabled',
+            key: `aws-iam-user-mfa-disabled-${user.UserName}`,
+            title: `IAM User (${user.UserName}) without MFA`,
+            description: `IAM user (${user.UserName}) has console access but does not have MFA enabled, increasing the risk of unauthorized access if the password is compromised.`,
+            additionalInfo: {
+              userName: user.UserName,
+              passwordLastUsed: passwordLastUsed.toISOString()
+            }
+          };
+
+          mfaDisabledFindings.push(mfaDisabledFinding);
+          findings.push(mfaDisabledFinding);
+        }
+      }
 
       const accessKeys = await getUserAccessKeys(iamClient, user.UserName);
 
@@ -114,10 +168,10 @@ export async function findIAMFindings(credentials: any, region: string) {
       }
     }
 
-    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys and ${inactiveFindings.length} IAM users with inactive access keys over 90 days`);
+    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys, ${inactiveFindings.length} IAM users with inactive access keys over 90 days, ${oldPasswordFindings.length} IAM users with passwords older than 90 days, and ${mfaDisabledFindings.length} IAM users with console access but without MFA enabled`);
     return findings;
   } catch (error) {
-    console.error('Error finding IAM users with old or inactive access keys:', error);
+    console.error('Error finding IAM users with old or inactive access keys, old passwords, or without MFA:', error);
     return [];
   }
 }
@@ -183,5 +237,42 @@ async function getAccessKeyLastUsed(iamClient: IAMClient, accessKeyId: string) {
   } catch (error) {
     console.error(`Error getting last used info for access key ${accessKeyId}:`, error);
     return null;
+  }
+}
+
+/**
+ * Get detailed information for an IAM user
+ * @param iamClient - IAM client
+ * @param userName - IAM user name
+ * @returns User details including password last changed date
+ */
+async function getUserDetails(iamClient: IAMClient, userName: string) {
+  try {
+    const command: GetUserCommand = new GetUserCommand({ UserName: userName });
+    const response: GetUserCommandOutput = await iamClient.send(command);
+
+    return response.User;
+  } catch (error) {
+    console.error(`Error getting details for user ${userName}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Check if an IAM user has MFA enabled
+ * @param iamClient - IAM client
+ * @param userName - IAM user name
+ * @returns True if the user has at least one MFA device, false otherwise
+ */
+async function userHasMFA(iamClient: IAMClient, userName: string) {
+  try {
+    const command: ListMFADevicesCommand = new ListMFADevicesCommand({ UserName: userName });
+    const response: ListMFADevicesCommandOutput = await iamClient.send(command);
+
+    // User has MFA if they have at least one MFA device
+    return response.MFADevices && response.MFADevices.length > 0;
+  } catch (error) {
+    console.error(`Error checking MFA for user ${userName}:`, error);
+    return false;
   }
 }

@@ -45,7 +45,7 @@ export async function processAWSIntegration(integration: any, appId: string, pri
 
     console.log(`Successfully assumed role for integration: ${integration.name}`);
 
-    // Find IAM users with access keys not rotated for more than 90 days
+    // Find IAM users with access keys not rotated for more than 90 days, inactive access keys, passwords older than 90 days, and console users without MFA enabled
     const iamFindings = await findIAMFindings(credentials, region);
     console.log(`Found ${iamFindings.length} IAM findings in AWS`);
 

@@ -417,18 +417,7 @@
       "vendor": "Amazon Web Services",
       "severity": "Medium"
     },
-    {
-      "id": "c5376384-e4e4-4b2c-af84-12d6740939f0",
-      "name": "IAM User Password Older Than 90 Days",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
-    },
+
     {
       "id": "8de72710-b23a-4d94-915e-26ef7249d21e",
       "name": "IAM Role with Cross-Account Access",

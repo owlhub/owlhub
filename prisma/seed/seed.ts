@@ -270,6 +270,20 @@ async function main() {
         "description": "IAM user access keys that have not been rotated in over 90 days, increasing the risk of unauthorized access.",
         "type": "posture"
       },
+      {
+        "key": "aws_iam_user_password_older_90_days",
+        "name": "IAM User Password Older Than 90 Days",
+        "severity": "medium",
+        "description": "IAM users with passwords that have not been rotated in over 90 days, increasing the risk of unauthorized access.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_user_mfa_disabled",
+        "name": "IAM User MFA Disabled",
+        "severity": "medium",
+        "description": "IAM users with console access that do not have MFA enabled, increasing the risk of unauthorized access if passwords are compromised.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_public_s3_bucket",
       //   "name": "Public S3 Bucket",

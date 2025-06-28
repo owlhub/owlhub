@@ -17,11 +17,11 @@ interface Finding {
   integration: {
     id: string;
     name: string;
-    appType: {
+    app: {
       icon: string | null;
     };
   };
-  securityFinding: {
+  appFinding: {
     id: string;
     name: string;
     severity: string;
