@@ -284,6 +284,13 @@ async function main() {
         "description": "IAM users with console access that do not have MFA enabled, increasing the risk of unauthorized access if passwords are compromised.",
         "type": "posture"
       },
+      {
+        "key": "aws_root_user_access_key_used_90_days",
+        "name": "AWS Root User Access Key Used within Last 90 Days",
+        "severity": "critical",
+        "description": "AWS root user access keys have been used within the last 90 days, which is a security risk as the root user should only be used for account and service management tasks that require root user access.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_public_s3_bucket",
       //   "name": "Public S3 Bucket",

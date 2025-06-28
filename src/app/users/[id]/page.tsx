@@ -6,6 +6,7 @@ import {useRouter, notFound} from "next/navigation";
 import {useSession} from "next-auth/react";
 import UserStatusToggle from "../components/UserStatusToggle";
 import IntegrationMembershipsTable from "./IntegrationMembershipsTable";
+import { Role } from "@prisma/client";
 
 export default function UserDetailPage({
                                          params,
@@ -43,7 +44,7 @@ export default function UserDetailPage({
         // Transform the data to match the expected format
         const transformedUser = {
           ...data.user,
-          userRoles: data.user.roles ? data.user.roles.map(role => ({
+          userRoles: data.user.roles ? data.user.roles.map((role: Role) => ({
             id: `${data.user.id}-${role.id}`, // Generate a unique ID
             role: role
           })) : []

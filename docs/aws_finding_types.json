@@ -405,18 +405,6 @@
       "vendor": "Amazon Web Services",
       "severity": "Medium"
     },
-    {
-      "id": "4679563f-5975-4c68-9dbf-896810ec8de9",
-      "name": "IAM User MFA Disabled",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
-    },
 
     {
       "id": "8de72710-b23a-4d94-915e-26ef7249d21e",
