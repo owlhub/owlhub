@@ -53,7 +53,7 @@ export default function UserDetailPage({
         setLoading(false);
       } catch (err) {
         console.error("Failed to fetch user:", err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : String(err));
         setLoading(false);
       }
     };
