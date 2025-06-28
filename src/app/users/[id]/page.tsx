@@ -8,6 +8,28 @@ import UserStatusToggle from "../components/UserStatusToggle";
 import IntegrationMembershipsTable from "./IntegrationMembershipsTable";
 import { Role } from "@prisma/client";
 
+interface UserRole {
+  id: string;
+  role: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+}
+
+interface User {
+  id: string;
+  name?: string | null;
+  email: string;
+  isActive: boolean;
+  isSuperUser: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  emailVerified?: string | Date | null;
+  image?: string | null;
+  userRoles: UserRole[];
+}
+
 export default function UserDetailPage({
                                          params,
                                        }: {
@@ -22,7 +44,7 @@ export default function UserDetailPage({
   });
 
   const {id} = React.use(params);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
