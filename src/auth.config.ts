@@ -2,6 +2,7 @@ import type { NextAuthConfig } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
+import { AdapterUser } from "@auth/core/adapters";
 
 // Create a custom adapter that extends the PrismaAdapter
 function CustomPrismaAdapter(p: typeof prisma) {
@@ -9,15 +10,15 @@ function CustomPrismaAdapter(p: typeof prisma) {
 
   return {
     ...adapter,
-    createUser: async (data: { email: string; emailVerified?: Date; name?: string; image?: string }) => {
+    createUser: async (user: AdapterUser) => {
       // Create the user first
       if (!adapter.createUser) {
         throw new Error("createUser method is not defined in the adapter");
       }
-      const user = await adapter.createUser(data);
+      const createdUser = await adapter.createUser(user);
 
       // If user creation failed, throw an error
-      if (!user) {
+      if (!createdUser) {
         throw new Error("Failed to create user");
       }
 
@@ -29,7 +30,7 @@ function CustomPrismaAdapter(p: typeof prisma) {
 
         // This is the first user, make them a super user
         await p.user.update({
-          where: { id: user.id },
+          where: { id: createdUser.id },
           data: { isSuperUser: true },
         });
 
@@ -50,14 +51,14 @@ function CustomPrismaAdapter(p: typeof prisma) {
         // Assign the super admin role to the first user
         await p.userRole.create({
           data: {
-            userId: user.id,
+            userId: createdUser.id,
             roleId: superAdminRole.id,
           },
         });
 
         // Return the updated user
         const updatedUser = await p.user.findUnique({
-          where: { id: user.id },
+          where: { id: createdUser.id },
         });
 
         // If we couldn't find the updated user, throw an error
@@ -68,7 +69,7 @@ function CustomPrismaAdapter(p: typeof prisma) {
         return updatedUser;
       }
 
-      return user;
+      return createdUser;
     },
   };
 };
