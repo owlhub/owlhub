@@ -23,7 +23,7 @@ export default function AppIcon({ iconName, size = 24, className = '' }: AppIcon
   }
 
   // Path to the SVG icon
-  const iconPath = `/app-icons/${iconName.toLowerCase()}.svg`;
+  const iconPath = `/assets/app-icons/${iconName.toLowerCase()}.svg`;
 
   return (
     <div className={`relative ${className}`} style={{ width: size, height: size, display: 'inline-block' }}>

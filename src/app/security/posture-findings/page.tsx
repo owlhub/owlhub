@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/src/lib/prisma";
 import ClientWrapper from "./ClientWrapper";
 import { redirect } from "next/navigation";
@@ -12,11 +12,11 @@ export default async function PostureFindingsPage() {
   // Check if the user is authenticated
   if (!session?.user) {
     // Redirect to home page with the current URL as a parameter
-    redirect("/?redirect=/security/posture-findings");
+    redirect("/login?redirect=/security/posture-findings");
   }
 
   // Fetch integration security findings with active or hidden findings
-  const findings = await prisma.integrationSecurityFinding.findMany({
+  const findings = await prisma.integrationFinding.findMany({
     where: {
       OR: [
         { activeCount: { gt: 0 } },
@@ -26,10 +26,10 @@ export default async function PostureFindingsPage() {
     include: {
       integration: {
         include: {
-          appType: true
+          app: true
         }
       },
-      securityFinding: true
+      appFinding: true
     },
     orderBy: {
       createdAt: 'desc'

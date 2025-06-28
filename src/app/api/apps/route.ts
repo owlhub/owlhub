@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 
-// GET: Fetch all available app types
+// GET: Fetch all available apps
 export async function GET() {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
@@ -17,26 +17,26 @@ export async function GET() {
     );
   }
 
-  // Allow all authenticated users to access the app types
-  // No need to check for super user status for viewing app types
+  // Allow all authenticated users to access the apps
+  // No need to check for super user status for viewing apps
 
   try {
-    // Get all app types
-    const appTypes = await prisma.appType.findMany({
+    // Get all apps
+    const apps = await prisma.app.findMany({
       orderBy: {
         name: 'asc'
       }
     });
 
     // Transform the configFields from JSON string to object
-    const transformedAppTypes = appTypes.map(appType => ({
-      ...appType,
-      configFields: JSON.parse(appType.configFields)
+    const transformedApps = apps.map(app => ({
+      ...app,
+      configFields: JSON.parse(app.configFields)
     }));
 
-    return NextResponse.json({ appTypes: transformedAppTypes });
+    return NextResponse.json({ apps: transformedApps });
   } catch (error) {
-    console.error("Error fetching app types:", error);
+    console.error("Error fetching apps:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

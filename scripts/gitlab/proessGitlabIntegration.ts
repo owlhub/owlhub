@@ -3,17 +3,17 @@ import {fetchIntegrationMembers} from './fetchIntegrationMembers';
 import {fetchGitLabSecurityFindings} from './fetchGitLabSecurityFindings';
 import {
   addIntegrationMembersToDatabase,
-  addIntegrationSecurityFindingDetails
+  addIntegrationFindingDetails
 } from "../utils/common";
 
 /**
  * Process a GitLab integration
  * @param integration - The GitLab integration to process
- * @param appTypeId - The ID of the GitLab app type
+ * @param appId - The ID of the GitLab app
  * @param prisma - The Prisma client instance
- * @param securityFindings - Security findings for this app type
+ * @param securityFindings - App findings for this app type
  */
-export async function processGitLabIntegration(integration: any, appTypeId: string, prisma: PrismaClient, securityFindings: any[] = []) {
+export async function processGitLabIntegration(integration: any, appId: string, prisma: PrismaClient, appFindings: any[] = []) {
   try {
     console.log(`Processing GitLab integration: ${integration.name}`);
 
@@ -26,35 +26,35 @@ export async function processGitLabIntegration(integration: any, appTypeId: stri
       return;
     }
 
-    // If securityFindings is not provided, return
-    if (securityFindings.length === 0) {
+    // If appFindings is not provided, return
+    if (appFindings.length === 0) {
       return
     }
 
-    console.log(`Found ${securityFindings.length} security findings for this app type`);
+    console.log(`Found ${appFindings.length} app findings for this app type`);
 
     // Fetch users from GitLab
     const members = await fetchIntegrationMembers(gitlabUrl, personalAccessToken);
 
     // Add users to database and record their integration membership
-    await addIntegrationMembersToDatabase(integration, members, appTypeId, prisma);
+    await addIntegrationMembersToDatabase(integration, members, appId, prisma);
 
     // Fetch vulnerabilities from GitLab
-    const foundSecurityFindings = await fetchGitLabSecurityFindings(gitlabUrl, personalAccessToken);
+    const foundAppFindings = await fetchGitLabSecurityFindings(gitlabUrl, personalAccessToken);
 
-    console.log(`Found ${foundSecurityFindings.length} security findings in GitLab`, foundSecurityFindings);
+    console.log(`Found ${foundAppFindings.length} app findings in GitLab`, foundAppFindings);
 
     // Create a new array with updated IDs to ensure changes persist
-    const updatedSecurityFindings = foundSecurityFindings.map(foundSecurityFinding => {
+    const updatedAppFindings = foundAppFindings.map(foundAppFinding => {
       // Create a copy of the finding to avoid reference issues
-      const updatedFinding = { ...foundSecurityFinding };
+      const updatedFinding = { ...foundAppFinding };
 
       // Update the ID based on key match
-      for (const securityFinding of securityFindings) {
-        if (updatedFinding.id === securityFinding.key) {
-          console.log(`Updating ID for security finding with key ${updatedFinding.key} from ${updatedFinding.id} to ${securityFinding.id}`);
-          updatedFinding.id = securityFinding.id;
-          updatedFinding.severity = securityFinding.severity;
+      for (const appFinding of appFindings) {
+        if (updatedFinding.id === appFinding.key) {
+          console.log(`Updating ID for app finding with key ${updatedFinding.key} from ${updatedFinding.id} to ${appFinding.id}`);
+          updatedFinding.id = appFinding.id;
+          updatedFinding.severity = appFinding.severity;
           break; // Exit the loop once a match is found
         }
       }
@@ -62,7 +62,7 @@ export async function processGitLabIntegration(integration: any, appTypeId: stri
       return updatedFinding;
     });
 
-    await addIntegrationSecurityFindingDetails(integration, updatedSecurityFindings, prisma);
+    await addIntegrationFindingDetails(integration, updatedAppFindings, prisma);
 
     console.log(`Completed processing GitLab integration: ${integration.name}`);
   } catch (error) {

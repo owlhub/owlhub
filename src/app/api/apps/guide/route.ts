@@ -36,14 +36,11 @@ export async function GET(request: NextRequest) {
     // Read the file content
     let content = fs.readFileSync(fullPath, 'utf8');
 
-    // If this is the AWS integration guide, replace placeholders with a random UUID
-    if (pathWithExtension.includes('aws-integration-guide')) {
-      // Generate a random UUID
-      const uuid = crypto.randomUUID();
+    // Generate a random UUID
+    const uuid = crypto.randomUUID();
 
-      // Replace any placeholder for External ID with the UUID
-      content = content.replace(/{{EXTERNAL_ID}}/g, uuid);
-    }
+    // Replace any placeholder for External ID with the UUID
+    content = content.replace(/{{EXTERNAL_ID}}/g, uuid);
 
     // Return the content
     return NextResponse.json({ content });

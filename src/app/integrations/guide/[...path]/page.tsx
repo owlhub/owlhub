@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import {useSession} from "next-auth/react";
+import {useParams, useRouter} from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import Link from 'next/link';
 import remarkGfm from 'remark-gfm';
@@ -14,6 +15,12 @@ interface CodeComponentProps {
 }
 
 export default function GuidePage() {
+  const router = useRouter();
+
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated: () => router.push('/login?redirect=/integrations/new'),
+  });
   const params = useParams();
   const [markdown, setMarkdown] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -26,7 +33,7 @@ export default function GuidePage() {
     const fetchMarkdown = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/guide?path=${guidePath}`);
+        const response = await fetch(`/api/apps/guide?path=${guidePath}`);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch guide: ${response.statusText}`);
@@ -45,7 +52,13 @@ export default function GuidePage() {
     if (guidePath) {
       fetchMarkdown();
     }
-  }, [guidePath]);
+  }, [session, router, guidePath]);
+
+  if (status === "loading") {
+    return (
+       <></>
+    );
+  }
 
   if (loading) {
     return (

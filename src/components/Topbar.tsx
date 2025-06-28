@@ -143,7 +143,7 @@ export default function Topbar() {
                     Profile
                   </Link>
                   <button 
-                    onClick={() => signOut()}
+                    onClick={() => signOut({redirectTo: "/login", redirect: true})}
                     className={`block w-full text-left px-4 py-2 text-sm ${styles.navItem} ${styles.profileDropdownItem}`}
                     style={{ color: 'var(--error)' }}
                   >

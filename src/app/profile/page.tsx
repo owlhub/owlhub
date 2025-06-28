@@ -1,7 +1,5 @@
-import { auth } from "@/auth";
 import Link from "next/link";
-import { getUserAccessiblePages } from "@/auth";
-import ClientWrapper from "./ClientWrapper";
+import { auth, getUserAccessiblePages } from "@/lib/auth";
 
 export default async function Home() {
   const session = await auth().catch(error => {
@@ -18,30 +16,12 @@ export default async function Home() {
   }
 
   return (
-    <ClientWrapper>
+    <>
       <div className="p-8 max-w-6xl mx-auto">
-        <header className="mb-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            {!isAuthenticated && (
-              <Link
-                href="/login"
-                className="rounded-md border-0 transition-colors flex items-center justify-center gap-2 font-medium text-sm h-10 px-4 shadow-sm hover:shadow-md hover:bg-[var(--secondary-blue)]"
-                style={{ 
-                  background: 'var(--primary-blue)', 
-                  color: 'white'
-                }}
-              >
-                Sign In
-              </Link>
-            )}
-          </div>
-        </header>
-
         <main className="flex flex-col gap-[32px] row-start-2 items-center w-full max-w-4xl">
           <h1 className="text-4xl font-bold text-center">Welcome to OwlHub</h1>
 
-          {isAuthenticated ? (
+          {isAuthenticated && (
             <div className="w-full">
               <div className="p-6 rounded-lg shadow-sm mb-8" style={{ background: 'var(--card-bg)', borderLeft: '4px solid var(--primary-blue)' }}>
                 <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--primary-blue)' }}>Your Account</h2>
@@ -90,38 +70,9 @@ export default async function Home() {
                 )}
               </div>
             </div>
-          ) : (
-            <div className="text-center">
-              <p className="text-lg mb-8">
-                Please sign in to access protected content.
-              </p>
-              <Link
-                href="/login"
-                className="rounded-md border-0 transition-colors flex items-center justify-center gap-2 font-medium text-lg h-12 px-6 mx-auto shadow-sm hover:shadow-md hover:bg-[var(--secondary-blue)]"
-                style={{ 
-                  background: 'var(--primary-blue)', 
-                  color: 'white'
-                }}
-              >
-                Sign In with OIDC
-              </Link>
-            </div>
           )}
         </main>
-
-        <footer className="mt-12 py-6 border-t" style={{ borderColor: 'var(--border-color)' }}>
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm opacity-70 mb-2 md:mb-0">
-              © {new Date().getFullYear()} OwlHub. All rights reserved.
-            </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-sm hover:underline" style={{ color: 'var(--primary-blue)' }}>Privacy Policy</a>
-              <a href="#" className="text-sm hover:underline" style={{ color: 'var(--primary-blue)' }}>Terms of Service</a>
-              <a href="#" className="text-sm hover:underline" style={{ color: 'var(--primary-blue)' }}>Contact Us</a>
-            </div>
-          </div>
-        </footer>
       </div>
-    </ClientWrapper>
+    </>
   );
 }

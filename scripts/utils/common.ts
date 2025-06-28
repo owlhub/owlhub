@@ -7,48 +7,48 @@ export function generateKey(integrationId: string, findingId: string, findingKey
 }
 
 /**
- * Fetch security findings from the database for a specific app type
- * @param appTypeId - The ID of the app type
+ * Fetch security findings from the database for a specific app
+ * @param appId - The ID of the app
  * @param prisma - The Prisma client instance
  * @returns An array of security findings
  */
-export async function fetchAppSecurityFindingsFromDatabase(appTypeId: string, prisma: PrismaClient) {
+export async function fetchAppSecurityFindingsFromDatabase(appId: string, prisma: PrismaClient) {
     try {
-        console.log(`Fetching security findings for appTypeId: ${appTypeId}`);
+        console.log(`Fetching security findings for appId: ${appId}`);
 
-        const findings = await prisma.securityFinding.findMany({
+        const findings = await prisma.appFinding.findMany({
             where: {
-                appTypeId
+                appId
             }
         });
 
-        console.log(`Found ${findings.length} security findings for appTypeId: ${appTypeId}`);
+        console.log(`Found ${findings.length} security findings for appId: ${appId}`);
         return findings;
     } catch (error) {
-        console.error(`Error fetching security findings for appTypeId ${appTypeId}:`, error);
+        console.error(`Error fetching security findings for appId ${appId}:`, error);
         return [];
     }
 }
 
 /**
- * Add or update security finding details in the IntegrationSecurityFindingDetails table for a specific integration
- * @param integration - The integration to add security finding details for
- * @param securityFindings - The security findings to add details for
+ * Add or update app finding details in the integrationFindingDetail table for a specific integration
+ * @param integration - The integration to add app finding details for
+ * @param findings - The app findings to add details for
  * @param prisma - The Prisma client instance
- * @returns An array of created or updated IntegrationSecurityFindingDetails records
+ * @returns An array of created or updated IntegrationFindingDetail records
  */
-export async function addIntegrationSecurityFindingDetails(
+export async function addIntegrationFindingDetails(
     integration: any, 
-    securityFindings: any[], 
+    findings: any[],
     prisma: PrismaClient
 ) {
     const results = [];
 
     try {
-        console.log(`Adding ${securityFindings.length} security finding details for integration: ${integration.name}`);
+        console.log(`Adding ${findings.length} security finding details for integration: ${integration.name}`);
 
         // Fetch all existing security finding details for this integration
-        const existingDetails = await prisma.integrationSecurityFindingDetails.findMany({
+        const existingDetails = await prisma.integrationFindingDetail.findMany({
             where: {
                 integrationId: integration.id
             }
@@ -59,48 +59,48 @@ export async function addIntegrationSecurityFindingDetails(
         const newFindingKeys = new Set();
 
         // Process each security finding
-        for (const securityFinding of securityFindings) {
-            console.log(`Adding security finding detail for: ${securityFinding.name || securityFinding.title} in integration: ${integration.name}`, integration.id, securityFinding.id, securityFinding.key);
+        for (const finding of findings) {
+            console.log(`Adding security finding detail for: ${finding.name || finding.title} in integration: ${integration.name}`, integration.id, finding.id, finding.key);
             try {
                 // Generate a unique key for this security finding detail
-                const detailKey = generateKey(integration.id, securityFinding.id, securityFinding.key.toString());
+                const detailKey = generateKey(integration.id, finding.id, finding.key.toString());
 
                 // Add to the set of new keys
                 newFindingKeys.add(detailKey);
 
                 // Check if the integration security finding detail already exists
-                const existingDetail = await prisma.integrationSecurityFindingDetails.findUnique({
+                const existingDetail = await prisma.integrationFindingDetail.findUnique({
                     where: { key: detailKey }
                 });
 
                 if (!existingDetail) {
                     // Create integration security finding detail
-                    const newDetail = await prisma.integrationSecurityFindingDetails.create({
+                    const newDetail = await prisma.integrationFindingDetail.create({
                         data: {
                             integrationId: integration.id,
-                            securityFindingId: securityFinding.id,
+                            appFindingId: finding.id,
                             key: detailKey,
-                            description: securityFinding.description || 'No description provided',
-                            additionalInfo: typeof securityFinding.additionalInfo === 'string' 
-                                ? securityFinding.additionalInfo 
-                                : JSON.stringify(securityFinding.additionalInfo || {})
+                            description: finding.description || 'No description provided',
+                            additionalInfo: typeof finding.additionalInfo === 'string'
+                                ? finding.additionalInfo
+                                : JSON.stringify(finding.additionalInfo || {})
                         }
                     });
 
-                    console.log(`Added integration security finding detail for: ${securityFinding.name || securityFinding.title} in integration: ${integration.name}`);
+                    console.log(`Added integration security finding detail for: ${finding.name || finding.title} in integration: ${integration.name}`);
                     results.push(newDetail);
                 } else {
                     // Update existing security finding detail with new description and additionalInfo
-                    const updatedDetail = await prisma.integrationSecurityFindingDetails.update({
+                    const updatedDetail = await prisma.integrationFindingDetail.update({
                         where: { key: detailKey },
                         data: {
-                            description: securityFinding.description || 'No description provided',
-                            additionalInfo: typeof securityFinding.additionalInfo === 'string' 
-                                ? securityFinding.additionalInfo 
-                                : JSON.stringify(securityFinding.additionalInfo || {})
+                            description: finding.description || 'No description provided',
+                            additionalInfo: typeof finding.additionalInfo === 'string'
+                                ? finding.additionalInfo
+                                : JSON.stringify(finding.additionalInfo || {})
                         }
                     });
-                    console.log(`Updated integration security finding detail for: ${securityFinding.name || securityFinding.title} in integration: ${integration.name}`);
+                    console.log(`Updated integration security finding detail for: ${finding.name || finding.title} in integration: ${integration.name}`);
                     results.push(updatedDetail);
                 }
             } catch (error) {
@@ -113,7 +113,7 @@ export async function addIntegrationSecurityFindingDetails(
             if (!newFindingKeys.has(existingDetail.key)) {
                 console.log(`Deleting security finding detail with key: ${existingDetail.key} as it no longer exists`);
                 try {
-                    await prisma.integrationSecurityFindingDetails.delete({
+                    await prisma.integrationFindingDetail.delete({
                         where: { key: existingDetail.key }
                     });
                     console.log(`Deleted security finding detail with key: ${existingDetail.key}`);
@@ -131,7 +131,7 @@ export async function addIntegrationSecurityFindingDetails(
 }
 
 // Function to add users to the database if they don't exist and record their integration membership
-export async function addIntegrationMembersToDatabase(integration: any, users: any[], appTypeId: string, prisma: PrismaClient) {
+export async function addIntegrationMembersToDatabase(integration: any, users: any[], appId: string, prisma: PrismaClient) {
     try {
         console.log(`Processing ${users.length} users for integration: ${integration.name}`);
 
@@ -192,9 +192,9 @@ export async function addIntegrationMembersToDatabase(integration: any, users: a
                     await prisma.integrationMembership.create({
                         data: {
                             integrationId: integration.id,
-                            appTypeId: appTypeId,
+                            appId: appId,
                             userId: dbUser.id,
-                            config: JSON.stringify(user.additionalData || {})
+                            additionalInfo: JSON.stringify(user.additionalData || {})
                         }
                     });
                     console.log(`Added integration membership for user: ${user.email} in integration: ${integration.name}`);

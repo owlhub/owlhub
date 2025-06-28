@@ -1,0 +1,661 @@
+{
+  "success": true,
+  "errors": [],
+  "messages": [],
+  "result_info": {
+    "page": 1,
+    "per_page": 100,
+    "count": 54,
+    "total_count": 54
+  },
+  "result": [
+    {
+      "id": "70fe0596-28bc-41dd-a2c3-1486fb0fb1dd",
+      "name": "AWS: S3 Bucket Policy Allows Any Authenticated User to Write",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "c6b3a745-b535-45ea-b2c0-ba8a139ca634",
+      "name": "AWS: S3 Bucket Policy Allows Any Authenticated User to Read",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "319c9715-b86d-4215-bdfa-c5d9b3a5cc83",
+      "name": "AWS: S3 Bucket Policy Allows Any Authenticated User to List",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "4431eaeb-63e3-43c1-a4bc-029f09da66fd",
+      "name": "AWS: S3 Bucket Policy Allows Any Authenticated User to Delete",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "e324242c-5feb-41a3-8d91-f70611471fad",
+      "name": "AWS: S3 Bucket ACL Allows Public ACP Read",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "09bc7d1f-e682-43bc-a4ce-e6e03b408244",
+      "name": "AWS: S3 Bucket ACL Allows Any Authenticated User to Write",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "fda31c4d-24dc-43d4-8a84-a1a9e1df01a1",
+      "name": "AWS: S3 Bucket ACL Allows Any Authenticated User to Read",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "9392a460-c566-4e0d-b06b-01d87dc84d7c",
+      "name": "AWS: S3 Bucket ACL Allows Any Authenticated User to Write ACP",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "7232e46b-3539-4080-b905-022f1091556c",
+      "name": "AWS: S3 Bucket ACL Allows Any Authenticated User to Read ACP",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "bbbeacbc-6692-4121-a785-d634da1e5c56",
+      "name": "AWS: S3 Bucket Policy Allows Public Delete",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "5b792c7f-2546-4fcd-96dc-a58a53fea7e0",
+      "name": "AWS: S3 Bucket ACL Allows Public ACP Write",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "cb61ef18-a498-456c-985c-78a45e19f4fe",
+      "name": "AWS: S3 Bucket Without Replication Enabled",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "95e1284f-a514-4396-bf64-cd003818790c",
+      "name": "AWS: S3 Bucket Without Versioning Enabled",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "9af2594c-3999-49c9-bd3d-2f4b091f99c0",
+      "name": "AWS: S3 Bucket Without Object-Level Logging",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "f108bd28-9870-453f-a439-01818e85bdc7",
+      "name": "AWS: S3 Bucket Without MFA Delete Enabled",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "2df6f1b8-e41c-4ab5-a466-992ce485a367",
+      "name": "AWS: S3 Bucket Without Lifecycle Policies",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "89366ebe-ca0b-45fc-a9cb-135674e0a49b",
+      "name": "AWS: S3 Bucket Without AWS CloudTrail Logging",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "67d0995d-7b4a-40c5-a43f-7a98d20faac6",
+      "name": "AWS: S3 Bucket Without Access Logging",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "5e2aac4b-d8be-43dc-b324-84fdf63f760e",
+      "name": "AWS: S3 Bucket Policy Allows Public Write",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "f3915412-eef9-47d9-8448-e04462de8ba2",
+      "name": "AWS: S3 Bucket Policy Allows Public Read",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "f7ae03e3-1303-4404-b6f5-a7f97e52105e",
+      "name": "AWS: S3 Bucket Policy Allows Public List",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "f50ae197-fa0a-4caa-be95-79aed91eed63",
+      "name": "AWS: S3 Bucket ACL Allows Public Write",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "f8c9f979-29f0-4ada-b09e-a149937a55d4",
+      "name": "AWS: S3 Bucket ACL Allows Public Read",
+      "category": {
+        "product": "Cloud",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": null,
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "3e1d0535-d82f-4ed1-9664-d2c50905db17",
+      "name": "S3 Bucket Policy Not Existent",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Low"
+    },
+    {
+      "id": "0b3227dd-63d3-46bc-97b3-e62d9c11567a",
+      "name": "S3 Bucket Encryption in Transit Disabled",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "970d2ca8-e189-42a8-8e86-9f674fcb1aea",
+      "name": "S3 Bucket Lifecycle Disabled",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Low"
+    },
+    {
+      "id": "518697ff-3f7e-463e-acf3-79d106599f0e",
+      "name": "S3 Bucket MFA Delete Disabled",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "4e976e0d-b545-4c4a-99c5-a2f5d9a6f3d8",
+      "name": "S3 Bucket Versioning Disabled",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Low"
+    },
+    {
+      "id": "84ba76fa-4703-490e-ab75-1b554993c054",
+      "name": "S3 Bucket Access Logging Disabled",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Low"
+    },
+    {
+      "id": "0ff170dc-be6b-46fa-a1cf-95ca7d067f4b",
+      "name": "S3 Bucket Objects Can Be Public",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "d69ab398-fba8-4e71-bf49-60af48d00cbc",
+      "name": "S3 Bucket Server Side Encryption Disabled",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "6b1276e3-88e8-4150-a4d5-1b8273f11078",
+      "name": "S3 Bucket Publicly Accessible",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "82b50a4d-8582-4766-9bad-f41b441bf336",
+      "name": "IAM User Console Login Inactive Over 90 Days",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "4679563f-5975-4c68-9dbf-896810ec8de9",
+      "name": "IAM User MFA Disabled",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "c5376384-e4e4-4b2c-af84-12d6740939f0",
+      "name": "IAM User Password Older Than 90 Days",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "8de72710-b23a-4d94-915e-26ef7249d21e",
+      "name": "IAM Role with Cross-Account Access",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "9d23c002-aece-42b5-b082-2b51fab8d7c1",
+      "name": "AWS Root User Access Key Used within Last 90 Days",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "e9959d6e-edc9-4ea3-9113-3c30b02a811e",
+      "name": "AWS Root User Logged in within Last 90 Days",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "1b788d31-ed56-4008-b136-6993f38e4d1c",
+      "name": "AWS Root User has Access Keys",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "19abe0ee-e8bd-4e3b-9ee9-ea5c64fe769c",
+      "name": "AWS Root User MFA Disabled",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "5be79a96-4570-45cf-8ba3-1abe62802d16",
+      "name": "IAM Account Password Policy Doesn't Require Passwords to Expire",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "9278444b-0c38-4ed0-8127-f3f25444811c",
+      "name": "IAM Account Password Policy Doesn't Require Lowercase Letters",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "e4976e53-bab5-4276-a1d3-1d85ebfd4d57",
+      "name": "IAM Account Password Policy Doesn't Require Uppercase Letters",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "15c65813-c7e6-4b22-95b3-b3942c8b8924",
+      "name": "IAM Account Password Policy Doesn't Require Numbers",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Low"
+    },
+    {
+      "id": "dd17afa3-4d4c-49e4-84c3-e829af9fff97",
+      "name": "IAM Account Password Policy Doesn't Require Symbols",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "a4791a20-373f-44d3-9f6e-e61f1685fe05",
+      "name": "IAM Account Password Policy Re-use Prevention is less than 5",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "4e1092a0-7092-405f-a991-537d8c371440",
+      "name": "IAM Account Password Policy Max Age is greater than 90 days",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "2a2fa181-7beb-48ba-bc8d-8f1170c6062c",
+      "name": "IAM Account Password Policy Minimum Length is less than 8",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "e39ee4da-eed5-49d0-95f7-b423884b858c",
+      "name": "IAM Account Password Policy Does Not Exist",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    },
+    {
+      "id": "d2caf571-4c99-4da7-a21c-4384f8cb4e5c",
+      "name": "IAM Access Key Not Rotated over 90 Days",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "37d1adb1-8e37-4708-a849-e06945c60802",
+      "name": "IAM Access Key Inactive over 90 Days",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "d313bc0c-a2fb-41d8-b5a8-ef2704bb5570",
+      "name": "ACM Certificate Has Domain Wildcard",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
+    },
+    {
+      "id": "cd93f2c1-9b07-4e6c-964c-79f3a64d56ac",
+      "name": "ACM Certificate Expires within 30 days",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "id": "30ce0a22-eb3d-457d-bc59-6468f9bb4c4f",
+      "name": "ACM Certificate Expired",
+      "category": {
+        "product": "SaaS",
+        "type": "Posture",
+        "observation": "Issue"
+      },
+      "description": "",
+      "vendor": "Amazon Web Services",
+      "severity": "Critical"
+    }
+  ]
+}

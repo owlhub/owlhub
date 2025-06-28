@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 
 // Define interface for where clause
 interface WhereClause {
   integrationId: string;
-  securityFindingId: string;
+  appFindingId: string;
   hidden?: boolean;
   [key: string]: unknown;
 }
@@ -25,12 +25,12 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const integrationId = searchParams.get('integrationId');
-    const securityFindingId = searchParams.get('securityFindingId');
+    const appFindingId = searchParams.get('appFindingId');
     const hiddenParam = searchParams.get('hidden');
 
     // Validate required parameters
-    if (!integrationId || !securityFindingId) {
-      return NextResponse.json({ error: "Integration ID and Security Finding ID are required" }, { status: 400 });
+    if (!integrationId || !appFindingId) {
+      return NextResponse.json({ error: "Integration ID and App Finding ID are required" }, { status: 400 });
     }
 
     // Parse hidden parameter
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Build the query
     const whereClause: WhereClause = {
       integrationId,
-      securityFindingId,
+      appFindingId,
     };
 
     // Add hidden filter if provided
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch the findings
-    const findings = await prisma.integrationSecurityFindingDetails.findMany({
+    const findings = await prisma.integrationFindingDetail.findMany({
       where: whereClause,
       orderBy: {
         createdAt: 'desc',
@@ -103,13 +103,13 @@ export async function PUT(request: NextRequest) {
 
 async function handleSingleFindingUpdate(findingId: string, hidden: boolean) {
   // Get the finding details
-  const findingDetail = await prisma.integrationSecurityFindingDetails.findUnique({
+  const findingDetail = await prisma.integrationFindingDetail.findUnique({
     where: { id: findingId },
     select: {
       id: true,
       hidden: true,
       integrationId: true,
-      securityFindingId: true,
+      appFindingId: true,
     },
   });
 
@@ -118,16 +118,16 @@ async function handleSingleFindingUpdate(findingId: string, hidden: boolean) {
   }
 
   // Update the finding status
-  const updatedFinding = await prisma.integrationSecurityFindingDetails.update({
+  const updatedFinding = await prisma.integrationFindingDetail.update({
     where: { id: findingId },
     data: { hidden },
   });
 
   // Get the current counts
-  const integrationSecurityFinding = await prisma.integrationSecurityFinding.findFirst({
+  const integrationSecurityFinding = await prisma.integrationFinding.findFirst({
     where: {
       integrationId: findingDetail.integrationId,
-      securityFindingId: findingDetail.securityFindingId,
+      appFindingId: findingDetail.appFindingId,
     },
   });
 
@@ -151,7 +151,7 @@ async function handleSingleFindingUpdate(findingId: string, hidden: boolean) {
   }
 
   // Update the counts
-  await prisma.integrationSecurityFinding.update({
+  await prisma.integrationFinding.update({
     where: { id: integrationSecurityFinding.id },
     data: {
       activeCount,
@@ -169,7 +169,7 @@ async function handleSingleFindingUpdate(findingId: string, hidden: boolean) {
 
 async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
   // Get all the findings
-  const findings = await prisma.integrationSecurityFindingDetails.findMany({
+  const findings = await prisma.integrationFindingDetail.findMany({
     where: {
       id: {
         in: findingIds,
@@ -179,7 +179,7 @@ async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
       id: true,
       hidden: true,
       integrationId: true,
-      securityFindingId: true,
+      appFindingId: true,
     },
   });
 
@@ -187,19 +187,19 @@ async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
     return NextResponse.json({ error: "No findings found" }, { status: 404 });
   }
 
-  // Group findings by integration and security finding
+  // Group findings by integration and app finding
   const findingGroups = findings.reduce((groups, finding) => {
-    const key = `${finding.integrationId}-${finding.securityFindingId}`;
+    const key = `${finding.integrationId}-${finding.appFindingId}`;
     if (!groups[key]) {
       groups[key] = {
         integrationId: finding.integrationId,
-        securityFindingId: finding.securityFindingId,
+        appFindingId: finding.appFindingId,
         findings: [],
       };
     }
     groups[key].findings.push(finding);
     return groups;
-  }, {} as Record<string, { integrationId: string; securityFindingId: string; findings: typeof findings }> );
+  }, {} as Record<string, { integrationId: string; appFindingId: string; findings: typeof findings }> );
 
   // Process each group in a transaction
   const results = await prisma.$transaction(async (tx) => {
@@ -209,7 +209,7 @@ async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
       const group = findingGroups[key];
 
       // Update all findings in this group
-      await tx.integrationSecurityFindingDetails.updateMany({
+      await tx.integrationFindingDetail.updateMany({
         where: {
           id: {
             in: group.findings.map(f => f.id),
@@ -221,10 +221,10 @@ async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
       });
 
       // Get the current counts
-      const integrationSecurityFinding = await tx.integrationSecurityFinding.findFirst({
+      const integrationSecurityFinding = await tx.integrationFinding.findFirst({
         where: {
           integrationId: group.integrationId,
-          securityFindingId: group.securityFindingId,
+          appFindingId: group.appFindingId,
         },
       });
 
@@ -251,7 +251,7 @@ async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
 
       // Only update if there are changes
       if (activeCountChange !== 0 || hiddenCountChange !== 0) {
-        const updatedCounts = await tx.integrationSecurityFinding.update({
+        const updatedCounts = await tx.integrationFinding.update({
           where: { id: integrationSecurityFinding.id },
           data: {
             activeCount: {
@@ -269,7 +269,7 @@ async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
 
         groupResults.push({
           integrationId: group.integrationId,
-          securityFindingId: group.securityFindingId,
+          appFindingId: group.appFindingId,
           activeCount: updatedCounts.activeCount,
           hiddenCount: updatedCounts.hiddenCount,
         });

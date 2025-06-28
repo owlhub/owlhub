@@ -10,7 +10,7 @@
     "make-first-user-super-user": "npx ts-node -P tsconfig.scripts.json scripts/makeFirstUserSuperUser.ts",
     "seed": "npx prisma generate && npx ts-node -P tsconfig.scripts.json prisma/seed/seed.ts",
     "migrate": "yarn migrate:deploy && npx prisma generate && yarn seed",
-    "migrate:create": "npx prisma migrate dev --name",
+    "migrate:create": "npx prisma format && npx prisma migrate dev --name",
     "migrate:deploy": "npx prisma migrate deploy",
     "migrate:reset": "npx prisma migrate reset",
     "migrate:check": "npx ts-node -P tsconfig.scripts.json scripts/check-migrations.ts"

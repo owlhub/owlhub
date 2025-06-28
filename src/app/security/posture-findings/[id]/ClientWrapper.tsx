@@ -13,7 +13,7 @@ interface FindingDetail {
 
 interface ClientWrapperProps {
   integrationId: string;
-  securityFindingId: string;
+  appFindingId: string;
   initialActiveCount: number;
   initialHiddenCount: number;
 }
@@ -22,7 +22,7 @@ type TabType = 'active' | 'hidden';
 
 export default function ClientWrapper({ 
   integrationId, 
-  securityFindingId,
+  appFindingId,
   initialActiveCount, 
   initialHiddenCount 
 }: ClientWrapperProps) {
@@ -41,7 +41,7 @@ export default function ClientWrapper({
       setError(null);
 
       const response = await fetch(
-        `/api/security/posture-findings?integrationId=${integrationId}&securityFindingId=${securityFindingId}&hidden=${hidden}`,
+        `/api/security/posture-findings?integrationId=${integrationId}&appFindingId=${appFindingId}&hidden=${hidden}`,
         {
           method: 'GET',
           headers: {
@@ -67,7 +67,7 @@ export default function ClientWrapper({
     } finally {
       setIsLoading(false);
     }
-  }, [integrationId, securityFindingId]);
+  }, [integrationId, appFindingId]);
 
   // Fetch active findings on initial load
   useEffect(() => {
@@ -140,7 +140,7 @@ export default function ClientWrapper({
         <FindingDetailsSlider 
           findingDetails={activeTab === 'active' ? activeFindings : hiddenFindings} 
           integrationId={integrationId}
-          securityFindingId={securityFindingId}
+          appFindingId={appFindingId}
           onCountsUpdate={updateCounts}
           activeTab={activeTab}
           onRefreshData={() => fetchFindings(activeTab === 'hidden' ? true : false)}

@@ -1,4 +1,4 @@
-import { PrismaClient, AppType } from '@prisma/client';
+import { PrismaClient, App } from '@prisma/client';
 
 // Define interfaces for our data structures
 interface ActionData {
@@ -6,19 +6,21 @@ interface ActionData {
   description: string;
 }
 
-interface SecurityFindingData {
+interface AppFindingData {
   key: string;
   name: string;
   severity: string;
   description: string;
+  type: string;
 }
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Define app types with their configurations
-  const appTypesData = [
+  // Define apps with their configurations
+  const appsData = [
     {
+      type: 'saas',
       name: 'GitLab',
       description: 'Identify important security issues across your Gitlab organizations.',
       icon: 'gitlab',
@@ -28,7 +30,6 @@ async function main() {
           name: 'gitlabUrl',
           label: 'GitLab URL',
           type: 'text',
-          required: true,
           placeholder: 'https://gitlab.com',
           description: 'The URL of your GitLab instance'
         },
@@ -43,6 +44,7 @@ async function main() {
       ])
     },
     {
+      type: 'saas',
       name: 'Jira',
       description: 'Integration with Jira issue tracking',
       icon: 'jira',
@@ -67,6 +69,7 @@ async function main() {
       ])
     },
     {
+      type: 'cloud',
       name: 'AWS',
       description: 'Identify security issues in your AWS environment.',
       icon: 'aws',
@@ -92,76 +95,80 @@ async function main() {
     }
   ];
 
-  // Get all existing app types
-  const existingAppTypes = await prisma.appType.findMany();
-  const existingAppTypeNames = existingAppTypes.map(appType => appType.name);
+  // Get all existing apps
+  const existingApps = await prisma.app.findMany();
+  const existingAppNames = existingApps.map(app => app.name);
 
-  // Track processed app types to identify which ones to delete later
-  const processedAppTypeIds: string[] = [];
+  // Track processed apps to identify which ones to delete later
+  const processedAppIds: string[] = [];
 
-  // Process each app type
-  const appTypeMap: Record<string, AppType> = {};
+  // Process each app
+  const appMap: Record<string, App> = {};
 
-  for (const appTypeData of appTypesData) {
-    let appType;
+  for (const appData of appsData) {
+    let app;
 
-    // Check if app type already exists
-    const existingAppType = existingAppTypes.find(at => at.name === appTypeData.name);
+    // Check if app already exists
+    const existingApp = existingApps.find(a => a.name === appData.name);
 
-    if (existingAppType) {
-      // Update existing app type
-      appType = await prisma.appType.update({
-        where: { id: existingAppType.id },
-        data: appTypeData
+    if (existingApp) {
+      // Update existing app
+      app = await prisma.app.update({
+        where: { id: existingApp.id },
+        data: appData
       });
-      console.log(`Updated app type: ${appType.name}`);
+      console.log(`Updated app: ${app.name}`);
     } else {
-      // Create new app type
-      appType = await prisma.appType.create({
-        data: appTypeData
+      // Create new app
+      app = await prisma.app.create({
+        data: appData
       });
-      console.log(`Created app type: ${appType.name}`);
+      console.log(`Created app: ${app.name}`);
     }
 
-    processedAppTypeIds.push(appType.id);
-    appTypeMap[appType.name] = appType;
+    processedAppIds.push(app.id);
+    appMap[app.name] = app;
   }
 
-  // Delete app types that are no longer in the seeder
-  const appTypesToDelete = existingAppTypes.filter(appType => !processedAppTypeIds.includes(appType.id));
-  for (const appType of appTypesToDelete) {
-    await prisma.appType.delete({
-      where: { id: appType.id }
+  // Delete apps that are no longer in the seeder
+  const appsToDelete = existingApps.filter(app => !processedAppIds.includes(app.id));
+  for (const app of appsToDelete) {
+    await prisma.app.delete({
+      where: { id: app.id }
     });
-    console.log(`Deleted app type: ${appType.name}`);
+    console.log(`Deleted app: ${app.name}`);
   }
 
-  // Define security findings data for each app type
-  const securityFindingsData: Record<string, SecurityFindingData[]> = {
+  // Define app findings data for each app
+  const appFindingsData: Record<string, AppFindingData[]> = {
     'GitLab': [
       {
         "key": "gitlab_public_project",
         "name": "Public Repository",
         "severity": "high",
-        "description": "The repository is publicly accessible, which may expose sensitive code or information."
+        "description": "The repository is publicly accessible, which may expose sensitive code or information.",
+        "type": "posture"
       },
       {
         "key": "gitlab_unprotected_default_branch",
         "name": "Unprotected Default Branch",
         "severity": "high",
-        "description": "The default branch is not protected, allowing direct pushes and force-pushes that can compromise code integrity."
+        "description": "The default branch is not protected, allowing direct pushes and force-pushes that can compromise code integrity.",
+        "type": "posture"
       },
       {
         "key": "gitlab_repo_access_without_expiry",
         "name": "Repository Access without Expiry",
         "severity": "high",
-        "description": "Users have access to repositories without an expiry date, posing a risk of unauthorized long-term access."
+        "description": "Users have access to repositories without an expiry date, posing a risk of unauthorized long-term access.",
+        "type": "posture"
       },
       {
         "key": "gitlab_repo_owner_with_expiry",
         "name": "Repository Owner have expiry",
         "severity": "high",
-        "description": "Repository Owner have an expiry date, posing a risk of loosing access to repo after expiry."
+        "description": "Repository Owner have an expiry date, posing a risk of loosing access to repo after expiry.",
+        "type": "posture"
       },
 
       // {
@@ -232,7 +239,8 @@ async function main() {
         "key": "aws_iam_user_access_key_not_rotated",
         "name": "IAM Access Key Not Rotated",
         "severity": "high",
-        "description": "IAM user access keys that have not been rotated in over 90 days, increasing the risk of unauthorized access."
+        "description": "IAM user access keys that have not been rotated in over 90 days, increasing the risk of unauthorized access.",
+        "type": "posture"
       },
       // {
       //   "key": "aws_public_s3_bucket",
@@ -256,7 +264,7 @@ async function main() {
     ]
   };
 
-  // Define actions data for each app type
+  // Define actions data for each app
   const actionsData: Record<string, ActionData[]> = {
     'GitLab': [
       // {
@@ -306,14 +314,14 @@ async function main() {
     ] as ActionData[]
   };
 
-  // Process security findings for each app type
-  for (const [appTypeName, findings] of Object.entries(securityFindingsData)) {
-    const appType = appTypeMap[appTypeName];
-    if (!appType) continue;
+  // Process app findings for each app
+  for (const [appName, findings] of Object.entries(appFindingsData)) {
+    const app = appMap[appName];
+    if (!app) continue;
 
-    // Get existing security findings for this app type
-    const existingFindings = await prisma.securityFinding.findMany({
-      where: { appTypeId: appType.id }
+    // Get existing app findings for this app
+    const existingFindings = await prisma.appFinding.findMany({
+      where: { appId: app.id }
     });
 
     // Track processed findings to identify which ones to delete later
@@ -321,29 +329,29 @@ async function main() {
 
     // Process each finding
     for (const findingData of findings) {
-      // Add appTypeId to the finding data
-      const completeData = { ...findingData, appTypeId: appType.id };
+      // Add appId to the finding data
+      const completeData = { ...findingData, appId: app.id };
 
-      // Check if finding already exists (match by key and appTypeId)
+      // Check if finding already exists (match by key and appId)
       const existingFinding = existingFindings.find(f => 
-        (f as any).key === findingData.key && f.appTypeId === appType.id
+        (f as any).key === findingData.key && f.appId === app.id
       );
 
       if (existingFinding) {
         // Update existing finding
-        const updatedFinding = await prisma.securityFinding.update({
+        const updatedFinding = await prisma.appFinding.update({
           where: { id: existingFinding.id },
           data: completeData
         });
         processedFindingIds.push(updatedFinding.id);
-        console.log(`Updated security finding: ${updatedFinding.name} for ${appTypeName}`);
+        console.log(`Updated app finding: ${updatedFinding.name} for ${appName}`);
       } else {
         // Create new finding
-        const newFinding = await prisma.securityFinding.create({
+        const newFinding = await prisma.appFinding.create({
           data: completeData
         });
         processedFindingIds.push(newFinding.id);
-        console.log(`Created security finding: ${newFinding.name} for ${appTypeName}`);
+        console.log(`Created app finding: ${newFinding.name} for ${appName}`);
       }
     }
 
@@ -353,21 +361,21 @@ async function main() {
     );
 
     for (const finding of findingsToDelete) {
-      await prisma.securityFinding.delete({
+      await prisma.appFinding.delete({
         where: { id: finding.id }
       });
-      console.log(`Deleted security finding: ${finding.name} for ${appTypeName}`);
+      console.log(`Deleted app finding: ${finding.name} for ${appName}`);
     }
   }
 
-  // Process actions for each app type
-  for (const [appTypeName, actions] of Object.entries(actionsData)) {
-    const appType = appTypeMap[appTypeName];
-    if (!appType) continue;
+  // Process actions for each app
+  for (const [appName, actions] of Object.entries(actionsData)) {
+    const app = appMap[appName];
+    if (!app) continue;
 
-    // Get existing actions for this app type
+    // Get existing actions for this app
     const existingActions = await prisma.action.findMany({
-      where: { appTypeId: appType.id }
+      where: { appId: app.id }
     });
 
     // Track processed actions to identify which ones to delete later
@@ -375,12 +383,12 @@ async function main() {
 
     // Process each action
     for (const actionData of actions) {
-      // Add appTypeId to the action data
-      const completeData = { ...actionData, appTypeId: appType.id };
+      // Add appId to the action data
+      const completeData = { ...actionData, appId: app.id };
 
-      // Check if action already exists (match by name and appTypeId)
+      // Check if action already exists (match by name and appId)
       const existingAction = existingActions.find(a => 
-        a.name === actionData.name && a.appTypeId === appType.id
+        a.name === actionData.name && a.appId === app.id
       );
 
       if (existingAction) {
@@ -390,14 +398,14 @@ async function main() {
           data: completeData
         });
         processedActionIds.push(updatedAction.id);
-        console.log(`Updated action: ${updatedAction.name} for ${appTypeName}`);
+        console.log(`Updated action: ${updatedAction.name} for ${appName}`);
       } else {
         // Create new action
         const newAction = await prisma.action.create({
           data: completeData
         });
         processedActionIds.push(newAction.id);
-        console.log(`Created action: ${newAction.name} for ${appTypeName}`);
+        console.log(`Created action: ${newAction.name} for ${appName}`);
       }
     }
 
@@ -410,7 +418,7 @@ async function main() {
       await prisma.action.delete({
         where: { id: action.id }
       });
-      console.log(`Deleted action: ${action.name} for ${appTypeName}`);
+      console.log(`Deleted action: ${action.name} for ${appName}`);
     }
   }
 

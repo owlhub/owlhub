@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 
 // Define interface for config fields
 interface ConfigField {
@@ -57,7 +57,7 @@ export async function PATCH(
         id: id
       },
       include: {
-        appType: true
+        app: true
       }
     });
 
@@ -73,9 +73,9 @@ export async function PATCH(
     if (name !== undefined) updateData.name = name;
     if (isEnabled !== undefined) updateData.isEnabled = isEnabled;
 
-    // If config is provided, validate it against the app type's configFields
+    // If config is provided, validate it against the app's configFields
     if (config !== undefined) {
-      const configFields = JSON.parse(existingIntegration.appType.configFields) as ConfigField[];
+      const configFields = JSON.parse(existingIntegration.app.configFields) as ConfigField[];
       const requiredFields = configFields
         .filter((field: ConfigField) => field.required)
         .map((field: ConfigField) => field.name);
@@ -99,7 +99,7 @@ export async function PATCH(
       },
       data: updateData,
       include: {
-        appType: true
+        app: true
       }
     });
 
@@ -107,9 +107,9 @@ export async function PATCH(
     const transformedIntegration = {
       ...updatedIntegration,
       config: JSON.parse(updatedIntegration.config),
-      appType: {
-        ...updatedIntegration.appType,
-        configFields: JSON.parse(updatedIntegration.appType.configFields)
+      app: {
+        ...updatedIntegration.app,
+        configFields: JSON.parse(updatedIntegration.app.configFields)
       }
     };
 

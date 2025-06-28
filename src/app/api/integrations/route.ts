@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 
 // Define interface for config fields
 interface ConfigField {
@@ -38,7 +38,7 @@ export async function GET() {
     // Get all integrations (application-wide)
     const integrations = await prisma.integration.findMany({
       include: {
-        appType: true
+        app: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -49,9 +49,9 @@ export async function GET() {
     const transformedIntegrations = integrations.map(integration => ({
       ...integration,
       config: JSON.parse(integration.config),
-      appType: {
-        ...integration.appType,
-        configFields: JSON.parse(integration.appType.configFields)
+      app: {
+        ...integration.app,
+        configFields: JSON.parse(integration.app.configFields)
       }
     }));
 
@@ -93,30 +93,30 @@ export async function POST(request: NextRequest) {
   try {
     // Parse the request body
     const body = await request.json();
-    const { name, appTypeId, config, isEnabled = true } = body;
+    const { name, appId, config, isEnabled = true } = body;
 
     // Validate the request body
-    if (!name || !appTypeId || !config) {
+    if (!name || !appId || !config) {
       return NextResponse.json(
-        { error: "Name, appTypeId, and config are required" },
+        { error: "Name, appId, and config are required" },
         { status: 400 }
       );
     }
 
-    // Check if the app type exists
-    const appType = await prisma.appType.findUnique({
-      where: { id: appTypeId }
+    // Check if the app exists
+    const app = await prisma.app.findUnique({
+      where: { id: appId }
     });
 
-    if (!appType) {
+    if (!app) {
       return NextResponse.json(
-        { error: "App type not found" },
+        { error: "App not found" },
         { status: 404 }
       );
     }
 
-    // Validate the config against the app type's configFields
-    const configFields = JSON.parse(appType.configFields) as ConfigField[];
+    // Validate the config against the app's configFields
+    const configFields = JSON.parse(app.configFields) as ConfigField[];
     const requiredFields = configFields
       .filter((field: ConfigField) => field.required)
       .map((field: ConfigField) => field.name);
@@ -134,12 +134,12 @@ export async function POST(request: NextRequest) {
     const integration = await prisma.integration.create({
       data: {
         name,
-        appTypeId,
+        appId,
         config: JSON.stringify(config),
         isEnabled
       },
       include: {
-        appType: true
+        app: true
       }
     });
 
@@ -147,9 +147,9 @@ export async function POST(request: NextRequest) {
     const transformedIntegration = {
       ...integration,
       config: JSON.parse(integration.config),
-      appType: {
-        ...integration.appType,
-        configFields: JSON.parse(integration.appType.configFields)
+      app: {
+        ...integration.app,
+        configFields: JSON.parse(integration.app.configFields)
       }
     };
 

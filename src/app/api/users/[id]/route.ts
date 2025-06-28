@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/lib/auth";
 
-export async function PATCH(
-  request: NextRequest,
+export async function GET(
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth().catch(error => {
@@ -19,7 +19,7 @@ export async function PATCH(
     );
   }
 
-  // Only allow super users or users with admin roles to update user status
+  // Only allow super users or users with admin roles to access user details
   const isSuperUser = session.user.isSuperUser;
   const hasAdminRole = session.user.roles && session.user.roles.some(role => 
     role.name === "Super Admin" || role.name === "Admin"
@@ -33,45 +33,47 @@ export async function PATCH(
   }
 
   try {
-    // Parse the request body
-    const body = await request.json();
-
-    // Validate the request body
-    if (typeof body.isActive !== 'boolean') {
-      return NextResponse.json(
-        { error: "isActive must be a boolean" },
-        { status: 400 }
-      );
-    }
-
+    // Get the user ID from the URL parameter
     const { id } = await params;
 
-    // Check if the user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id: id },
+    // Fetch the user by ID
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+        integrationMemberships: {
+          include: {
+            integration: {
+              include: {
+                app: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    if (!existingUser) {
+    // If the user doesn't exist, return a 404 response
+    if (!user) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
       );
     }
 
-    // Update the user's isActive status
-    const updatedUser = await prisma.user.update({
-      where: { id: id },
-      data: { isActive: body.isActive },
-    });
+    // Transform the data to include roles as a simple array and map app to appType
+    const transformedUser = {
+      ...user,
+      roles: user.userRoles.map(ur => ur.role),
+    };
 
-    return NextResponse.json({ 
-      user: {
-        id: updatedUser.id,
-        isActive: updatedUser.isActive
-      } 
-    });
+    return NextResponse.json({ user: transformedUser });
   } catch (error) {
-    console.error("Error updating user status:", error);
+    console.error("Error fetching user:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 
 export async function GET() {
   const session = await auth().catch(error => {
@@ -39,6 +39,7 @@ export async function GET() {
         email: true,
         emailVerified: true,
         image: true,
+        isActive: true,
         isSuperUser: true,
         createdAt: true,
         updatedAt: true,

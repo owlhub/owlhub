@@ -2,17 +2,17 @@ import { PrismaClient } from '@prisma/client';
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { findIAMUsersWithOldAccessKeys } from './findIAMUsersWithOldAccessKeys';
 import {
-  addIntegrationSecurityFindingDetails
+  addIntegrationFindingDetails
 } from "../utils/common";
 
 /**
  * Process an AWS integration
  * @param integration - The AWS integration to process
- * @param appTypeId - The ID of the AWS app type
+ * @param appId - The ID of the AWS app
  * @param prisma - The Prisma client instance
- * @param securityFindings - Security findings for this app type
+ * @param securityFindings - App findings for this app type
  */
-export async function processAWSIntegration(integration: any, appTypeId: string, prisma: PrismaClient, securityFindings: any[] = []) {
+export async function processAWSIntegration(integration: any, appId: string, prisma: PrismaClient, appFindings: any[] = []) {
   try {
     console.log(`Processing AWS integration: ${integration.name}`);
 
@@ -26,17 +26,17 @@ export async function processAWSIntegration(integration: any, appTypeId: string,
       return;
     }
 
-    // If securityFindings is not provided, return
-    if (securityFindings.length === 0) {
-      console.log(`No security findings provided for app type: ${appTypeId}`);
+    // If appFindings is not provided, return
+    if (appFindings.length === 0) {
+      console.log(`No app findings provided for app type: ${appId}`);
       return;
     }
 
-    console.log(`Found ${securityFindings.length} security findings for this app type`);
+    console.log(`Found ${appFindings.length} app findings for this app type`);
 
     // Assume the AWS role
     const credentials = await assumeRole(roleArn, externalId, region);
-    
+
     if (!credentials) {
       console.error(`Failed to assume role for integration: ${integration.name}`);
       return;
@@ -45,21 +45,21 @@ export async function processAWSIntegration(integration: any, appTypeId: string,
     console.log(`Successfully assumed role for integration: ${integration.name}`);
 
     // Find IAM users with access keys not rotated for more than 90 days
-    const foundSecurityFindings = await findIAMUsersWithOldAccessKeys(credentials, region);
+    const foundAppFindings = await findIAMUsersWithOldAccessKeys(credentials, region);
 
-    console.log(`Found ${foundSecurityFindings.length} security findings in AWS`, foundSecurityFindings);
+    console.log(`Found ${foundAppFindings.length} app findings in AWS`, foundAppFindings);
 
     // Create a new array with updated IDs to ensure changes persist
-    const updatedSecurityFindings = foundSecurityFindings.map(foundSecurityFinding => {
+    const updatedAppFindings = foundAppFindings.map(foundAppFinding => {
       // Create a copy of the finding to avoid reference issues
-      const updatedFinding = { ...foundSecurityFinding };
+      const updatedFinding = { ...foundAppFinding };
 
       // Update the ID based on key match
-      for (const securityFinding of securityFindings) {
-        if (updatedFinding.id === securityFinding.key) {
-          console.log(`Updating ID for security finding with key ${updatedFinding.key} from ${updatedFinding.id} to ${securityFinding.id}`);
-          updatedFinding.id = securityFinding.id;
-          updatedFinding.severity = securityFinding.severity;
+      for (const appFinding of appFindings) {
+        if (updatedFinding.id === appFinding.key) {
+          console.log(`Updating ID for app finding with key ${updatedFinding.key} from ${updatedFinding.id} to ${appFinding.id}`);
+          updatedFinding.id = appFinding.id;
+          updatedFinding.severity = appFinding.severity;
           break; // Exit the loop once a match is found
         }
       }
@@ -67,7 +67,7 @@ export async function processAWSIntegration(integration: any, appTypeId: string,
       return updatedFinding;
     });
 
-    await addIntegrationSecurityFindingDetails(integration, updatedSecurityFindings, prisma);
+    await addIntegrationFindingDetails(integration, updatedAppFindings, prisma);
 
     console.log(`Completed processing AWS integration: ${integration.name}`);
   } catch (error) {
@@ -87,7 +87,7 @@ async function assumeRole(roleArn: string, externalId?: string, region: string =
     console.log(`Assuming role: ${roleArn} with external ID: ${externalId || 'none'}`);
 
     const stsClient = new STSClient({ region });
-    
+
     const assumeRoleParams: any = {
       RoleArn: roleArn,
       RoleSessionName: 'OwlHubSecurityScan',

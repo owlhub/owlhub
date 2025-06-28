@@ -22,11 +22,11 @@ interface Finding {
   integration: {
     id: string;
     name: string;
-    appType: {
+    app: {
       icon: string | null;
     };
   };
-  securityFinding: {
+  appFinding: {
     id: string;
     name: string;
     severity: string;
@@ -34,7 +34,7 @@ interface Finding {
 }
 
 // Define a type for nested sort keys
-type NestedSortKey = string | keyof Finding | `${'integration' | 'securityFinding'}.${string}`;
+type NestedSortKey = string | keyof Finding | `${'integration' | 'appFinding'}.${string}`;
 
 // Define a custom column type that allows for NestedSortKey in sortKey
 interface FindingColumn {
@@ -80,7 +80,7 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
     // Filter by severity
     if (filterState.severity.length > 0) {
       result = result.filter(finding => 
-        filterState.severity.includes(finding.securityFinding.severity)
+        filterState.severity.includes(finding.appFinding.severity)
       );
     }
 
@@ -138,46 +138,46 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
         <span 
           className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
           style={{ 
-            background: finding.securityFinding.severity === 'critical' 
+            background: finding.appFinding.severity === 'critical' 
               ? 'rgba(220, 38, 38, 0.1)' 
-              : finding.securityFinding.severity === 'high'
+              : finding.appFinding.severity === 'high'
               ? 'rgba(234, 88, 12, 0.1)'
-              : finding.securityFinding.severity === 'medium'
+              : finding.appFinding.severity === 'medium'
               ? 'rgba(234, 179, 8, 0.1)'
               : 'rgba(34, 197, 94, 0.1)',
-            color: finding.securityFinding.severity === 'critical' 
+            color: finding.appFinding.severity === 'critical' 
               ? 'rgb(220, 38, 38)' 
-              : finding.securityFinding.severity === 'high'
+              : finding.appFinding.severity === 'high'
               ? 'rgb(234, 88, 12)'
-              : finding.securityFinding.severity === 'medium'
+              : finding.appFinding.severity === 'medium'
               ? 'rgb(234, 179, 8)'
               : 'rgb(34, 197, 94)'
           }}
         >
-          {finding.securityFinding.severity.charAt(0).toUpperCase() + finding.securityFinding.severity.slice(1)}
+          {finding.appFinding.severity.charAt(0).toUpperCase() + finding.appFinding.severity.slice(1)}
         </span>
       ),
       sortable: true,
-      sortKey: "securityFinding.severity" as NestedSortKey,
+      sortKey: "appFinding.severity" as NestedSortKey,
       width: "100px",
     },
     {
       header: "Finding",
       accessor: (finding: Finding) => (
         <Link href={`/security/posture-findings/${finding.id}`} className="text-[var(--primary-blue)] hover:underline" onClick={(e) => e.stopPropagation()}>
-          {finding.securityFinding.name}
+          {finding.appFinding.name}
         </Link>
       ),
       sortable: true,
-      sortKey: "securityFinding.name" as NestedSortKey,
+      sortKey: "appFinding.name" as NestedSortKey,
       width: "250px",
     },
     {
       header: "Integration",
       accessor: (finding: Finding) => (
         <div className="flex items-center">
-          {finding.integration.appType.icon && (
-              <AppIcon iconName={finding.integration.appType.icon} size={20} className="mr-2" />
+          {finding.integration.app.icon && (
+              <AppIcon iconName={finding.integration.app.icon} size={20} className="mr-2" />
           )}
           {finding.integration.name}
         </div>
@@ -249,7 +249,7 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
         onRowClick={handleRowClick}
         keyExtractor={(finding) => finding.id}
         defaultRowsPerPage={10}
-        emptyMessage="No security findings found"
+        emptyMessage="No app findings found"
         selectable={true}
         onSelectionChange={handleSelectionChange}
         selectedItems={selectedFindings}

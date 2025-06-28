@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -12,22 +12,22 @@ datasource db {
 }
 
 model User {
-  id                   String                 @id @default(cuid())
-  name                 String?
-  email                String                 @unique
-  emailVerified        DateTime?
-  image                String?
-  password             String?
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
-  accounts             Account[]
-  sessions             Session[]
-  userRoles            UserRole[]
+  id                     String                  @id @default(cuid())
+  name                   String?
+  email                  String                  @unique
+  emailVerified          DateTime?
+  image                  String?
+  password               String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  accounts               Account[]
+  sessions               Session[]
+  userRoles              UserRole[]
   integrationMemberships IntegrationMembership[]
-  isSuperUser          Boolean                @default(false)
-  isActive             Boolean                @default(true)
+  isSuperUser            Boolean                 @default(false)
+  isActive               Boolean                 @default(true)
 
-  @@map("user")
+  @@map("users")
 }
 
 model Account {
@@ -47,7 +47,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId], name: "provider_providerAccountId")
-  @@map("account")
+  @@map("accounts")
 }
 
 model Session {
@@ -57,7 +57,7 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("session")
+  @@map("sessions")
 }
 
 model VerificationToken {
@@ -66,7 +66,7 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verification_token")
+  @@map("verification_tokens")
 }
 
 model Role {
@@ -78,7 +78,7 @@ model Role {
   userRoles   UserRole[]
   pageRoles   PageRole[]
 
-  @@map("role")
+  @@map("roles")
 }
 
 model UserRole {
@@ -91,7 +91,7 @@ model UserRole {
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
-  @@map("user_role")
+  @@map("user_roles")
 }
 
 model Page {
@@ -103,7 +103,7 @@ model Page {
   updatedAt   DateTime   @updatedAt
   pageRoles   PageRole[]
 
-  @@map("page")
+  @@map("pages")
 }
 
 model PageRole {
@@ -116,116 +116,119 @@ model PageRole {
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([pageId, roleId])
-  @@map("page_role")
+  @@map("page_roles")
 }
 
-model AppType {
-  id                    String                 @id @default(cuid())
-  name                  String                 @unique
-  description           String?
-  icon                  String?
-  configFields          String                 // JSON string of required config fields
-  guide                 String?                // Path to the guide markdown file
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  integrations          Integration[]
-  securityFindings      SecurityFinding[]
-  actions               Action[]
+model App {
+  id                     String                  @id @default(cuid())
+  name                   String                  @unique
+  type                   String
+  description            String?
+  icon                   String?
+  configFields           String // JSON string of required config fields
+  guide                  String? // Path to the guide markdown file
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  integrations           Integration[]
+  appFindings            AppFinding[]
+  actions                Action[]
   integrationMemberships IntegrationMembership[]
 
-  @@map("app_type")
+  @@map("apps")
 }
 
-model SecurityFinding {
-  id           String   @id @default(cuid())
-  key          String   @unique
-  name         String
-  severity     String   // 'low', 'medium', 'high', 'critical'
-  description  String
-  appTypeId    String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  appType      AppType  @relation(fields: [appTypeId], references: [id])
-  integrations IntegrationSecurityFinding[]
-  integrationDetails IntegrationSecurityFindingDetails[]
+model AppFinding {
+  id                        String                     @id @default(cuid())
+  key                       String                     @unique
+  name                      String
+  severity                  String // 'low', 'medium', 'high', 'critical'
+  description               String
+  type                      String // 'posture', etc.
+  appId                     String
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  app                       App                        @relation(fields: [appId], references: [id])
+  integrationFindings       IntegrationFinding[]
+  integrationFindingDetails IntegrationFindingDetail[]
 
-  @@map("app_type_secuirty_findings")
+  @@map("app_findings")
 }
 
 model Action {
-  id           String   @id @default(cuid())
-  name         String
-  description  String
-  appTypeId    String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  appType      AppType  @relation(fields: [appTypeId], references: [id])
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  appId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  app         App      @relation(fields: [appId], references: [id])
 
   @@map("action")
 }
 
 model Integration {
-  id                    String                 @id @default(cuid())
-  name                  String                 // User-defined name for this integration
-  appTypeId             String
-  config                String                 // JSON string of configuration values
-  isEnabled             Boolean                @default(true)
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  appType               AppType                @relation(fields: [appTypeId], references: [id])
-  integrationMemberships IntegrationMembership[]
-  securityFindings      IntegrationSecurityFinding[]
-  securityFindingDetails IntegrationSecurityFindingDetails[]
+  id                        String                     @id @default(cuid())
+  name                      String // User-defined name for this integration
+  appId                     String
+  config                    String // JSON string of configuration values
+  isEnabled                 Boolean                    @default(true)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  app                       App                        @relation(fields: [appId], references: [id])
+  integrationMemberships    IntegrationMembership[]
+  integrationFindings       IntegrationFinding[]
+  integrationFindingDetails IntegrationFindingDetail[]
 
-  @@map("integration")
+  @@map("integrations")
 }
 
 model IntegrationMembership {
-  id           String      @id @default(cuid())
-  integrationId String
-  appTypeId     String
-  userId        String
-  config        String?    // JSON string for additional info if required
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  appType       AppType     @relation(fields: [appTypeId], references: [id], onDelete: Cascade)
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String      @id @default(cuid())
+  integrationId  String
+  appId          String
+  userId         String
+  additionalInfo String? // JSON string for additional info if required
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  integration    Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  app            App         @relation(fields: [appId], references: [id], onDelete: Cascade)
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([integrationId, userId], name: "integrationId_userId")
-  @@map("integration_membership")
+  @@map("integration_memberships")
 }
 
-model IntegrationSecurityFinding {
-  id                String      @id @default(cuid())
-  integrationId     String
-  securityFindingId String
-  activeCount       Int         @default(0)
-  hiddenCount       Int         @default(0)
-  lastDetectedAt    DateTime?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  integration       Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  securityFinding   SecurityFinding @relation(fields: [securityFindingId], references: [id], onDelete: Cascade)
+model IntegrationFinding {
+  id             String      @id @default(cuid())
+  integrationId  String
+  appFindingId   String
+  activeCount    Int         @default(0)
+  hiddenCount    Int         @default(0)
+  severity       String // 'low', 'medium', 'high', 'critical'
+  lastDetectedAt DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  integration    Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  appFinding     AppFinding  @relation(fields: [appFindingId], references: [id], onDelete: Cascade)
 
-  @@unique([integrationId, securityFindingId], name: "integrationId_securityFindingId")
-  @@map("integration_security_finding")
+  @@unique([integrationId, appFindingId], name: "integrationId_appFindingId")
+  @@map("integration_findings")
 }
 
-model IntegrationSecurityFindingDetails {
-  id                String      @id @default(cuid())
-  integrationId     String
-  securityFindingId String
-  key               String      @unique
-  description       String
-  hidden            Boolean     @default(false)
-  additionalInfo    String       // JSON data for additional information
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  integration       Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  securityFinding   SecurityFinding @relation(fields: [securityFindingId], references: [id], onDelete: Cascade)
+model IntegrationFindingDetail {
+  id             String      @id @default(cuid())
+  integrationId  String
+  appFindingId   String
+  key            String      @unique
+  description    String
+  hidden         Boolean     @default(false)
+  additionalInfo String // JSON data for additional information
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  integration    Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  appFinding     AppFinding  @relation(fields: [appFindingId], references: [id], onDelete: Cascade)
 
   @@index([integrationId])
-  @@index([securityFindingId])
-  @@map("integration_security_finding_details")
+  @@index([appFindingId])
+  @@map("integration_finding_details")
 }

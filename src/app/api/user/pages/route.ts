@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserAccessiblePages } from "@/auth";
-import { auth } from "@/auth";
+import { getUserAccessiblePages } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const session = await auth();

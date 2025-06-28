@@ -6,7 +6,7 @@ import Sidebar from "@/src/components/Sidebar";
 import MobileNav from "@/src/components/MobileNav";
 import Topbar from "@/src/components/Topbar";
 import Breadcrumb from "@/src/components/Breadcrumb";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 // Import Font Awesome configuration
 import "@/src/lib/fontawesome";
 
@@ -63,6 +63,21 @@ export default async function RootLayout({
                   {/* Breadcrumb - visible at the top of main content area */}
                   {isAuthenticated && <Breadcrumb />}
                   {children}
+
+                  <div className="p-8 max-w-6xl mx-auto">
+                  <footer className="mt-12 py-6 border-t" style={{ borderColor: 'var(--border-color)' }}>
+                    <div className="flex flex-col md:flex-row justify-between items-center">
+                      <p className="text-sm opacity-70 mb-2 md:mb-0">
+                        © {new Date().getFullYear()} OwlHub. All rights reserved.
+                      </p>
+                      <div className="flex space-x-4">
+                        <a href="#" className="text-sm hover:underline" style={{ color: 'var(--primary-blue)' }}>Privacy Policy</a>
+                        <a href="#" className="text-sm hover:underline" style={{ color: 'var(--primary-blue)' }}>Terms of Service</a>
+                        <a href="#" className="text-sm hover:underline" style={{ color: 'var(--primary-blue)' }}>Contact Us</a>
+                      </div>
+                    </div>
+                  </footer>
+                  </div>
                 </div>
               </main>
             </div>

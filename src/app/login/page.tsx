@@ -1,41 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import {signIn, useSession} from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Check for session and redirect to home page
+  // Store redirect parameter in localStorage when present
   useEffect(() => {
-    if (session) {
-      router.push('/');
+    const redirectPath = searchParams.get('redirect');
+    if (redirectPath && typeof window !== 'undefined') {
+      localStorage.setItem('loginRedirectPath', redirectPath);
+    }
+  }, [searchParams]);
+
+
+  useEffect(() => {
+    if (session?.user) {
+      let redirectPath = '/';
+
+      if (typeof window !== 'undefined') {
+        redirectPath = localStorage.getItem('loginRedirectPath') || '/';
+        localStorage.removeItem('loginRedirectPath');
+      }
+
+      router.push(redirectPath);
+
     }
   }, [session, router]);
 
-  // Handle login
-  useEffect(() => {
-    // Skip auto-redirect if user is already signed in
-    if (session) return;
-
-    // Add a small delay before redirecting
-    const timer = setTimeout(() => {
-      if (!error && !isRedirecting && !session) {
-        setIsRedirecting(true);
-        signIn("oidc").catch(err => {
-          console.error("Sign in error:", err);
-          setError("Failed to sign in. Please try again.");
-          setIsRedirecting(false);
-        });
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [error, isRedirecting, session]);
+  // We removed auto-login functionality as per requirements
+  // Now login only happens when the user clicks the button
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-24">
@@ -64,23 +64,38 @@ export default function LoginPage() {
         </>
       ) : (
         <>
-          <h1 className="text-4xl font-bold mb-8">Redirecting to login...</h1>
+          <h1 className="text-4xl font-bold mb-8">Welcome to OwlHub</h1>
           <p className="text-lg mb-8">
             {isRedirecting 
               ? "Redirecting to the authentication provider..." 
-              : "Preparing to redirect to the login page..."}
+              : "Please click the button below to sign in"}
           </p>
-          {!isRedirecting && (
-            <button
-              onClick={() => {
-                setIsRedirecting(true);
-                signIn("oidc");
-              }}
-              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-lg h-12 px-6"
-            >
-              Sign in with OIDC
-            </button>
-          )}
+          <button
+            onClick={() => {
+              setIsRedirecting(true);
+              // Get the redirect path from localStorage if it exists
+              let redirectPath = '/';
+
+              if (typeof window !== 'undefined') {
+                redirectPath = localStorage.getItem('loginRedirectPath') || '/';
+                localStorage.removeItem('loginRedirectPath');
+              }
+
+              console.log('Redirecting to:', redirectPath);
+
+              signIn("oidc", {
+                redirectTo: redirectPath,
+              }).catch(err => {
+                console.error("Sign in error:", err);
+                setError("Failed to sign in. Please try again.");
+                setIsRedirecting(false);
+              });
+            }}
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:text-[#383838] dark:hover:bg-[#ccc] font-medium text-lg h-12 px-6"
+            disabled={isRedirecting}
+          >
+            {isRedirecting ? "Signing in..." : "Sign in with OIDC"}
+          </button>
         </>
       )}
     </div>

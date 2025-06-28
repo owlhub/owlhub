@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { prisma } from "@/src/lib/prisma";
 import { notFound, redirect } from "next/navigation";
@@ -22,17 +22,17 @@ export default async function PostureFindingDetailsPage({
 
   // Fetch the integration security finding
   const { id } = await params;
-  const integrationSecurityFinding = await prisma.integrationSecurityFinding.findUnique({
+  const integrationSecurityFinding = await prisma.integrationFinding.findUnique({
     where: {
       id: id,
     },
     include: {
       integration: {
         include: {
-          appType: true,
+          app: true,
         },
       },
-      securityFinding: true,
+      appFinding: true,
     },
   });
 
@@ -57,7 +57,7 @@ export default async function PostureFindingDetailsPage({
     }
   };
 
-  const severityStyle = getSeverityStyle(integrationSecurityFinding.securityFinding.severity);
+  const severityStyle = getSeverityStyle(integrationSecurityFinding.appFinding.severity);
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -72,7 +72,7 @@ export default async function PostureFindingDetailsPage({
 
       <header className="mb-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">{integrationSecurityFinding.securityFinding.name}</h1>
+          <h1 className="text-3xl font-bold">{integrationSecurityFinding.appFinding.name}</h1>
           <span 
             className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" 
             style={{ 
@@ -80,8 +80,8 @@ export default async function PostureFindingDetailsPage({
               color: severityStyle.color
             }}
           >
-            {integrationSecurityFinding.securityFinding.severity.charAt(0).toUpperCase() + 
-             integrationSecurityFinding.securityFinding.severity.slice(1)}
+            {integrationSecurityFinding.appFinding.severity.charAt(0).toUpperCase() + 
+             integrationSecurityFinding.appFinding.severity.slice(1)}
           </span>
         </div>
       </header>
@@ -96,7 +96,7 @@ export default async function PostureFindingDetailsPage({
             </div>
             <div>
               <p className="text-sm text-gray-500">Integration Type</p>
-              <p className="font-medium">{integrationSecurityFinding.integration.appType.name}</p>
+              <p className="font-medium">{integrationSecurityFinding.integration.app.name}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Last Detected</p>
@@ -117,13 +117,13 @@ export default async function PostureFindingDetailsPage({
 
         <div className="p-6 rounded-lg shadow-sm" style={{ background: 'var(--card-bg)', color: 'var(--foreground)' }}>
           <h2 className="text-xl font-semibold mb-4">Description</h2>
-          <p>{integrationSecurityFinding.securityFinding.description}</p>
+          <p>{integrationSecurityFinding.appFinding.description}</p>
         </div>
       </div>
 
         <ClientWrapper 
           integrationId={integrationSecurityFinding.integrationId}
-          securityFindingId={integrationSecurityFinding.securityFindingId}
+          appFindingId={integrationSecurityFinding.appFindingId}
           initialActiveCount={integrationSecurityFinding.activeCount}
           initialHiddenCount={integrationSecurityFinding.hiddenCount}
         />

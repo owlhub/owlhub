@@ -26,85 +26,86 @@ async function processIntegrations() {
         isEnabled: true
       },
       include: {
-        appType: true
+        app: true
       }
     });
 
     console.log(`Found ${enabledIntegrations.length} enabled integrations`);
 
     // Group integrations by app type
-    const integrationsByAppType = new Map<string, { appType: any, integrations: any[] }>();
+    const integrationsByApp = new Map<string, { app: any, integrations: any[] }>();
 
     for (const integration of enabledIntegrations) {
-      const appTypeId = integration.appTypeId;
+      const appId = integration.appId;
 
-      if (!integrationsByAppType.has(appTypeId)) {
-        integrationsByAppType.set(appTypeId, {
-          appType: integration.appType,
+      if (!integrationsByApp.has(appId)) {
+        integrationsByApp.set(appId, {
+          app: integration.app,
           integrations: []
         });
       }
 
-      integrationsByAppType.get(appTypeId)?.integrations.push(integration);
+      integrationsByApp.get(appId)?.integrations.push(integration);
     }
 
     // Process each app type's integrations
-    for (const [appTypeId, { appType, integrations }] of integrationsByAppType.entries()) {
-      console.log(`Processing ${integrations.length} integrations for app type: ${appType.name}`);
+    for (const [appId, { app, integrations }] of integrationsByApp.entries()) {
+      console.log(`Processing ${integrations.length} integrations for app type: ${app.name}`);
 
-      // Fetch security findings from database for this appType
-      const securityFindings = await fetchAppSecurityFindingsFromDatabase(appTypeId, prisma);
+      // Fetch app findings from database for this app
+      const appFindings = await fetchAppSecurityFindingsFromDatabase(appId, prisma);
 
-      // Insert security findings in the IntegrationSecurityFinding table if not found
+      // Insert app findings in the IntegrationFinding table if not found
       for (const integration of integrations) {
-        for (const securityFinding of securityFindings) {
-          // Check if the integration security finding already exists
-          const existingIntegrationFinding = await prisma.integrationSecurityFinding.findUnique({
+        for (const appFinding of appFindings) {
+          // Check if the integration app finding already exists
+          const existingIntegrationFinding = await prisma.integrationFinding.findUnique({
             where: {
-              integrationId_securityFindingId: {
+              integrationId_appFindingId: {
                 integrationId: integration.id,
-                securityFindingId: securityFinding.id
+                appFindingId: appFinding.id
               }
             }
           });
 
           if (!existingIntegrationFinding) {
-            // Create integration security finding
-            await prisma.integrationSecurityFinding.create({
+            // Create integration app finding
+            await prisma.integrationFinding.create({
               data: {
                 integrationId: integration.id,
-                securityFindingId: securityFinding.id,
+                appFindingId: appFinding.id,
+                severity: appFinding.severity,
                 activeCount: 0,
                 hiddenCount: 0,
                 lastDetectedAt: new Date()
               }
             });
 
-            console.log(`Added integration security finding for: ${securityFinding.name} in integration: ${integration.name}`);
+            console.log(`Added integration app finding for: ${appFinding.name} in integration: ${integration.name}`);
           }
         }
       }
 
       // Process based on app type
-      switch (appType.name) {
+      switch (app.name) {
         case 'GitLab':
           for (const integration of integrations) {
-            await processGitLabIntegration(integration, appTypeId, prisma, securityFindings);
+            await processGitLabIntegration(integration, appId, prisma, appFindings);
           }
           break;
         case 'AWS':
           for (const integration of integrations) {
-            await processAWSIntegration(integration, appTypeId, prisma, securityFindings)
+            await processAWSIntegration(integration, appId, prisma, appFindings)
           }
         // Add cases for other app types as they are implemented
         default:
-          console.log(`No processor implemented for app type: ${appType.name}`);
+          console.log(`No processor implemented for app type: ${app.name}`);
       }
 
-      console.log('Updating active and hidden counts in integrationSecurityFinding table');
+      console.log('Updating active and hidden counts in integrationFinding table');
       for (const integration of integrations) {
         // Get all security findings for this integration
-        const integrationFindings = await prisma.integrationSecurityFinding.findMany({
+        const integrationFindings = await prisma.integrationFinding.findMany({
           where: {
             integrationId: integration.id
           }
@@ -112,25 +113,25 @@ async function processIntegrations() {
 
         for (const finding of integrationFindings) {
           // Count active (non-hidden) findings
-          const activeCount = await prisma.integrationSecurityFindingDetails.count({
+          const activeCount = await prisma.integrationFindingDetail.count({
             where: {
               integrationId: integration.id,
-              securityFindingId: finding.securityFindingId,
+              appFindingId: finding.appFindingId,
               hidden: false
             }
           });
 
           // Count hidden findings
-          const hiddenCount = await prisma.integrationSecurityFindingDetails.count({
+          const hiddenCount = await prisma.integrationFindingDetail.count({
             where: {
               integrationId: integration.id,
-              securityFindingId: finding.securityFindingId,
+              appFindingId: finding.appFindingId,
               hidden: true
             }
           });
 
-          // Update the integrationSecurityFinding record
-          await prisma.integrationSecurityFinding.update({
+          // Update the integrationFinding record
+          await prisma.integrationFinding.update({
             where: {
               id: finding.id
             },
@@ -141,7 +142,7 @@ async function processIntegrations() {
             }
           });
 
-          console.log(`Updated counts for integration ${integration.name}, finding ${finding.securityFindingId}: active=${activeCount}, hidden=${hiddenCount}`);
+          console.log(`Updated counts for integration ${integration.name}, finding ${finding.appFindingId}: active=${activeCount}, hidden=${hiddenCount}`);
         }
       }
     }

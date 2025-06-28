@@ -1,6 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "@/src/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { Role, User } from "@prisma/client";
 
 // Create a custom adapter that extends the PrismaAdapter
@@ -120,15 +120,12 @@ export const authConfig: NextAuthConfig = {
       // when they are created in the database
       return true;
     },
-    async session({ session, user }) {
-      console.log("Session callback called with user:", JSON.stringify(user, null, 2));
-      console.log("Current session:", JSON.stringify(session, null, 2));
+    async jwt({ token, user }) {
+      // If user is provided, this is the initial sign in
+      if (user) {
+        token.id = user.id;
 
-      if (session.user && user) {
         try {
-          // Add user ID to the session
-          session.user.id = user.id;
-
           // Get the latest user data from the database
           const userFromDb = await prisma.user.findUnique({
             where: { id: user.id },
@@ -142,23 +139,35 @@ export const authConfig: NextAuthConfig = {
           });
 
           if (userFromDb) {
-            console.log(`Session update for user ${user.id}: isSuperUser=${userFromDb.isSuperUser}, roles=${userFromDb.userRoles.length}`);
-            // Add super user status and roles to the session
-            session.user.isSuperUser = userFromDb.isSuperUser;
-            session.user.roles = userFromDb.userRoles.map(ur => ur.role);
-            console.log("Updated session:", JSON.stringify(session, null, 2));
+            console.log(`JWT update for user ${user.id}: isSuperUser=${userFromDb.isSuperUser}, roles=${userFromDb.userRoles.length}`);
+            // Add super user status and roles to the token
+            token.isSuperUser = userFromDb.isSuperUser;
+            token.roles = userFromDb.userRoles.map(ur => ur.role);
           } else {
-            console.warn(`User ${user.id} not found in database during session update`);
+            console.warn(`User ${user.id} not found in database during JWT update`);
             // Set default values to prevent errors
-            session.user.isSuperUser = false;
-            session.user.roles = [];
+            token.isSuperUser = false;
+            token.roles = [];
           }
         } catch (error) {
-          console.error("Error updating session:", error);
+          console.error("Error updating JWT token:", error);
           // Set default values to prevent errors
-          session.user.isSuperUser = false;
-          session.user.roles = [];
+          token.isSuperUser = false;
+          token.roles = [];
         }
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      console.log("Session callback called with token:", JSON.stringify(token, null, 2));
+      console.log("Current session:", JSON.stringify(session, null, 2));
+
+      if (session.user && token) {
+        // Copy data from token to session
+        session.user.id = token.id as string;
+        session.user.isSuperUser = token.isSuperUser as boolean;
+        session.user.roles = token.roles as Role[];
+        console.log("Updated session:", JSON.stringify(session, null, 2));
       }
       return session;
     },
@@ -168,10 +177,9 @@ export const authConfig: NextAuthConfig = {
     error: "/error",
   },
   session: {
-    strategy: "database",
+    strategy: "jwt",
     // Set a shorter maxAge to ensure the session is refreshed more frequently
-    // This helps keep the session data in sync with the database
-    maxAge: 1 * 60 * 60, // 12 hours in seconds
+    maxAge: 60 * 60, // 1 hours in seconds
   },
   debug: process.env.NODE_ENV === "development",
 };

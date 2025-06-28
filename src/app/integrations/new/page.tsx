@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AppIcon from "@/src/components/AppIcon";
 
-interface AppType {
+interface App {
   id: string;
   name: string;
+  type: string;
   icon?: string;
   description?: string;
   guide?: string;
@@ -22,12 +23,13 @@ interface AppType {
   }[];
 }
 
-interface SecurityFinding {
+interface AppFinding {
   id: string;
   key: string;
   name: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   description: string;
+  type: string;
 }
 
 interface Action {
@@ -40,20 +42,25 @@ interface Action {
 
 // Define steps for the multi-form process
 enum FormStep {
-  SELECT_APP_TYPE = 0,
+  SELECT_APP = 0,
   CONFIGURE_INTEGRATION = 1
 }
 
 export default function NewIntegrationPage() {
-  const { data: session } = useSession();
   const router = useRouter();
-  const [appTypes, setAppTypes] = useState<AppType[]>([]);
+
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated: () => router.push('/login?redirect=/integrations/new'),
+  });
+
+  const [apps, setApps] = useState<App[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Multi-step form state
-  const [currentStep, setCurrentStep] = useState<FormStep>(FormStep.SELECT_APP_TYPE);
+  const [currentStep, setCurrentStep] = useState<FormStep>(FormStep.SELECT_APP);
   const [showSidebar, setShowSidebar] = useState(false);
 
   // Handle click outside sidebar
@@ -79,64 +86,75 @@ export default function NewIntegrationPage() {
 
   // Form state
   const [name, setName] = useState("");
-  const [selectedAppTypeId, setSelectedAppTypeId] = useState("");
+  const [selectedAppId, setSelectedAppId] = useState("");
   const [configValues, setConfigValues] = useState<Record<string, string>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   // App details state
-  const [securityFindings, setSecurityFindings] = useState<SecurityFinding[]>([]);
+  const [postureFindings, setPostureFindings] = useState<AppFinding[]>([]);
+  const [billingFindings, setBillingFindings] = useState<AppFinding[]>([]);
+  const [otherFindings, setOtherFindings] = useState<AppFinding[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
   const [loadingAppDetails, setLoadingAppDetails] = useState(false);
   const [appDetailsError, setAppDetailsError] = useState<string | null>(null);
 
-  // Fetch app types
+  // Fetch apps
   useEffect(() => {
-    const fetchAppTypes = async () => {
+    // if (!session?.user) {
+    //   router.push('/?redirect=/integrations/new');
+    //   return;
+    // }
+
+    const fetchApps = async () => {
       try {
         const response = await fetch('/api/apps');
         if (!response.ok) {
-          throw new Error('Failed to fetch app types');
+          throw new Error('Failed to fetch apps');
         }
         const data = await response.json();
-        setAppTypes(data.appTypes || []);
+        setApps(data.apps || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
-        console.error('Error fetching app types:', err);
+        console.error('Error fetching apps:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (!session?.user) {
-      router.push('/?redirect=/integrations/new');
-      router.refresh();
-      return;
-    }
-
     if (session?.user?.isSuperUser) {
-      fetchAppTypes();
+      fetchApps();
     } else {
       setLoading(false);
     }
   }, [session, router]);
 
-  // Get the selected app type
-  const selectedAppType = appTypes.find(appType => appType.id === selectedAppTypeId);
+  // Get the selected app
+  const selectedApp = apps.find(app => app.id === selectedAppId);
 
-  // Fetch app details (security findings and actions)
-  const fetchAppDetails = async (appTypeId: string) => {
+  // Fetch app details (app findings and actions)
+  const fetchAppDetails = async (appId: string) => {
     setLoadingAppDetails(true);
     setAppDetailsError(null);
 
     try {
-      const response = await fetch(`/api/apps/details?appTypeId=${appTypeId}`);
+      const response = await fetch(`/api/apps/details?appId=${appId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch app details');
       }
 
       const data = await response.json();
-      setSecurityFindings(data.securityFindings || []);
+
+      // Separate app findings by type
+      const allFindings = data.appFindings || [];
+      const posture = allFindings.filter(finding => finding.type === 'posture');
+      const billing = allFindings.filter(finding => finding.type === 'billing');
+      const other = allFindings.filter(finding => finding.type !== 'posture' && finding.type !== 'billing');
+
+      setPostureFindings(posture);
+      setBillingFindings(billing);
+      setOtherFindings(other);
+
       setActions(data.actions || []);
     } catch (err) {
       setAppDetailsError(err instanceof Error ? err.message : 'An error occurred');
@@ -146,23 +164,23 @@ export default function NewIntegrationPage() {
     }
   };
 
-  // Handle app type selection
-  const handleAppTypeSelect = (appTypeId: string) => {
-    setSelectedAppTypeId(appTypeId);
+  // Handle app selection
+  const handleAppSelect = (appId: string) => {
+    setSelectedAppId(appId);
 
-    // Reset config values when app type changes
+    // Reset config values when app changes
     setConfigValues({});
     setFormErrors({});
 
     // Fetch app details
-    fetchAppDetails(appTypeId);
+    fetchAppDetails(appId);
 
     // Show sidebar with details
     setShowSidebar(true);
   };
 
-  // Handle app type confirmation
-  const handleAppTypeConfirm = () => {
+  // Handle app confirmation
+  const handleAppConfirm = () => {
     setCurrentStep(FormStep.CONFIGURE_INTEGRATION);
     setShowSidebar(false);
   };
@@ -170,7 +188,7 @@ export default function NewIntegrationPage() {
   // Handle back button
   const handleBack = () => {
     if (currentStep === FormStep.CONFIGURE_INTEGRATION) {
-      setCurrentStep(FormStep.SELECT_APP_TYPE);
+      setCurrentStep(FormStep.SELECT_APP);
       setShowSidebar(true);
     }
   };
@@ -208,13 +226,13 @@ export default function NewIntegrationPage() {
       errors.name = "Integration name is required";
     }
 
-    if (!selectedAppTypeId) {
-      errors.appType = "Please select an app type";
+    if (!selectedAppId) {
+      errors.app = "Please select an app";
     }
 
     // Validate config fields
-    if (selectedAppType) {
-      selectedAppType.configFields.forEach(field => {
+    if (selectedApp) {
+      selectedApp.configFields.forEach(field => {
         if (field.required && !configValues[field.name]) {
           errors[field.name] = `${field.label} is required`;
         }
@@ -243,7 +261,7 @@ export default function NewIntegrationPage() {
         },
         body: JSON.stringify({
           name,
-          appTypeId: selectedAppTypeId,
+          appId: selectedAppId,
           config: configValues,
           isEnabled: true
         }),
@@ -264,6 +282,12 @@ export default function NewIntegrationPage() {
       setSubmitting(false);
     }
   };
+
+  if (status === "loading") {
+    return (
+       <></>
+    );
+  }
 
   if (!session?.user?.isSuperUser) {
     return (
@@ -288,26 +312,26 @@ export default function NewIntegrationPage() {
     );
   }
 
-  // Render app type selection grid (Step 1)
-  const renderAppTypeGrid = () => {
+  // Render app selection grid (Step 1)
+  const renderAppGrid = () => {
     return (
       <div>
         <span className="text-xl font-semibold mb-4">Confirm your SaaS account’s permissions before adding your application.</span>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {appTypes.map((appType) => (
+          {apps.map((app) => (
             <div 
-              key={appType.id}
-              data-app-type-card
+              key={app.id}
+              data-app-card
               className={`border rounded-lg p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                selectedAppTypeId === appType.id && showSidebar ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+                selectedAppId === app.id && showSidebar ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
               }`}
-              onClick={() => handleAppTypeSelect(appType.id)}
+              onClick={() => handleAppSelect(app.id)}
             >
               <div className="flex items-center mb-2">
-                <AppIcon iconName={appType.icon} size={36} className="mr-3" />
-                <h3 className="text-lg font-semibold">{appType.name}</h3>
+                <AppIcon iconName={app.icon} size={36} className="mr-3" />
+                <h3 className="text-lg font-semibold">{app.name}</h3>
               </div>
-              <p className="text-sm text-gray-600">{appType.description || `Integration with ${appType.name}`}</p>
+              <p className="text-sm text-gray-600">{app.description || `Integration with ${app.name}`}</p>
             </div>
           ))}
         </div>
@@ -315,9 +339,9 @@ export default function NewIntegrationPage() {
     );
   };
 
-  // Render sidebar with actions and security findings (Step 2)
+  // Render sidebar with actions and app findings (Step 2)
   const renderSidebar = () => {
-    if (!selectedAppType) return null;
+    if (!selectedApp) return null;
 
     return (
       <div 
@@ -330,8 +354,8 @@ export default function NewIntegrationPage() {
       >
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center">
-            <AppIcon iconName={selectedAppType.icon} size={24} className="mr-2" />
-            <h2 className="text-xl font-semibold">{selectedAppType.name}</h2>
+            <AppIcon iconName={selectedApp.icon} size={24} className="mr-2" />
+            <h2 className="text-xl font-semibold">{selectedApp.name}</h2>
           </div>
           <button 
             onClick={() => setShowSidebar(false)}
@@ -345,19 +369,19 @@ export default function NewIntegrationPage() {
 
         <div className="mb-4">
           <h3 className="text-lg font-bold mb-2">About</h3>
-          <p className="text-sm text-gray-600">{selectedAppType.description || `Integration with ${selectedAppType.name}`}</p>
-          {selectedAppType.guide && (
+          <p className="text-sm text-gray-600">{selectedApp.description || `Integration with ${selectedApp.name}`}</p>
+          {selectedApp.guide && (
             <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm font-medium text-blue-800">
                 This integration requires specific setup. Please refer to the integration guide.
               </p>
               <a 
-                href={`/guide/${selectedAppType.guide}`}
+                href={`/integrations/guide/${selectedApp.guide}`}
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:underline mt-1 inline-block"
               >
-                View {selectedAppType.name} Integration Guide →
+                View {selectedApp.name} Integration Guide →
               </a>
             </div>
           )}
@@ -371,7 +395,7 @@ export default function NewIntegrationPage() {
           <div className="py-4 text-center text-red-500">
             <p>Error: {appDetailsError}</p>
             <button 
-              onClick={() => fetchAppDetails(selectedAppTypeId)}
+              onClick={() => fetchAppDetails(selectedAppId)}
               className="mt-2 px-4 py-1 bg-blue-500 text-white rounded"
             >
               Retry
@@ -394,20 +418,19 @@ export default function NewIntegrationPage() {
                 </ul>
               )}
             </div>
-
             <div className="mb-6">
-              <h3 className="text-lg font-bold mb-2">Security Findings</h3>
-              {securityFindings.length === 0 ? (
-                <p className="text-gray-500">No security findings available</p>
+              <h3 className="text-lg font-bold mb-2">Posture Findings</h3>
+              {postureFindings.length === 0 ? (
+                  <p className="text-gray-500">No posture findings available</p>
               ) : (
-                <ul className="space-y-2">
-                  {securityFindings.map(finding => (
+              <ul className="space-y-2">
+                {postureFindings.map(finding => (
                     <li key={finding.id} className="p-2 bg-gray-50 rounded">
                       <div className="flex items-center">
-                        <span 
+                        <span
                           className="inline-block w-2 h-2 rounded-full mr-2"
                           style={{
-                            backgroundColor: 
+                            backgroundColor:
                               finding.severity === 'critical' ? 'rgb(254, 204, 200)' :
                               finding.severity === 'high' ? 'rgb(251, 205, 165)' :
                               finding.severity === 'medium' ? 'rgb(185, 214, 255)' :
@@ -415,41 +438,127 @@ export default function NewIntegrationPage() {
                           }}
                         ></span>
                         <p className="font-medium">{finding.name}</p>
-                        <span 
-                          className="ml-auto text-xs px-2 py-1 rounded-full"
-                          style={{
-                            backgroundColor: 
-                              finding.severity === 'critical' ? 'rgb(254, 204, 200)' :
-                              finding.severity === 'high' ? 'rgb(251, 205, 165)' :
-                              finding.severity === 'medium' ? 'rgb(185, 214, 255)' :
-                              'rgb(223, 220, 249)',
-                            color: 
-                              finding.severity === 'critical' ? 'rgb(90, 8, 1)' :
-                              finding.severity === 'high' ? 'rgb(72, 35, 3)' :
-                              finding.severity === 'medium' ? 'rgb(0, 43, 103)' :
-                              'rgb(34, 23, 133)'
-                          }}
+                        <span
+                            className="ml-auto text-xs px-2 py-1 rounded-full"
+                            style={{
+                              backgroundColor:
+                                  finding.severity === 'critical' ? 'rgb(254, 204, 200)' :
+                                  finding.severity === 'high' ? 'rgb(251, 205, 165)' :
+                                  finding.severity === 'medium' ? 'rgb(185, 214, 255)' :
+                                  'rgb(223, 220, 249)',
+                              color:
+                                  finding.severity === 'critical' ? 'rgb(90, 8, 1)' :
+                                  finding.severity === 'high' ? 'rgb(72, 35, 3)' :
+                                  finding.severity === 'medium' ? 'rgb(0, 43, 103)' :
+                                  'rgb(34, 23, 133)'
+                            }}
                         >
                           {finding.severity}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">{finding.description}</p>
                     </li>
-                  ))}
-                </ul>
+                ))}
+              </ul>
               )}
             </div>
+
+            {billingFindings.length != 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-bold mb-2">Billing Findings</h3>
+                <ul className="space-y-2">
+                  {billingFindings.map(finding => (
+                      <li key={finding.id} className="p-2 bg-gray-50 rounded">
+                        <div className="flex items-center">
+                            <span
+                              className="inline-block w-2 h-2 rounded-full mr-2"
+                              style={{
+                                backgroundColor:
+                                  finding.severity === 'critical' ? 'rgb(254, 204, 200)' :
+                                  finding.severity === 'high' ? 'rgb(251, 205, 165)' :
+                                  finding.severity === 'medium' ? 'rgb(185, 214, 255)' :
+                                  'rgb(223, 220, 249)'
+                              }}
+                            ></span>
+                          <p className="font-medium">{finding.name}</p>
+                          <span
+                            className="ml-auto text-xs px-2 py-1 rounded-full"
+                            style={{
+                              backgroundColor:
+                                finding.severity === 'critical' ? 'rgb(254, 204, 200)' :
+                                finding.severity === 'high' ? 'rgb(251, 205, 165)' :
+                                finding.severity === 'medium' ? 'rgb(185, 214, 255)' :
+                                'rgb(223, 220, 249)',
+                              color:
+                                finding.severity === 'critical' ? 'rgb(90, 8, 1)' :
+                                finding.severity === 'high' ? 'rgb(72, 35, 3)' :
+                                finding.severity === 'medium' ? 'rgb(0, 43, 103)' :
+                                'rgb(34, 23, 133)'
+                            }}
+                          >
+                            {finding.severity}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{finding.description}</p>
+                      </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {otherFindings.length != 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-bold mb-2">Other Findings</h3>
+                <ul className="space-y-2">
+                  {otherFindings.map(finding => (
+                      <li key={finding.id} className="p-2 bg-gray-50 rounded">
+                        <div className="flex items-center">
+                            <span
+                                className="inline-block w-2 h-2 rounded-full mr-2"
+                                style={{
+                                  backgroundColor:
+                                      finding.severity === 'critical' ? 'rgb(254, 204, 200)' :
+                                          finding.severity === 'high' ? 'rgb(251, 205, 165)' :
+                                              finding.severity === 'medium' ? 'rgb(185, 214, 255)' :
+                                                  'rgb(223, 220, 249)'
+                                }}
+                            ></span>
+                          <p className="font-medium">{finding.name}</p>
+                          <span
+                              className="ml-auto text-xs px-2 py-1 rounded-full"
+                              style={{
+                                backgroundColor:
+                                    finding.severity === 'critical' ? 'rgb(254, 204, 200)' :
+                                        finding.severity === 'high' ? 'rgb(251, 205, 165)' :
+                                            finding.severity === 'medium' ? 'rgb(185, 214, 255)' :
+                                                'rgb(223, 220, 249)',
+                                color:
+                                    finding.severity === 'critical' ? 'rgb(90, 8, 1)' :
+                                        finding.severity === 'high' ? 'rgb(72, 35, 3)' :
+                                            finding.severity === 'medium' ? 'rgb(0, 43, 103)' :
+                                                'rgb(34, 23, 133)'
+                              }}
+                          >
+                            {finding.severity}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{finding.description}</p>
+                      </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
         )}
 
         <div className="mt-auto pt-4 border-t">
           <button
-            onClick={handleAppTypeConfirm}
+            onClick={handleAppConfirm}
             className="w-full px-4 py-2 rounded-md text-white"
             style={{ background: 'var(--primary-blue)' }}
             disabled={loadingAppDetails || !!appDetailsError}
           >
-            Continue with {selectedAppType.name}
+            Continue with {selectedApp.name}
           </button>
         </div>
       </div>
@@ -458,11 +567,11 @@ export default function NewIntegrationPage() {
 
   // Render integration configuration form (Step 3)
   const renderConfigurationForm = () => {
-    if (!selectedAppType) return null;
+    if (!selectedApp) return null;
 
     return (
       <form onSubmit={handleSubmit} className="max-w-2xl">
-        <h2 className="text-xl font-semibold mb-4">Configure {selectedAppType.name} Integration</h2>
+        <h2 className="text-xl font-semibold mb-4">Configure {selectedApp.name} Integration</h2>
 
         {/* Integration Name */}
         <div className="mb-4">
@@ -485,7 +594,7 @@ export default function NewIntegrationPage() {
         {/* Dynamic Config Fields */}
         <div className="mb-4">
           <h3 className="text-lg font-medium mb-2">Configuration</h3>
-          {selectedAppType.configFields.map((field) => (
+          {selectedApp.configFields.map((field) => (
             <div key={field.name} className="mb-3">
               <label htmlFor={field.name} className="block text-sm font-medium mb-1">
                 {field.label} {field.required && '*'}
@@ -564,11 +673,11 @@ export default function NewIntegrationPage() {
 
       {/* Multi-step form content */}
       <div className="relative">
-        {currentStep === FormStep.SELECT_APP_TYPE && renderAppTypeGrid()}
+        {currentStep === FormStep.SELECT_APP && renderAppGrid()}
         {currentStep === FormStep.CONFIGURE_INTEGRATION && renderConfigurationForm()}
 
         {/* Overlay for sidebar */}
-        {selectedAppType && (
+        {selectedApp && (
           <div 
             className="fixed inset-0 bg-black" 
             style={{ 
@@ -580,7 +689,7 @@ export default function NewIntegrationPage() {
           />
         )}
 
-        {selectedAppType && renderSidebar()}
+        {selectedApp && renderSidebar()}
       </div>
     </div>
   );

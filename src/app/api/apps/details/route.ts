@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 
-// GET: Fetch security findings and actions for a specific app type
+// GET: Fetch security findings and actions for a specific app
 export async function GET(request: NextRequest) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
@@ -20,44 +20,44 @@ export async function GET(request: NextRequest) {
   // Allow all authenticated users to access the app details
   // No need to check for super user status for viewing app details
 
-  // Get the app type ID from the query parameters
+  // Get the app ID from the query parameters
   const url = new URL(request.url);
-  const appTypeId = url.searchParams.get('appTypeId');
+  const appId = url.searchParams.get('appId');
 
-  if (!appTypeId) {
+  if (!appId) {
     return NextResponse.json(
-      { error: "App type ID is required" },
+      { error: "App ID is required" },
       { status: 400 }
     );
   }
 
   try {
-    // Get the app type with its security findings and actions
-    const appType = await prisma.appType.findUnique({
-      where: { id: appTypeId },
+    // Get the app with its app findings and actions
+    const app = await prisma.app.findUnique({
+      where: { id: appId },
       include: {
-        securityFindings: true,
+        appFindings: true,
         actions: true
       }
     });
 
-    if (!appType) {
+    if (!app) {
       return NextResponse.json(
-        { error: "App type not found" },
+        { error: "App not found" },
         { status: 404 }
       );
     }
 
     // Transform the configFields from JSON string to object
-    const transformedAppType = {
-      ...appType,
-      configFields: JSON.parse(appType.configFields)
+    const transformedApp = {
+      ...app,
+      configFields: JSON.parse(app.configFields)
     };
 
     return NextResponse.json({
-      appType: transformedAppType,
-      securityFindings: appType.securityFindings,
-      actions: appType.actions
+      app: transformedApp,
+      appFindings: app.appFindings,
+      actions: app.actions
     });
   } catch (error) {
     console.error("Error fetching app details:", error);

@@ -10,7 +10,7 @@ import Popup from "@/src/components/Popup";
 interface Integration {
   id: string;
   name: string;
-  appType: {
+  app: {
     name: string;
     icon?: string;
     configFields: {
@@ -27,8 +27,12 @@ interface Integration {
 }
 
 export default function IntegrationsPage() {
-  const { data: session } = useSession();
   const router = useRouter();
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated: () => router.push('/?redirect=/integrations'),
+  });
+
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,8 +158,8 @@ export default function IntegrationsPage() {
   const validateConfigForm = () => {
     const errors: Record<string, string> = {};
 
-    if (confirmationIntegration?.appType.configFields) {
-      confirmationIntegration.appType.configFields.forEach(field => {
+    if (confirmationIntegration?.app.configFields) {
+      confirmationIntegration.app.configFields.forEach(field => {
         if (field.required && !configValues[field.name]) {
           errors[field.name] = `${field.label} is required`;
         }
@@ -229,18 +233,18 @@ export default function IntegrationsPage() {
       }
     };
 
-    if (!session?.user) {
-      router.push('/?redirect=/integrations');
-      router.refresh();
-      return;
-    }
-
     if (session?.user?.isSuperUser) {
       fetchIntegrations();
     } else {
       setLoading(false);
     }
   }, [session, router]);
+
+  if (status === "loading") {
+    return (
+       <></>
+    );
+  }
 
   if (!session?.user?.isSuperUser) {
     return (
@@ -374,7 +378,7 @@ export default function IntegrationsPage() {
         ]}
       >
         <div className="max-h-[60vh] overflow-y-auto">
-          {confirmationIntegration?.appType.configFields.map((field) => (
+          {confirmationIntegration?.app.configFields.map((field) => (
             <div key={field.name} className="mb-3">
               <label htmlFor={field.name} className="block text-sm font-medium mb-1">
                 {field.label} {field.required && '*'}
@@ -439,7 +443,7 @@ export default function IntegrationsPage() {
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <AppIcon iconName={integration.appType.icon} size={28} className="mr-2" />
+                  <AppIcon iconName={integration.app.icon} size={28} className="mr-2" />
                   <h3 className="text-lg font-semibold">{integration.name}</h3>
                 </div>
                 <div className="relative menu-container">
@@ -498,7 +502,7 @@ export default function IntegrationsPage() {
                   )}
                 </div>
               </div>
-              <p className="text-sm mb-2">Type: {integration.appType.name}</p>
+              <p className="text-sm mb-2">Type: {integration.app.name}</p>
               <div className="flex items-center">
                 <span
                     className={`inline-block w-2 h-2 rounded-full mr-2 ${

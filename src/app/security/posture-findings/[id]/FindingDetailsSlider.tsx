@@ -14,7 +14,7 @@ interface FindingDetail {
 interface FindingDetailsSliderProps {
   findingDetails: Array<FindingDetail>;
   integrationId: string;
-  securityFindingId: string;
+  appFindingId: string;
   onCountsUpdate: (activeCount: number, hiddenCount: number) => void;
   activeTab: 'active' | 'hidden';
   onRefreshData: () => Promise<void>;
@@ -25,7 +25,7 @@ export default function FindingDetailsSlider({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   integrationId,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  securityFindingId,
+  appFindingId,
   onCountsUpdate,
   activeTab,
   onRefreshData

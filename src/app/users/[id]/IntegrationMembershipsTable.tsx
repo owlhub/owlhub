@@ -8,7 +8,7 @@ type IntegrationMembership = {
   id: string;
   integration: {
     name: string;
-    appType: {
+    app: {
       name: string;
       icon?: string | null;
     };
@@ -33,14 +33,14 @@ export default function IntegrationMembershipsTable({ memberships }: Integration
           header: "Type",
           accessor: (membership) => (
             <div className="flex items-center">
-                { membership.integration.appType.icon && (
+                { membership.integration.app.icon && (
                     <AppIcon
-                        iconName={membership.integration.appType.icon}
+                        iconName={membership.integration.app.icon}
                         size={20}
                         className="mr-2"
                     />
                 )}
-              {membership.integration.appType.name}
+              {membership.integration.app.name}
             </div>
           ),
           sortable: false,

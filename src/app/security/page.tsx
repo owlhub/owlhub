@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { prisma } from "@/src/lib/prisma";
 import { redirect } from "next/navigation";
@@ -12,7 +12,7 @@ export default async function SecurityPage() {
   // Check if the user is authenticated
   if (!session?.user) {
     // Redirect to home page with the current URL as a parameter
-    redirect("/?redirect=/security");
+    redirect("/login?redirect=/security");
   }
 
   // Fetch security data for dashboard widgets
@@ -20,19 +20,19 @@ export default async function SecurityPage() {
     where: { isEnabled: true }
   });
 
-  const integrationFindingsCount = await prisma.integrationSecurityFindingDetails.count();
+  const integrationFindingsCount = await prisma.integrationFindingDetail.count();
 
-  const criticalFindingsCount = await prisma.integrationSecurityFindingDetails.count({
+  const criticalFindingsCount = await prisma.integrationFindingDetail.count({
     where: {
-      securityFinding: {
+      appFinding: {
         severity: 'critical'
       }
     }
   });
 
-  const highRiskFindingsCount = await prisma.integrationSecurityFindingDetails.count({
+  const highRiskFindingsCount = await prisma.integrationFindingDetail.count({
     where: {
-      securityFinding: {
+      appFinding: {
         severity: 'high'
       }
     }
