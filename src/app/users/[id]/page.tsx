@@ -17,6 +17,17 @@ interface UserRole {
   };
 }
 
+interface IntegrationMembership {
+  id: string;
+  integration: {
+    name: string;
+    app: {
+      name: string;
+      icon?: string | null;
+    };
+  };
+}
+
 interface User {
   id: string;
   name?: string | null;
@@ -28,6 +39,7 @@ interface User {
   emailVerified?: string | Date | null;
   image?: string | null;
   userRoles: UserRole[];
+  integrationMemberships: IntegrationMembership[];
 }
 
 export default function UserDetailPage({
