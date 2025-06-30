@@ -1,0 +1,88 @@
+# OwlHub Release Notes - Initial Release
+
+## Overview
+
+OwlHub is a comprehensive security posture management platform designed to help organizations monitor and improve their security across multiple cloud services and development tools. This initial release provides integrations with AWS, GitLab, and Jira, allowing you to identify security vulnerabilities and compliance issues in your infrastructure and applications.
+
+## Key Features
+
+### Core Platform
+
+- **OIDC Authentication**: Secure login using OpenID Connect
+- **Role-Based Access Control**: Granular permissions for different pages
+- **Protected Routes**: All pages are protected after login
+- **Super User**: First user is automatically assigned super user privileges
+- **Integrations Management**: Connect and configure external services and applications
+- **User Management**: Administer users and their roles
+- **Modern UI**: Built with TailwindCSS and FontAwesome icons
+
+### Integrations
+
+#### AWS Integration
+
+The AWS integration allows you to scan your AWS environment for security vulnerabilities and compliance issues. It uses cross-account access with an IAM role to securely access your AWS resources.
+
+**Features:**
+- Secure cross-account access using IAM roles and external IDs
+- Read-only access to your AWS resources
+- Comprehensive security scanning across multiple AWS services
+
+**Security Findings:**
+- **IAM Findings**:
+  - IAM users with passwords older than 90 days
+  - IAM users with console access but without MFA enabled
+  - IAM users with access keys not rotated for more than 90 days
+  - IAM users with inactive access keys
+  - Root user access key usage within the last 90 days
+  - Missing IAM account password policy
+
+- **ACM Findings**:
+  - Expired ACM certificates
+  - ACM certificates expiring within 30 days
+  - ACM certificates with domain wildcards
+
+#### GitLab Integration
+
+The GitLab integration allows you to scan your GitLab repositories for security vulnerabilities and compliance issues. It uses a personal access token to securely access your GitLab resources.
+
+**Features:**
+- Support for both GitLab.com and self-hosted GitLab instances
+- Secure access using personal access tokens
+- Fetches members from your GitLab projects
+
+**Security Findings:**
+- Public repositories
+- Unprotected default branches (not protected or allowing direct/force push)
+
+#### Jira Integration
+
+The Jira integration allows you to connect OwlHub to your Jira instance. It uses an API token to securely access your Jira resources.
+
+**Features:**
+- Support for both Jira Cloud and Jira Server/Data Center
+- Secure access using API tokens
+
+## Getting Started
+
+To get started with OwlHub:
+
+1. Sign up for an account
+2. Set up your integrations:
+   - AWS: Follow the [AWS Integration Guide](app-guides/aws-integration-guide.md)
+   - GitLab: Follow the [GitLab Integration Guide](app-guides/gitlab-integration-guide.md)
+   - Jira: Follow the [Jira Integration Guide](app-guides/jira-integration-guide.md)
+3. View your security findings in the dashboard
+
+## System Requirements
+
+- Node.js 18.x or later
+- PostgreSQL 12.x or later
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+
+## Coming Soon
+
+- Enhanced security scanning for AWS and GitLab
+- New integrations: GitHub, Microsoft 365, Slack
+- Enhanced dashboard with customizable widgets
+- Comprehensive reporting capabilities
+- Expanded API capabilities

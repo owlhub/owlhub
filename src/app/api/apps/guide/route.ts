@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const pathWithExtension = sanitizedPath.endsWith('.md') ? sanitizedPath : `${sanitizedPath}.md`;
 
     // Construct the full path to the markdown file
-    const fullPath = path.join(process.cwd(), 'docs', pathWithExtension);
+    const fullPath = path.join(process.cwd(), 'docs', 'app-guides', pathWithExtension);
 
     // Check if the file exists
     if (!fs.existsSync(fullPath)) {
