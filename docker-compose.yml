@@ -28,12 +28,11 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
-      # Database
+      # Database - this will be overridden by .env if present
       DATABASE_URL: postgresql://postgres:postgres@db:5432/owlhub
-      # NextAuth.js
-      NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: your-secret-key-at-least-32-chars-long
       # Node environment
       NODE_ENV: production
     command: >
