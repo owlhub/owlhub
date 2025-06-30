@@ -298,6 +298,55 @@ async function main() {
         "description": "The AWS account does not have an IAM password policy configured. This is a critical security risk as it allows users to set weak passwords, increasing the risk of unauthorized access.",
         "type": "posture"
       },
+      {
+        "key": "aws_iam_account_password_policy_min_length_less_than_8",
+        "name": "IAM Account Password Policy Minimum Length is less than 8",
+        "severity": "high",
+        "description": "The AWS account's IAM password policy has a minimum length requirement that is less than 8 characters, which increases the risk of password-based attacks.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_account_password_policy_max_age_greater_than_90_days",
+        "name": "IAM Account Password Policy Max Age is greater than 90 days",
+        "severity": "high",
+        "description": "The AWS account's IAM password policy allows passwords to be used for more than 90 days, which increases the risk of unauthorized access if passwords are compromised.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_account_password_policy_reuse_prevention_less_than_5",
+        "name": "IAM Account Password Policy Re-use Prevention is less than 5",
+        "severity": "high",
+        "description": "The AWS account's IAM password policy allows password reuse with less than 5 previous passwords remembered, which increases the risk of password-based attacks.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_account_password_policy_doesnt_require_lowercase",
+        "name": "IAM Account Password Policy Doesn't Require Lowercase Letters",
+        "severity": "high",
+        "description": "The AWS account's IAM password policy does not require lowercase letters, which reduces password complexity and increases the risk of password-based attacks.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_account_password_policy_doesnt_require_uppercase",
+        "name": "IAM Account Password Policy Doesn't Require Uppercase Letters",
+        "severity": "high",
+        "description": "The AWS account's IAM password policy does not require uppercase letters, which reduces password complexity and increases the risk of password-based attacks.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_account_password_policy_doesnt_require_numbers",
+        "name": "IAM Account Password Policy Doesn't Require Numbers",
+        "severity": "low",
+        "description": "The AWS account's IAM password policy does not require numbers, which reduces password complexity and increases the risk of password-based attacks.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_account_password_policy_doesnt_require_symbols",
+        "name": "IAM Account Password Policy Doesn't Require Symbols",
+        "severity": "high",
+        "description": "The AWS account's IAM password policy does not require symbols, which reduces password complexity and increases the risk of password-based attacks.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_public_s3_bucket",
       //   "name": "Public S3 Bucket",

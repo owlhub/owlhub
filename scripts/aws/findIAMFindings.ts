@@ -23,7 +23,10 @@ import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
  * IAM users with passwords older than 90 days,
  * IAM users with console access but without MFA enabled,
  * AWS root user access key usage within the last 90 days,
- * and check if IAM account password policy exists
+ * check if IAM account password policy exists,
+ * check if IAM account password policy minimum length is less than 8,
+ * check if IAM account password policy max age is greater than 90 days,
+ * and check if IAM account password policy re-use prevention is less than 5
  * @param credentials - AWS credentials
  * @param region - AWS region
  * @param accountId
@@ -31,7 +34,7 @@ import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
  */
 export async function findIAMFindings(credentials: any, region: string, accountId: string | null = null) {
   try {
-    console.log('Finding IAM users with access keys not rotated for more than 90 days, inactive access keys over 90 days, passwords older than 90 days, console users without MFA enabled, root user access key usage within the last 90 days, and checking if IAM account password policy exists');
+    console.log('Finding IAM users with access keys not rotated for more than 90 days, inactive access keys over 90 days, passwords older than 90 days, console users without MFA enabled, root user access key usage within the last 90 days, checking if IAM account password policy exists, checking if IAM account password policy minimum length is less than 8, checking if IAM account password policy max age is greater than 90 days, and checking if IAM account password policy re-use prevention is less than 5');
 
     const iamClient = new IAMClient({
       region,
@@ -199,15 +202,64 @@ export async function findIAMFindings(credentials: any, region: string, accountI
       if (passwordPolicyFinding) {
         passwordPolicyFindings.push(passwordPolicyFinding);
         findings.push(passwordPolicyFinding);
+      } else {
+        // If password policy exists, check if minimum length is less than 8
+        const minLengthFinding = await checkPasswordPolicyMinLength(iamClient, accountId);
+        if (minLengthFinding) {
+          passwordPolicyFindings.push(minLengthFinding);
+          findings.push(minLengthFinding);
+        }
+
+        // Check if max age is greater than 90 days
+        const maxAgeFinding = await checkPasswordPolicyMaxAge(iamClient, accountId);
+        if (maxAgeFinding) {
+          passwordPolicyFindings.push(maxAgeFinding);
+          findings.push(maxAgeFinding);
+        }
+
+        // Check if re-use prevention is less than 5
+        const reusePreventionFinding = await checkPasswordPolicyReusePrevention(iamClient, accountId);
+        if (reusePreventionFinding) {
+          passwordPolicyFindings.push(reusePreventionFinding);
+          findings.push(reusePreventionFinding);
+        }
+
+        // Check if lowercase letters are required
+        const lowercaseFinding = await checkPasswordPolicyRequireLowercase(iamClient, accountId);
+        if (lowercaseFinding) {
+          passwordPolicyFindings.push(lowercaseFinding);
+          findings.push(lowercaseFinding);
+        }
+
+        // Check if uppercase letters are required
+        const uppercaseFinding = await checkPasswordPolicyRequireUppercase(iamClient, accountId);
+        if (uppercaseFinding) {
+          passwordPolicyFindings.push(uppercaseFinding);
+          findings.push(uppercaseFinding);
+        }
+
+        // Check if numbers are required
+        const numbersFinding = await checkPasswordPolicyRequireNumbers(iamClient, accountId);
+        if (numbersFinding) {
+          passwordPolicyFindings.push(numbersFinding);
+          findings.push(numbersFinding);
+        }
+
+        // Check if symbols are required
+        const symbolsFinding = await checkPasswordPolicyRequireSymbols(iamClient, accountId);
+        if (symbolsFinding) {
+          passwordPolicyFindings.push(symbolsFinding);
+          findings.push(symbolsFinding);
+        }
       }
     } catch (policyError) {
       console.error('Error checking IAM account password policy:', policyError);
     }
 
-    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys, ${inactiveFindings.length} IAM users with inactive access keys over 90 days, ${oldPasswordFindings.length} IAM users with passwords older than 90 days, ${mfaDisabledFindings.length} IAM users with console access but without MFA enabled, ${rootUserAccessKeyUsedFindings.length} instances of root user access key usage within the last 90 days, and ${passwordPolicyFindings.length} instances of missing IAM account password policy`);
+    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys, ${inactiveFindings.length} IAM users with inactive access keys over 90 days, ${oldPasswordFindings.length} IAM users with passwords older than 90 days, ${mfaDisabledFindings.length} IAM users with console access but without MFA enabled, ${rootUserAccessKeyUsedFindings.length} instances of root user access key usage within the last 90 days, and ${passwordPolicyFindings.length} instances of IAM account password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5)`);
     return findings;
   } catch (error) {
-    console.error('Error finding IAM users with old or inactive access keys, old passwords, without MFA, root user access key usage, or checking password policy:', error);
+    console.error('Error finding IAM users with old or inactive access keys, old passwords, without MFA, root user access key usage, or checking password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5):', error);
     return [];
   }
 }
@@ -391,6 +443,329 @@ async function checkPasswordPolicyExists(iamClient: IAMClient, accountId: string
 
     // For other errors, log and rethrow
     console.error('Error checking password policy:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the IAM account password policy minimum length is less than 8 characters
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the password policy minimum length is less than 8, null otherwise
+ */
+async function checkPasswordPolicyMinLength(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Try to get the account password policy
+    const command = new GetAccountPasswordPolicyCommand({});
+    const response: GetAccountPasswordPolicyCommandOutput = await iamClient.send(command);
+
+    // Check if the minimum password length is less than 8
+    if (response.PasswordPolicy && response.PasswordPolicy.MinimumPasswordLength && response.PasswordPolicy.MinimumPasswordLength < 8) {
+      return {
+        id: 'aws_iam_account_password_policy_min_length_less_than_8',
+        key: `aws-iam-account-password-policy-min-length-less-than-8-${accountId}`,
+        title: 'IAM Account Password Policy Minimum Length is less than 8',
+        description: 'The AWS account\'s IAM password policy has a minimum length requirement that is less than 8 characters, which increases the risk of password-based attacks.',
+        additionalInfo: {
+          currentMinLength: response.PasswordPolicy.MinimumPasswordLength,
+          accountId: accountId
+        }
+      };
+    }
+
+    // If we get here, the password policy minimum length is 8 or greater
+    return null;
+  } catch (error: any) {
+    // If the error is NoSuchEntity, it means the password policy doesn't exist
+    // This is already handled by checkPasswordPolicyExists, so we can just return null
+    if (error.name === 'NoSuchEntityException') {
+      return null;
+    }
+
+    // For other errors, log and rethrow
+    console.error('Error checking password policy minimum length:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the IAM account password policy max age is greater than 90 days
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the password policy max age is greater than 90 days, null otherwise
+ */
+async function checkPasswordPolicyMaxAge(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Try to get the account password policy
+    const command = new GetAccountPasswordPolicyCommand({});
+    const response: GetAccountPasswordPolicyCommandOutput = await iamClient.send(command);
+
+    // Check if the max password age is greater than 90 days or if password expiration is not required
+    if (response.PasswordPolicy) {
+      // If password expiration is not required, return a finding
+      if (!response.PasswordPolicy.ExpirePasswords) {
+        return {
+          id: 'aws_iam_account_password_policy_max_age_greater_than_90_days',
+          key: `aws-iam-account-password-policy-max-age-greater-than-90-days-${accountId}`,
+          title: 'IAM Account Password Policy Max Age is greater than 90 days',
+          description: 'The AWS account\'s IAM password policy does not require passwords to expire, which increases the risk of unauthorized access if passwords are compromised.',
+          additionalInfo: {
+            passwordExpirationRequired: false,
+            accountId: accountId
+          }
+        };
+      }
+
+      // If max password age is greater than 90 days, return a finding
+      if (response.PasswordPolicy.MaxPasswordAge && response.PasswordPolicy.MaxPasswordAge > 90) {
+        return {
+          id: 'aws_iam_account_password_policy_max_age_greater_than_90_days',
+          key: `aws-iam-account-password-policy-max-age-greater-than-90-days-${accountId}`,
+          title: 'IAM Account Password Policy Max Age is greater than 90 days',
+          description: 'The AWS account\'s IAM password policy allows passwords to be used for more than 90 days, which increases the risk of unauthorized access if passwords are compromised.',
+          additionalInfo: {
+            currentMaxAge: response.PasswordPolicy.MaxPasswordAge,
+            passwordExpirationRequired: true,
+            accountId: accountId
+          }
+        };
+      }
+    }
+
+    // If we get here, the password policy max age is 90 days or less
+    return null;
+  } catch (error: any) {
+    // If the error is NoSuchEntity, it means the password policy doesn't exist
+    // This is already handled by checkPasswordPolicyExists, so we can just return null
+    if (error.name === 'NoSuchEntityException') {
+      return null;
+    }
+
+    // For other errors, log and rethrow
+    console.error('Error checking password policy max age:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the IAM account password policy re-use prevention is less than 5
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the password policy re-use prevention is less than 5, null otherwise
+ */
+async function checkPasswordPolicyReusePrevention(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Try to get the account password policy
+    const command = new GetAccountPasswordPolicyCommand({});
+    const response: GetAccountPasswordPolicyCommandOutput = await iamClient.send(command);
+
+    // Check if password reuse prevention is less than 5 or not enabled
+    if (response.PasswordPolicy) {
+      // If password reuse prevention is not enabled, return a finding
+      if (!response.PasswordPolicy.PasswordReusePrevention) {
+        return {
+          id: 'aws_iam_account_password_policy_reuse_prevention_less_than_5',
+          key: `aws-iam-account-password-policy-reuse-prevention-less-than-5-${accountId}`,
+          title: 'IAM Account Password Policy Re-use Prevention is less than 5',
+          description: 'The AWS account\'s IAM password policy does not prevent password reuse, which increases the risk of password-based attacks.',
+          additionalInfo: {
+            passwordReusePreventionEnabled: false,
+            accountId: accountId
+          }
+        };
+      }
+
+      // If password reuse prevention is less than 5, return a finding
+      if (response.PasswordPolicy.PasswordReusePrevention < 5) {
+        return {
+          id: 'aws_iam_account_password_policy_reuse_prevention_less_than_5',
+          key: `aws-iam-account-password-policy-reuse-prevention-less-than-5-${accountId}`,
+          title: 'IAM Account Password Policy Re-use Prevention is less than 5',
+          description: 'The AWS account\'s IAM password policy allows password reuse with less than 5 previous passwords remembered, which increases the risk of password-based attacks.',
+          additionalInfo: {
+            currentReusePreventionValue: response.PasswordPolicy.PasswordReusePrevention,
+            passwordReusePreventionEnabled: true,
+            accountId: accountId
+          }
+        };
+      }
+    }
+
+    // If we get here, the password policy re-use prevention is 5 or greater
+    return null;
+  } catch (error: any) {
+    // If the error is NoSuchEntity, it means the password policy doesn't exist
+    // This is already handled by checkPasswordPolicyExists, so we can just return null
+    if (error.name === 'NoSuchEntityException') {
+      return null;
+    }
+
+    // For other errors, log and rethrow
+    console.error('Error checking password policy re-use prevention:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the IAM account password policy requires lowercase letters
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the password policy doesn't require lowercase letters, null otherwise
+ */
+async function checkPasswordPolicyRequireLowercase(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Try to get the account password policy
+    const command = new GetAccountPasswordPolicyCommand({});
+    const response: GetAccountPasswordPolicyCommandOutput = await iamClient.send(command);
+
+    // Check if password policy requires lowercase letters
+    if (response.PasswordPolicy && !response.PasswordPolicy.RequireLowercaseCharacters) {
+      return {
+        id: 'aws_iam_account_password_policy_doesnt_require_lowercase',
+        key: `aws-iam-account-password-policy-doesnt-require-lowercase-${accountId}`,
+        title: 'IAM Account Password Policy Doesn\'t Require Lowercase Letters',
+        description: 'The AWS account\'s IAM password policy does not require lowercase letters, which reduces password complexity and increases the risk of password-based attacks.',
+        additionalInfo: {
+          requireLowercaseCharacters: false,
+          accountId: accountId
+        }
+      };
+    }
+
+    // If we get here, the password policy requires lowercase letters
+    return null;
+  } catch (error: any) {
+    // If the error is NoSuchEntity, it means the password policy doesn't exist
+    // This is already handled by checkPasswordPolicyExists, so we can just return null
+    if (error.name === 'NoSuchEntityException') {
+      return null;
+    }
+
+    // For other errors, log and rethrow
+    console.error('Error checking password policy lowercase requirement:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the IAM account password policy requires uppercase letters
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the password policy doesn't require uppercase letters, null otherwise
+ */
+async function checkPasswordPolicyRequireUppercase(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Try to get the account password policy
+    const command = new GetAccountPasswordPolicyCommand({});
+    const response: GetAccountPasswordPolicyCommandOutput = await iamClient.send(command);
+
+    // Check if password policy requires uppercase letters
+    if (response.PasswordPolicy && !response.PasswordPolicy.RequireUppercaseCharacters) {
+      return {
+        id: 'aws_iam_account_password_policy_doesnt_require_uppercase',
+        key: `aws-iam-account-password-policy-doesnt-require-uppercase-${accountId}`,
+        title: 'IAM Account Password Policy Doesn\'t Require Uppercase Letters',
+        description: 'The AWS account\'s IAM password policy does not require uppercase letters, which reduces password complexity and increases the risk of password-based attacks.',
+        additionalInfo: {
+          requireUppercaseCharacters: false,
+          accountId: accountId
+        }
+      };
+    }
+
+    // If we get here, the password policy requires uppercase letters
+    return null;
+  } catch (error: any) {
+    // If the error is NoSuchEntity, it means the password policy doesn't exist
+    // This is already handled by checkPasswordPolicyExists, so we can just return null
+    if (error.name === 'NoSuchEntityException') {
+      return null;
+    }
+
+    // For other errors, log and rethrow
+    console.error('Error checking password policy uppercase requirement:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the IAM account password policy requires numbers
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the password policy doesn't require numbers, null otherwise
+ */
+async function checkPasswordPolicyRequireNumbers(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Try to get the account password policy
+    const command = new GetAccountPasswordPolicyCommand({});
+    const response: GetAccountPasswordPolicyCommandOutput = await iamClient.send(command);
+
+    // Check if password policy requires numbers
+    if (response.PasswordPolicy && !response.PasswordPolicy.RequireNumbers) {
+      return {
+        id: 'aws_iam_account_password_policy_doesnt_require_numbers',
+        key: `aws-iam-account-password-policy-doesnt-require-numbers-${accountId}`,
+        title: 'IAM Account Password Policy Doesn\'t Require Numbers',
+        description: 'The AWS account\'s IAM password policy does not require numbers, which reduces password complexity and increases the risk of password-based attacks.',
+        additionalInfo: {
+          requireNumbers: false,
+          accountId: accountId
+        }
+      };
+    }
+
+    // If we get here, the password policy requires numbers
+    return null;
+  } catch (error: any) {
+    // If the error is NoSuchEntity, it means the password policy doesn't exist
+    // This is already handled by checkPasswordPolicyExists, so we can just return null
+    if (error.name === 'NoSuchEntityException') {
+      return null;
+    }
+
+    // For other errors, log and rethrow
+    console.error('Error checking password policy numbers requirement:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the IAM account password policy requires symbols
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the password policy doesn't require symbols, null otherwise
+ */
+async function checkPasswordPolicyRequireSymbols(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Try to get the account password policy
+    const command = new GetAccountPasswordPolicyCommand({});
+    const response: GetAccountPasswordPolicyCommandOutput = await iamClient.send(command);
+
+    // Check if password policy requires symbols
+    if (response.PasswordPolicy && !response.PasswordPolicy.RequireSymbols) {
+      return {
+        id: 'aws_iam_account_password_policy_doesnt_require_symbols',
+        key: `aws-iam-account-password-policy-doesnt-require-symbols-${accountId}`,
+        title: 'IAM Account Password Policy Doesn\'t Require Symbols',
+        description: 'The AWS account\'s IAM password policy does not require symbols, which reduces password complexity and increases the risk of password-based attacks.',
+        additionalInfo: {
+          requireSymbols: false,
+          accountId: accountId
+        }
+      };
+    }
+
+    // If we get here, the password policy requires symbols
+    return null;
+  } catch (error: any) {
+    // If the error is NoSuchEntity, it means the password policy doesn't exist
+    // This is already handled by checkPasswordPolicyExists, so we can just return null
+    if (error.name === 'NoSuchEntityException') {
+      return null;
+    }
+
+    // For other errors, log and rethrow
+    console.error('Error checking password policy symbols requirement:', error);
     throw error;
   }
 }
