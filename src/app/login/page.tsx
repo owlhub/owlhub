@@ -51,7 +51,6 @@ export default function LoginPage() {
     setIsLoggingIn(true);
 
     try {
-      const redirectPath = getRedirectPath();
       const result = await signIn("credentials", {
         username: username,
         password: password,
