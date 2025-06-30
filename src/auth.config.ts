@@ -123,7 +123,7 @@ export const authConfig: NextAuthConfig = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.username },
+          where: { email: credentials.username as string },
           include: {
             userRoles: {
               include: {
@@ -138,7 +138,7 @@ export const authConfig: NextAuthConfig = {
         }
 
         const isPasswordValid = await bcrypt.compare(
-          credentials.password,
+          credentials.password as string,
           user.password
         );
 
