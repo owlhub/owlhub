@@ -55,7 +55,11 @@ export async function findIAMFindings(credentials: any, region: string, accountI
     const oldPasswordFindings: any[] = [];
     const mfaDisabledFindings: any[] = [];
     const rootUserAccessKeyUsedFindings: any[] = [];
+    const rootUserMFADisabledFindings: any[] = [];
+    const rootUserHasAccessKeysFindings: any[] = [];
+    const rootUserLoggedInFindings: any[] = [];
     const passwordPolicyFindings: any[] = [];
+    const inactiveConsoleLoginFindings: any[] = [];
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
@@ -196,6 +200,50 @@ export async function findIAMFindings(credentials: any, region: string, accountI
       console.error('Error checking root user access key usage:', rootError);
     }
 
+    // Check if root user has MFA enabled
+    try {
+      const rootUserMFAFinding = await checkRootUserMFADisabled(iamClient, accountId);
+      if (rootUserMFAFinding) {
+        rootUserMFADisabledFindings.push(rootUserMFAFinding);
+        findings.push(rootUserMFAFinding);
+      }
+    } catch (rootMFAError) {
+      console.error('Error checking root user MFA status:', rootMFAError);
+    }
+
+    // Check if root user has access keys
+    try {
+      const rootUserHasAccessKeysFinding = await checkRootUserHasAccessKeys(iamClient, accountId);
+      if (rootUserHasAccessKeysFinding) {
+        rootUserHasAccessKeysFindings.push(rootUserHasAccessKeysFinding);
+        findings.push(rootUserHasAccessKeysFinding);
+      }
+    } catch (rootAccessKeysError) {
+      console.error('Error checking if root user has access keys:', rootAccessKeysError);
+    }
+
+    // Check if root user has logged in within the last 90 days
+    try {
+      const rootUserLoggedInFinding = await checkRootUserLoggedInWithin90Days(iamClient, ninetyDaysAgo, accountId);
+      if (rootUserLoggedInFinding) {
+        rootUserLoggedInFindings.push(rootUserLoggedInFinding);
+        findings.push(rootUserLoggedInFinding);
+      }
+    } catch (rootLoggedInError) {
+      console.error('Error checking if root user has logged in within the last 90 days:', rootLoggedInError);
+    }
+
+    // Check for IAM users with console logins inactive over 90 days
+    try {
+      const inactiveConsoleLogins = await checkIAMUserConsoleLoginInactive(iamClient, ninetyDaysAgo, accountId);
+      if (inactiveConsoleLogins.length > 0) {
+        inactiveConsoleLoginFindings.push(...inactiveConsoleLogins);
+        findings.push(...inactiveConsoleLogins);
+      }
+    } catch (inactiveConsoleLoginError) {
+      console.error('Error checking for IAM users with console logins inactive over 90 days:', inactiveConsoleLoginError);
+    }
+
     // Check if IAM account password policy exists
     try {
       const passwordPolicyFinding = await checkPasswordPolicyExists(iamClient, accountId);
@@ -251,15 +299,22 @@ export async function findIAMFindings(credentials: any, region: string, accountI
           passwordPolicyFindings.push(symbolsFinding);
           findings.push(symbolsFinding);
         }
+
+        // Check if passwords are required to expire
+        const expirationFinding = await checkPasswordPolicyRequireExpiration(iamClient, accountId);
+        if (expirationFinding) {
+          passwordPolicyFindings.push(expirationFinding);
+          findings.push(expirationFinding);
+        }
       }
     } catch (policyError) {
       console.error('Error checking IAM account password policy:', policyError);
     }
 
-    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys, ${inactiveFindings.length} IAM users with inactive access keys over 90 days, ${oldPasswordFindings.length} IAM users with passwords older than 90 days, ${mfaDisabledFindings.length} IAM users with console access but without MFA enabled, ${rootUserAccessKeyUsedFindings.length} instances of root user access key usage within the last 90 days, and ${passwordPolicyFindings.length} instances of IAM account password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5)`);
+    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys, ${inactiveFindings.length} IAM users with inactive access keys over 90 days, ${oldPasswordFindings.length} IAM users with passwords older than 90 days, ${mfaDisabledFindings.length} IAM users with console access but without MFA enabled, ${inactiveConsoleLoginFindings.length} IAM users with console logins inactive over 90 days, ${rootUserAccessKeyUsedFindings.length} instances of root user access key usage within the last 90 days, ${rootUserMFADisabledFindings.length} instances of root user without MFA enabled, ${rootUserHasAccessKeysFindings.length} instances of root user with access keys, ${rootUserLoggedInFindings.length} instances of root user logged in within the last 90 days, and ${passwordPolicyFindings.length} instances of IAM account password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5)`);
     return findings;
   } catch (error) {
-    console.error('Error finding IAM users with old or inactive access keys, old passwords, without MFA, root user access key usage, or checking password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5):', error);
+    console.error('Error finding IAM users with old or inactive access keys, old passwords, without MFA, console logins inactive over 90 days, root user access key usage, root user without MFA, root user with access keys, root user logged in within the last 90 days, or checking password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5):', error);
     return [];
   }
 }
@@ -767,6 +822,357 @@ async function checkPasswordPolicyRequireSymbols(iamClient: IAMClient, accountId
     // For other errors, log and rethrow
     console.error('Error checking password policy symbols requirement:', error);
     throw error;
+  }
+}
+
+/**
+ * Check if the IAM account password policy requires passwords to expire
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the password policy doesn't require passwords to expire, null otherwise
+ */
+async function checkPasswordPolicyRequireExpiration(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Try to get the account password policy
+    const command = new GetAccountPasswordPolicyCommand({});
+    const response: GetAccountPasswordPolicyCommandOutput = await iamClient.send(command);
+
+    // Check if the password policy requires passwords to expire
+    if (response.PasswordPolicy && !response.PasswordPolicy.ExpirePasswords) {
+      return {
+        id: 'aws_iam_account_password_policy_doesnt_require_passwords_to_expire',
+        key: `aws-iam-account-password-policy-doesnt-require-passwords-to-expire-${accountId}`,
+        title: 'IAM Account Password Policy Doesn\'t Require Passwords to Expire',
+        description: 'The AWS account\'s IAM password policy does not require passwords to expire, which increases the risk of unauthorized access if passwords are compromised.',
+        additionalInfo: {
+          passwordExpirationRequired: false,
+          accountId: accountId
+        }
+      };
+    }
+
+    // If we get here, the password policy requires passwords to expire
+    return null;
+  } catch (error: any) {
+    // If the error is NoSuchEntity, it means the password policy doesn't exist
+    // This is already handled by checkPasswordPolicyExists, so we can just return null
+    if (error.name === 'NoSuchEntityException') {
+      return null;
+    }
+
+    // For other errors, log and rethrow
+    console.error('Error checking password policy require expiration:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the root user has MFA enabled
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the root user does not have MFA enabled, null otherwise
+ */
+async function checkRootUserMFADisabled(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Get the credential report
+    const reportCsv = await getCredentialReport(iamClient);
+
+    // Parse the CSV report
+    const lines = reportCsv.split('\n');
+    if (lines.length < 2) {
+      console.log('Credential report is empty or malformed');
+      return null;
+    }
+
+    // Get the header line and find the indices of the relevant columns
+    const headers = lines[0].split(',');
+    const userNameIndex = headers.indexOf('user');
+    const mfaActiveIndex = headers.indexOf('mfa_active');
+
+    if (userNameIndex === -1 || mfaActiveIndex === -1) {
+      console.log('Credential report is missing required columns');
+      return null;
+    }
+
+    // Find the root user line
+    const rootUserLine = lines.find(line => {
+      const columns = line.split(',');
+      return columns[userNameIndex] === '<root_account>';
+    });
+
+    if (!rootUserLine) {
+      console.log('Root user not found in credential report');
+      return null;
+    }
+
+    // Parse the root user line
+    const rootUserColumns = rootUserLine.split(',');
+    const mfaActive = rootUserColumns[mfaActiveIndex].toLowerCase();
+
+    // Check if MFA is not active for the root user
+    if (mfaActive === 'false') {
+      return {
+        id: 'aws_root_user_mfa_disabled',
+        key: `aws-root-user-mfa-disabled-${accountId}`,
+        title: 'AWS Root User MFA Disabled',
+        description: 'The AWS root user does not have MFA enabled, which is a critical security risk as it increases the vulnerability to unauthorized access to the AWS account.',
+        additionalInfo: {
+          mfaActive: false,
+          ...(accountId && { accountId })
+        }
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error checking root user MFA status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the root user has access keys
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns A finding object if the root user has access keys, null otherwise
+ */
+async function checkRootUserHasAccessKeys(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Get the credential report
+    const reportCsv = await getCredentialReport(iamClient);
+
+    // Parse the CSV report
+    const lines = reportCsv.split('\n');
+    if (lines.length < 2) {
+      console.log('Credential report is empty or malformed');
+      return null;
+    }
+
+    // Get the header line and find the indices of the relevant columns
+    const headers = lines[0].split(',');
+    const userNameIndex = headers.indexOf('user');
+    const accessKey1ActiveIndex = headers.indexOf('access_key_1_active');
+    const accessKey2ActiveIndex = headers.indexOf('access_key_2_active');
+
+    if (userNameIndex === -1 || accessKey1ActiveIndex === -1 || accessKey2ActiveIndex === -1) {
+      console.log('Credential report is missing required columns');
+      return null;
+    }
+
+    // Find the root user line
+    const rootUserLine = lines.find(line => {
+      const columns = line.split(',');
+      return columns[userNameIndex] === '<root_account>';
+    });
+
+    if (!rootUserLine) {
+      console.log('Root user not found in credential report');
+      return null;
+    }
+
+    // Parse the root user line
+    const rootUserColumns = rootUserLine.split(',');
+    const accessKey1Active = rootUserColumns[accessKey1ActiveIndex].toLowerCase();
+    const accessKey2Active = rootUserColumns[accessKey2ActiveIndex].toLowerCase();
+
+    // Check if either access key is active for the root user
+    if (accessKey1Active === 'true' || accessKey2Active === 'true') {
+      return {
+        id: 'aws_root_user_has_access_keys',
+        key: `aws-root-user-has-access-keys-${accountId}`,
+        title: 'AWS Root User has Access Keys',
+        description: 'The AWS root user has access keys, which is a critical security risk as these keys provide programmatic access with full permissions and should not be used for day-to-day operations.',
+        additionalInfo: {
+          accessKey1Active: accessKey1Active === 'true',
+          accessKey2Active: accessKey2Active === 'true',
+          ...(accountId && { accountId })
+        }
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error checking if root user has access keys:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if the root user has logged in within the last 90 days
+ * @param iamClient - IAM client
+ * @param ninetyDaysAgo - Date object representing 90 days ago
+ * @param accountId - AWS account ID
+ * @returns A finding object if the root user has logged in within the last 90 days, null otherwise
+ */
+async function checkRootUserLoggedInWithin90Days(iamClient: IAMClient, ninetyDaysAgo: Date, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Get the credential report
+    const reportCsv = await getCredentialReport(iamClient);
+
+    // Parse the CSV report
+    const lines = reportCsv.split('\n');
+    if (lines.length < 2) {
+      console.log('Credential report is empty or malformed');
+      return null;
+    }
+
+    // Get the header line and find the indices of the relevant columns
+    const headers = lines[0].split(',');
+    const userNameIndex = headers.indexOf('user');
+    const passwordLastUsedIndex = headers.indexOf('password_last_used');
+    const consoleLastUsedIndex = headers.indexOf('console_last_used');
+
+    if (userNameIndex === -1 || (passwordLastUsedIndex === -1 && consoleLastUsedIndex === -1)) {
+      console.log('Credential report is missing required columns');
+      return null;
+    }
+
+    // Find the root user line
+    const rootUserLine = lines.find(line => {
+      const columns = line.split(',');
+      return columns[userNameIndex] === '<root_account>';
+    });
+
+    if (!rootUserLine) {
+      console.log('Root user not found in credential report');
+      return null;
+    }
+
+    // Parse the root user line
+    const rootUserColumns = rootUserLine.split(',');
+
+    // Check if the root user has logged in within the last 90 days
+    // First check password_last_used, then fall back to console_last_used if available
+    let lastLoginDate = null;
+    let loginType = null;
+
+    if (passwordLastUsedIndex !== -1) {
+      const passwordLastUsed = rootUserColumns[passwordLastUsedIndex];
+      if (passwordLastUsed && passwordLastUsed !== 'N/A' && passwordLastUsed !== 'no_information' && passwordLastUsed !== 'not_supported') {
+        lastLoginDate = new Date(passwordLastUsed);
+        loginType = 'password';
+      }
+    }
+
+    // If we didn't find a valid password_last_used date, check console_last_used
+    if (!lastLoginDate && consoleLastUsedIndex !== -1) {
+      const consoleLastUsed = rootUserColumns[consoleLastUsedIndex];
+      if (consoleLastUsed && consoleLastUsed !== 'N/A' && consoleLastUsed !== 'no_information' && consoleLastUsed !== 'not_supported') {
+        lastLoginDate = new Date(consoleLastUsed);
+        loginType = 'console';
+      }
+    }
+
+    // If we found a valid login date and it's within the last 90 days, create a finding
+    if (lastLoginDate && lastLoginDate > ninetyDaysAgo) {
+      const daysAgo = Math.floor((new Date().getTime() - lastLoginDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      return {
+        id: 'aws_root_user_logged_in_90_days',
+        key: `aws-root-user-logged-in-90-days-${accountId}`,
+        title: 'AWS Root User Logged in within Last 90 Days',
+        description: `The AWS root user account has been logged in within the last 90 days, which is a security risk as the root user should only be used for account and service management tasks that absolutely require root user access.`,
+        additionalInfo: {
+          loginType: loginType,
+          lastLoginDate: lastLoginDate.toISOString(),
+          daysAgo: daysAgo,
+          ...(accountId && { accountId })
+        }
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error checking if root user has logged in within the last 90 days:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check for IAM users with console logins inactive over 90 days
+ * @param iamClient - IAM client
+ * @param ninetyDaysAgo - Date object representing 90 days ago
+ * @param accountId - AWS account ID
+ * @returns Array of findings for IAM users with console logins inactive over 90 days
+ */
+async function checkIAMUserConsoleLoginInactive(iamClient: IAMClient, ninetyDaysAgo: Date, accountId: string | null = null): Promise<any[]> {
+  try {
+    // Get the credential report
+    const reportCsv = await getCredentialReport(iamClient);
+    const findings: any[] = [];
+
+    // Parse the CSV report
+    const lines = reportCsv.split('\n');
+    if (lines.length < 2) {
+      console.log('Credential report is empty or malformed');
+      return findings;
+    }
+
+    // Get the header line and find the indices of the relevant columns
+    const headers = lines[0].split(',');
+    const userNameIndex = headers.indexOf('user');
+    const passwordEnabledIndex = headers.indexOf('password_enabled');
+    const passwordLastUsedIndex = headers.indexOf('password_last_used');
+
+    if (userNameIndex === -1 || passwordEnabledIndex === -1 || passwordLastUsedIndex === -1) {
+      console.log('Credential report is missing required columns');
+      return findings;
+    }
+
+    // Check each user in the credential report
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim()) continue; // Skip empty lines
+
+      const columns = line.split(',');
+      const userName = columns[userNameIndex];
+
+      // Skip the root user
+      if (userName === '<root_account>') continue;
+
+      const passwordEnabled = columns[passwordEnabledIndex].toLowerCase() === 'true';
+      const passwordLastUsed = columns[passwordLastUsedIndex];
+
+      // Check if the user has console access (password enabled) but hasn't logged in for over 90 days
+      if (passwordEnabled) {
+        let isInactive = false;
+        let lastLoginDate = null;
+        let daysInactive = 0;
+
+        if (passwordLastUsed === 'no_information' || passwordLastUsed === 'N/A' || passwordLastUsed === 'not_supported') {
+          // If there's no login information, consider it inactive
+          isInactive = true;
+          daysInactive = 999; // Use a high number to indicate never used
+        } else {
+          lastLoginDate = new Date(passwordLastUsed);
+          isInactive = lastLoginDate < ninetyDaysAgo;
+          if (isInactive) {
+            daysInactive = Math.floor((new Date().getTime() - lastLoginDate.getTime()) / (1000 * 60 * 60 * 24));
+          }
+        }
+
+        if (isInactive) {
+          const finding = {
+            id: 'aws_iam_user_console_login_inactive_90_days',
+            key: `aws-iam-user-console-login-inactive-90-days-${userName}`,
+            title: `IAM User (${userName}) with Inactive Console Login`,
+            description: `IAM user (${userName}) has console access but has not logged in for over 90 days, indicating a potentially unused account that should be disabled or removed.`,
+            additionalInfo: {
+              userName: userName,
+              lastLoginDate: lastLoginDate ? lastLoginDate.toISOString() : 'Never',
+              daysInactive: daysInactive,
+              ...(accountId && { accountId })
+            }
+          };
+          findings.push(finding);
+        }
+      }
+    }
+
+    return findings;
+  } catch (error) {
+    console.error('Error checking for IAM users with console logins inactive over 90 days:', error);
+    return [];
   }
 }
 

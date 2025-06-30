@@ -257,41 +257,6 @@ async function main() {
         "type": "posture"
       },
       {
-        "key": "aws_iam_access_key_inactive_90_days",
-        "name": "IAM Access Key Inactive over 90 Days",
-        "severity": "medium",
-        "description": "IAM user access keys that have been inactive for over 90 days and should be removed to reduce the attack surface.",
-        "type": "posture"
-      },
-      {
-        "key": "aws_iam_access_key_not_rotated_90_days",
-        "name": "IAM Access Key Not Rotated over 90 Days",
-        "severity": "medium",
-        "description": "IAM user access keys that have not been rotated in over 90 days, increasing the risk of unauthorized access.",
-        "type": "posture"
-      },
-      {
-        "key": "aws_iam_user_password_older_90_days",
-        "name": "IAM User Password Older Than 90 Days",
-        "severity": "medium",
-        "description": "IAM users with passwords that have not been rotated in over 90 days, increasing the risk of unauthorized access.",
-        "type": "posture"
-      },
-      {
-        "key": "aws_iam_user_mfa_disabled",
-        "name": "IAM User MFA Disabled",
-        "severity": "medium",
-        "description": "IAM users with console access that do not have MFA enabled, increasing the risk of unauthorized access if passwords are compromised.",
-        "type": "posture"
-      },
-      {
-        "key": "aws_root_user_access_key_used_90_days",
-        "name": "AWS Root User Access Key Used within Last 90 Days",
-        "severity": "critical",
-        "description": "AWS root user access keys have been used within the last 90 days, which is a security risk as the root user should only be used for account and service management tasks that require root user access.",
-        "type": "posture"
-      },
-      {
         "key": "aws_iam_account_password_policy_does_not_exist",
         "name": "IAM Account Password Policy Does Not Exist",
         "severity": "critical",
@@ -345,6 +310,76 @@ async function main() {
         "name": "IAM Account Password Policy Doesn't Require Symbols",
         "severity": "high",
         "description": "The AWS account's IAM password policy does not require symbols, which reduces password complexity and increases the risk of password-based attacks.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_account_password_policy_doesnt_require_passwords_to_expire",
+        "name": "IAM Account Password Policy Doesn't Require Passwords to Expire",
+        "severity": "high",
+        "description": "The AWS account's IAM password policy does not require passwords to expire, which increases the risk of unauthorized access if passwords are compromised.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_root_user_access_key_used_90_days",
+        "name": "AWS Root User Access Key Used within Last 90 Days",
+        "severity": "critical",
+        "description": "AWS root user access keys have been used within the last 90 days, which is a security risk as the root user should only be used for account and service management tasks that require root user access.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_root_user_mfa_disabled",
+        "name": "AWS Root User MFA Disabled",
+        "severity": "critical",
+        "description": "The AWS root user does not have MFA enabled, which is a critical security risk as it increases the vulnerability to unauthorized access to the AWS account.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_root_user_has_access_keys",
+        "name": "AWS Root User has Access Keys",
+        "severity": "critical",
+        "description": "The AWS root user has access keys, which is a critical security risk as these keys provide programmatic access with full permissions and should not be used for day-to-day operations.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_root_user_logged_in_90_days",
+        "name": "AWS Root User Logged in within Last 90 Days",
+        "severity": "critical",
+        "description": "The AWS root user account has been logged in within the last 90 days, which is a security risk as the root user should only be used for account and service management tasks that absolutely require root user access.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_access_key_inactive_90_days",
+        "name": "IAM Access Key Inactive over 90 Days",
+        "severity": "medium",
+        "description": "IAM user access keys that have been inactive for over 90 days and should be removed to reduce the attack surface.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_access_key_not_rotated_90_days",
+        "name": "IAM Access Key Not Rotated over 90 Days",
+        "severity": "medium",
+        "description": "IAM user access keys that have not been rotated in over 90 days, increasing the risk of unauthorized access.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_user_password_older_90_days",
+        "name": "IAM User Password Older Than 90 Days",
+        "severity": "medium",
+        "description": "IAM users with passwords that have not been rotated in over 90 days, increasing the risk of unauthorized access.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_user_mfa_disabled",
+        "name": "IAM User MFA Disabled",
+        "severity": "medium",
+        "description": "IAM users with console access that do not have MFA enabled, increasing the risk of unauthorized access if passwords are compromised.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_iam_user_console_login_inactive_90_days",
+        "name": "IAM User Console Login Inactive Over 90 Days",
+        "severity": "medium",
+        "description": "IAM users with console access that have not logged in for over 90 days, indicating potentially unused accounts that should be disabled or removed.",
         "type": "posture"
       },
       // {

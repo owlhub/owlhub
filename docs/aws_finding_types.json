@@ -394,81 +394,8 @@
       "severity": "Critical"
     },
     {
-      "id": "82b50a4d-8582-4766-9bad-f41b441bf336",
-      "name": "IAM User Console Login Inactive Over 90 Days",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
-    },
-
-    {
       "id": "8de72710-b23a-4d94-915e-26ef7249d21e",
       "name": "IAM Role with Cross-Account Access",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "High"
-    },
-    {
-      "id": "9d23c002-aece-42b5-b082-2b51fab8d7c1",
-      "name": "AWS Root User Access Key Used within Last 90 Days",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Critical"
-    },
-    {
-      "id": "e9959d6e-edc9-4ea3-9113-3c30b02a811e",
-      "name": "AWS Root User Logged in within Last 90 Days",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Critical"
-    },
-    {
-      "id": "1b788d31-ed56-4008-b136-6993f38e4d1c",
-      "name": "AWS Root User has Access Keys",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Critical"
-    },
-    {
-      "id": "19abe0ee-e8bd-4e3b-9ee9-ea5c64fe769c",
-      "name": "AWS Root User MFA Disabled",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Critical"
-    },
-    {
-      "id": "5be79a96-4570-45cf-8ba3-1abe62802d16",
-      "name": "IAM Account Password Policy Doesn't Require Passwords to Expire",
       "category": {
         "product": "SaaS",
         "type": "Posture",
