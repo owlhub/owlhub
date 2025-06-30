@@ -491,46 +491,6 @@ OwlHub is continuously evolving with new features and improvements planned for f
 
 ## Deployment
 
-### CI/CD Integration
-
-The project includes a GitHub Actions workflow file (`.github/workflows/check-migrations.yml`) that demonstrates how to use the `migrate:check` script in a CI/CD pipeline:
-
-```yaml
-name: Check Database Migrations
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
-
-jobs:
-  check-migrations:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
-        cache: 'yarn'
-
-    - name: Install dependencies
-      run: yarn install --frozen-lockfile
-
-    - name: Generate Prisma Client
-      run: npx prisma generate
-
-    - name: Check migrations
-      run: yarn migrate:check
-      # This will fail the workflow if there are pending migrations
-```
-
-This workflow runs on pushes to main/master branches, pull requests to main/master branches, and can be triggered manually. It checks if all migrations have been deployed and fails the workflow if there are pending migrations.
-
 ### Docker Deployment
 
 The application includes a Dockerfile for containerized deployment. The Docker image is automatically built and pushed to GitHub Container Registry (GHCR) using GitHub Actions.
@@ -540,7 +500,7 @@ The application includes a Dockerfile for containerized deployment. The Docker i
 You can pull the latest Docker image from GHCR:
 
 ```bash
-docker pull ghcr.io/[your-github-username]/owlhub:latest
+docker pull ghcr.io/owlhub/owlhub:latest
 ```
 
 To run the container:
@@ -553,7 +513,7 @@ docker run -p 3000:3000 \
   -e OIDC_ISSUER="https://your-oidc-provider.com" \
   -e OIDC_CLIENT_ID="your-client-id" \
   -e OIDC_CLIENT_SECRET="your-client-secret" \
-  ghcr.io/[your-github-username]/owlhub:latest
+  ghcr.io/owlhub/owlhub:latest
 ```
 
 ### Deploying to Vercel
