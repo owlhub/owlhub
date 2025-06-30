@@ -291,6 +291,13 @@ async function main() {
         "description": "AWS root user access keys have been used within the last 90 days, which is a security risk as the root user should only be used for account and service management tasks that require root user access.",
         "type": "posture"
       },
+      {
+        "key": "aws_iam_account_password_policy_does_not_exist",
+        "name": "IAM Account Password Policy Does Not Exist",
+        "severity": "critical",
+        "description": "The AWS account does not have an IAM password policy configured. This is a critical security risk as it allows users to set weak passwords, increasing the risk of unauthorized access.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_public_s3_bucket",
       //   "name": "Public S3 Bucket",

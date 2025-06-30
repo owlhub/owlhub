@@ -14,7 +14,7 @@ import { EC2Client, DescribeRegionsCommand } from '@aws-sdk/client-ec2';
  * @param region - AWS region (used to initialize EC2 client for listing regions)
  * @returns Array of security findings
  */
-export async function findACMFindings(credentials: any, region: string) {
+export async function findACMFindings(credentials: any, region: string, accountId: string | null = null) {
   try {
     console.log('Finding ACM certificate issues (expired, expiring within 30 days, or having domain wildcards) in all AWS regions');
 
@@ -70,7 +70,8 @@ export async function findACMFindings(credentials: any, region: string) {
               keyAlgorithm: certDetail.KeyAlgorithm || 'Unknown',
               inUseBy: certDetail.InUseBy || [],
               type: certDetail.Type || 'Unknown',
-              renewalEligibility: certDetail.RenewalEligibility || 'Unknown'
+              renewalEligibility: certDetail.RenewalEligibility || 'Unknown',
+              ...(accountId && { accountId })
             }
           };
 
@@ -98,7 +99,8 @@ export async function findACMFindings(credentials: any, region: string) {
               renewalEligibility: certDetail.RenewalEligibility || 'Unknown',
               daysUntilExpiry: certDetail.NotAfter ? 
                 Math.ceil((new Date(certDetail.NotAfter).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 
-                'Unknown'
+                'Unknown',
+              ...(accountId && { accountId })
             }
           };
 
@@ -125,7 +127,8 @@ export async function findACMFindings(credentials: any, region: string) {
               inUseBy: certDetail.InUseBy || [],
               type: certDetail.Type || 'Unknown',
               renewalEligibility: certDetail.RenewalEligibility || 'Unknown',
-              subjectAlternativeNames: certDetail.SubjectAlternativeNames || []
+              subjectAlternativeNames: certDetail.SubjectAlternativeNames || [],
+              ...(accountId && { accountId })
             }
           };
 

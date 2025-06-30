@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
+import { AssumeRoleCommand, STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { findIAMFindings } from './findIAMFindings';
 import { findACMFindings } from './findACMFindings';
 import {
@@ -45,16 +45,37 @@ export async function processAWSIntegration(integration: any, appId: string, pri
 
     console.log(`Successfully assumed role for integration: ${integration.name}`);
 
+    // Get the AWS account ID
+    const stsClient = new STSClient([{
+      region,
+      credentials: {
+        accessKeyId: credentials.accessKeyId,
+        secretAccessKey: credentials.secretAccessKey,
+        sessionToken: credentials.sessionToken
+      }
+    }]);
+
+    let accountId = null;
+    try {
+      const identityCommand = new GetCallerIdentityCommand({});
+      const identityResponse = await stsClient.send(identityCommand);
+      accountId = identityResponse.Account;
+      console.log(`Got AWS account ID: ${accountId}`);
+    } catch (error) {
+      console.error('Error getting AWS account ID:', error);
+    }
+
     // Find IAM users with access keys not rotated for more than 90 days, inactive access keys, passwords older than 90 days, console users without MFA enabled, and root user access key usage within the last 90 days
-    const iamFindings = await findIAMFindings(credentials, region);
+    const iamFindings = await findIAMFindings(credentials, region, accountId);
     console.log(`Found ${iamFindings.length} IAM findings in AWS`);
 
     // Find ACM certificate issues (expired or expiring within 30 days) in all regions
-    const acmFindings = await findACMFindings(credentials, region);
+    const acmFindings = await findACMFindings(credentials, region, accountId);
     console.log(`Found ${acmFindings.length} ACM findings in AWS`);
 
     // Combine all findings
     const foundAppFindings = [...iamFindings, ...acmFindings];
+
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);
 
     // Create a new array with updated IDs to ensure changes persist

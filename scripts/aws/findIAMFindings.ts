@@ -11,22 +11,27 @@ import {
   ListMFADevicesCommand,
   ListMFADevicesCommandOutput,
   GenerateCredentialReportCommand,
-  GetCredentialReportCommand
+  GetCredentialReportCommand,
+  GetAccountPasswordPolicyCommand,
+  GetAccountPasswordPolicyCommandOutput
 } from '@aws-sdk/client-iam';
+import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 
 /**
  * Find IAM users with access keys not rotated for more than 90 days,
  * IAM users with access keys that are inactive for over 90 days,
  * IAM users with passwords older than 90 days,
  * IAM users with console access but without MFA enabled,
- * and AWS root user access key usage within the last 90 days
+ * AWS root user access key usage within the last 90 days,
+ * and check if IAM account password policy exists
  * @param credentials - AWS credentials
  * @param region - AWS region
+ * @param accountId
  * @returns Array of security findings
  */
-export async function findIAMFindings(credentials: any, region: string) {
+export async function findIAMFindings(credentials: any, region: string, accountId: string | null = null) {
   try {
-    console.log('Finding IAM users with access keys not rotated for more than 90 days, inactive access keys over 90 days, passwords older than 90 days, console users without MFA enabled, and root user access key usage within the last 90 days');
+    console.log('Finding IAM users with access keys not rotated for more than 90 days, inactive access keys over 90 days, passwords older than 90 days, console users without MFA enabled, root user access key usage within the last 90 days, and checking if IAM account password policy exists');
 
     const iamClient = new IAMClient({
       region,
@@ -47,6 +52,7 @@ export async function findIAMFindings(credentials: any, region: string) {
     const oldPasswordFindings: any[] = [];
     const mfaDisabledFindings: any[] = [];
     const rootUserAccessKeyUsedFindings: any[] = [];
+    const passwordPolicyFindings: any[] = [];
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
@@ -72,7 +78,8 @@ export async function findIAMFindings(credentials: any, region: string) {
             additionalInfo: {
               userName: user.UserName,
               passwordLastUsed: passwordLastUsed.toISOString(),
-              ageInDays: Math.floor((new Date().getTime() - passwordLastUsed.getTime()) / (1000 * 60 * 60 * 24))
+              ageInDays: Math.floor((new Date().getTime() - passwordLastUsed.getTime()) / (1000 * 60 * 60 * 24)),
+              ...(accountId && { accountId })
             }
           };
 
@@ -92,7 +99,8 @@ export async function findIAMFindings(credentials: any, region: string) {
             description: `IAM user (${user.UserName}) has console access but does not have MFA enabled, increasing the risk of unauthorized access if the password is compromised.`,
             additionalInfo: {
               userName: user.UserName,
-              passwordLastUsed: passwordLastUsed.toISOString()
+              passwordLastUsed: passwordLastUsed.toISOString(),
+              ...(accountId && { accountId })
             }
           };
 
@@ -130,7 +138,8 @@ export async function findIAMFindings(credentials: any, region: string) {
               lastUsed: lastUsedInfo?.LastUsedDate ? new Date(lastUsedInfo.LastUsedDate).toISOString() : 'Never',
               lastUsedService: lastUsedInfo?.ServiceName || 'N/A',
               lastUsedRegion: lastUsedInfo?.Region || 'N/A',
-              ageInDays: Math.floor((new Date().getTime() - createDate.getTime()) / (1000 * 60 * 60 * 24))
+              ageInDays: Math.floor((new Date().getTime() - createDate.getTime()) / (1000 * 60 * 60 * 24)),
+              ...(accountId && { accountId })
             }
           };
 
@@ -161,7 +170,8 @@ export async function findIAMFindings(credentials: any, region: string) {
                 ageInDays: Math.floor((new Date().getTime() - createDate.getTime()) / (1000 * 60 * 60 * 24)),
                 inactiveDays: lastUsedDate ? 
                   Math.floor((new Date().getTime() - lastUsedDate.getTime()) / (1000 * 60 * 60 * 24)) : 
-                  Math.floor((new Date().getTime() - createDate.getTime()) / (1000 * 60 * 60 * 24))
+                  Math.floor((new Date().getTime() - createDate.getTime()) / (1000 * 60 * 60 * 24)),
+                ...(accountId && { accountId })
               }
             };
 
@@ -174,7 +184,7 @@ export async function findIAMFindings(credentials: any, region: string) {
 
     // Check for root user access key usage within the last 90 days
     try {
-      const rootUserFindings = await checkRootUserAccessKeyUsage(iamClient, ninetyDaysAgo);
+      const rootUserFindings = await checkRootUserAccessKeyUsage(iamClient, ninetyDaysAgo, accountId);
       if (rootUserFindings) {
         rootUserAccessKeyUsedFindings.push(rootUserFindings);
         findings.push(rootUserFindings);
@@ -183,10 +193,21 @@ export async function findIAMFindings(credentials: any, region: string) {
       console.error('Error checking root user access key usage:', rootError);
     }
 
-    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys, ${inactiveFindings.length} IAM users with inactive access keys over 90 days, ${oldPasswordFindings.length} IAM users with passwords older than 90 days, ${mfaDisabledFindings.length} IAM users with console access but without MFA enabled, and ${rootUserAccessKeyUsedFindings.length} instances of root user access key usage within the last 90 days`);
+    // Check if IAM account password policy exists
+    try {
+      const passwordPolicyFinding = await checkPasswordPolicyExists(iamClient, accountId);
+      if (passwordPolicyFinding) {
+        passwordPolicyFindings.push(passwordPolicyFinding);
+        findings.push(passwordPolicyFinding);
+      }
+    } catch (policyError) {
+      console.error('Error checking IAM account password policy:', policyError);
+    }
+
+    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys, ${inactiveFindings.length} IAM users with inactive access keys over 90 days, ${oldPasswordFindings.length} IAM users with passwords older than 90 days, ${mfaDisabledFindings.length} IAM users with console access but without MFA enabled, ${rootUserAccessKeyUsedFindings.length} instances of root user access key usage within the last 90 days, and ${passwordPolicyFindings.length} instances of missing IAM account password policy`);
     return findings;
   } catch (error) {
-    console.error('Error finding IAM users with old or inactive access keys, old passwords, without MFA, or root user access key usage:', error);
+    console.error('Error finding IAM users with old or inactive access keys, old passwords, without MFA, root user access key usage, or checking password policy:', error);
     return [];
   }
 }
@@ -341,12 +362,46 @@ async function getCredentialReport(iamClient: IAMClient): Promise<string> {
 }
 
 /**
+ * Check if an IAM account password policy exists
+ * @param iamClient - IAM client
+ * @returns A finding object if the password policy doesn't exist, null otherwise
+ */
+async function checkPasswordPolicyExists(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+  try {
+    // Try to get the account password policy
+    const command = new GetAccountPasswordPolicyCommand({});
+    await iamClient.send(command);
+
+    // If we get here, the password policy exists
+    return null;
+  } catch (error: any) {
+    // If the error is NoSuchEntity, it means the password policy doesn't exist
+    if (error.name === 'NoSuchEntityException') {
+      return {
+        id: 'aws_iam_account_password_policy_does_not_exist',
+        key: `aws-iam-account-password-policy-does-not-exist-${accountId}`,
+        title: 'IAM Account Password Policy Does Not Exist',
+        description: 'The AWS account does not have an IAM password policy configured. This is a critical security risk as it allows users to set weak passwords, increasing the risk of unauthorized access.',
+        additionalInfo: {
+          recommendation: 'Configure an IAM password policy with strong requirements including minimum length, complexity, and rotation periods.',
+          accountId: accountId
+        }
+      };
+    }
+
+    // For other errors, log and rethrow
+    console.error('Error checking password policy:', error);
+    throw error;
+  }
+}
+
+/**
  * Check if the root user has access keys that have been used within the last 90 days
  * @param iamClient - IAM client
  * @param ninetyDaysAgo - Date object representing 90 days ago
  * @returns A finding object if the root user has access keys that have been used within the last 90 days, null otherwise
  */
-async function checkRootUserAccessKeyUsage(iamClient: IAMClient, ninetyDaysAgo: Date): Promise<any | null> {
+async function checkRootUserAccessKeyUsage(iamClient: IAMClient, ninetyDaysAgo: Date, accountId: string | null = null): Promise<any | null> {
   try {
     // Get the credential report
     const reportCsv = await getCredentialReport(iamClient);
@@ -417,7 +472,8 @@ async function checkRootUserAccessKeyUsage(iamClient: IAMClient, ninetyDaysAgo: 
         additionalInfo: {
           keyId: recentlyUsedKey,
           lastUsedDate: lastUsedDate.toISOString(),
-          daysAgo: daysAgo
+          daysAgo: daysAgo,
+          ...(accountId && { accountId })
         }
       };
     }
