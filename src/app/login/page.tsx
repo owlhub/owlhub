@@ -10,6 +10,9 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Store redirect parameter in localStorage when present
   useEffect(() => {
@@ -34,8 +37,38 @@ export default function LoginPage() {
     }
   }, [session, router]);
 
-  // We removed auto-login functionality as per requirements
-  // Now login only happens when the user clicks the button
+  // Get the redirect path from localStorage if it exists
+  const getRedirectPath = () => {
+    let redirectPath = '/';
+    if (typeof window !== 'undefined') {
+      redirectPath = localStorage.getItem('loginRedirectPath') || '/';
+    }
+    return redirectPath;
+  };
+
+  const handleCredentialsLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+
+    try {
+      const redirectPath = getRedirectPath();
+      const result = await signIn("credentials", {
+        username: username,
+        password: password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid username or password. Please try again.");
+        setIsLoggingIn(false);
+      }
+      // No need to redirect here as the session effect will handle it
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Failed to sign in. Please try again.");
+      setIsLoggingIn(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-24">
@@ -65,22 +98,56 @@ export default function LoginPage() {
       ) : (
         <>
           <h1 className="text-4xl font-bold mb-8">Welcome to OwlHub</h1>
-          <p className="text-lg mb-8">
+
+          {/* Username/Password Login Form */}
+          <div className="w-full max-w-md mb-8 p-6 bg-white bg-gray-800 rounded-lg shadow-md">
+            <h2 className="text-2xl font-semibold mb-6 text-center">Sign in with Username</h2>
+            <form onSubmit={handleCredentialsLogin} className="space-y-4">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium mb-1">
+                  Username
+                </label>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium mb-1">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              >
+                {isLoggingIn ? "Signing in..." : "Sign in"}
+              </button>
+            </form>
+          </div>
+
+          <p className="text-lg mb-4">
             {isRedirecting 
               ? "Redirecting to the authentication provider..." 
-              : "Please click the button below to sign in"}
+              : "Or sign in with your organization account"}
           </p>
           <button
             onClick={() => {
               setIsRedirecting(true);
-              // Get the redirect path from localStorage if it exists
-              let redirectPath = '/';
-
-              if (typeof window !== 'undefined') {
-                redirectPath = localStorage.getItem('loginRedirectPath') || '/';
-                localStorage.removeItem('loginRedirectPath');
-              }
-
+              const redirectPath = getRedirectPath();
               console.log('Redirecting to:', redirectPath);
 
               signIn("oidc", {

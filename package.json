@@ -7,7 +7,6 @@
     "build": "npx prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "make-first-user-super-user": "npx ts-node -P tsconfig.scripts.json scripts/makeFirstUserSuperUser.ts",
     "seed": "npx prisma generate && npx ts-node -P tsconfig.scripts.json prisma/seed/seed.ts",
     "migrate": "yarn migrate:deploy && npx prisma generate && yarn seed",
     "migrate:create": "npx prisma format && npx prisma migrate dev --name",

@@ -1,4 +1,5 @@
 import { PrismaClient, App } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 // Define interfaces for our data structures
 interface ActionData {
@@ -16,7 +17,140 @@ interface AppFindingData {
 
 const prisma = new PrismaClient();
 
+// Function to make the first user a super user if no super user exists
+async function makeFirstUserSuperUser() {
+  try {
+    console.log("Checking if any super user exists...");
+
+    // Check if any user is already marked as a super user
+    const superUserCount = await prisma.user.count({
+      where: {
+        isSuperUser: true
+      }
+    });
+
+    if (superUserCount > 0) {
+      console.log(`Found ${superUserCount} super user(s). No need to make the first user a super user.`);
+      return;
+    }
+
+    console.log("No super user found. Finding the first user...");
+
+    // Find the first user by sorting by createdAt timestamp
+    const firstUser = await prisma.user.findFirst({
+      orderBy: {
+        createdAt: 'asc'
+      }
+    });
+
+    if (!firstUser) {
+      console.error("No users found in the database.");
+      return;
+    }
+
+    console.log(`Found first user: ${firstUser.name || firstUser.email} (${firstUser.id})`);
+
+    // Update the user to be a super user
+    await prisma.user.update({
+      where: { id: firstUser.id },
+      data: { isSuperUser: true }
+    });
+    console.log("Updated the first user to be a super user.");
+
+    // Find or create the Super Admin role
+    let superAdminRole = await prisma.role.findUnique({
+      where: { name: "Super Admin" }
+    });
+
+    if (!superAdminRole) {
+      superAdminRole = await prisma.role.create({
+        data: {
+          name: "Super Admin",
+          description: "Has access to all pages and features"
+        }
+      });
+      console.log("Created the Super Admin role.");
+    } else {
+      console.log("Super Admin role already exists.");
+    }
+
+    // Check if the user already has the Super Admin role
+    const existingUserRole = await prisma.userRole.findFirst({
+      where: {
+        userId: firstUser.id,
+        roleId: superAdminRole.id
+      }
+    });
+
+    if (existingUserRole) {
+      console.log("The first user already has the Super Admin role.");
+    } else {
+      // Assign the Super Admin role to the user
+      await prisma.userRole.create({
+        data: {
+          userId: firstUser.id,
+          roleId: superAdminRole.id
+        }
+      });
+      console.log("Assigned the Super Admin role to the first user.");
+    }
+
+    console.log("makeFirstUserSuperUser operation completed successfully.");
+  } catch (error) {
+    console.error("An error occurred in makeFirstUserSuperUser:", error);
+  }
+}
+
 async function main() {
+  // Check if any users exist
+  const userCount = await prisma.user.count();
+
+  // If no users exist, create a default admin user
+  if (userCount === 0) {
+    console.log('No users found. Creating default admin user...');
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash('admin', 10);
+
+    // Create the admin user
+    const adminUser = await prisma.user.create({
+      data: {
+        name: 'Admin',
+        email: 'admin',
+        password: hashedPassword,
+        isSuperUser: true,
+      },
+    });
+
+    // Check if Super Admin role exists
+    let superAdminRole = await prisma.role.findUnique({
+      where: { name: 'Super Admin' },
+    });
+
+    // Create Super Admin role if it doesn't exist
+    if (!superAdminRole) {
+      superAdminRole = await prisma.role.create({
+        data: {
+          name: 'Super Admin',
+          description: 'Has access to all pages and features',
+        },
+      });
+    }
+
+    // Assign Super Admin role to the admin user
+    await prisma.userRole.create({
+      data: {
+        userId: adminUser.id,
+        roleId: superAdminRole.id,
+      },
+    });
+
+    console.log('Default admin user created successfully.');
+  }
+
+  // Make the first user a super user if no super user exists
+  await makeFirstUserSuperUser();
+
   // Define apps with their configurations
   const appsData = [
     {

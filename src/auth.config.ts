@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
 import { AdapterUser } from "@auth/core/adapters";
+import bcrypt from "bcryptjs";
 
 // Create a custom adapter that extends the PrismaAdapter
 function CustomPrismaAdapter(p: typeof prisma) {
@@ -105,6 +106,53 @@ export const authConfig: NextAuthConfig = {
           name: profile.name ?? profile.preferred_username,
           email: profile.email,
           image: profile.picture,
+        };
+      },
+    },
+    {
+      id: "credentials",
+      name: "Credentials",
+      type: "credentials",
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.username || !credentials?.password) {
+          return null;
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.username },
+          include: {
+            userRoles: {
+              include: {
+                role: true,
+              },
+            },
+          },
+        });
+
+        if (!user || !user.password) {
+          return null;
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          isSuperUser: user.isSuperUser,
+          roles: user.userRoles.map(ur => ur.role),
         };
       },
     },
