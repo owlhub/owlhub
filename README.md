@@ -26,7 +26,46 @@ A [Next.js](https://nextjs.org) application with OIDC authentication, role-based
   - NextAuth.js 5.0.0-beta.4
   - Prisma ORM 5.0.0
 
-### Installation
+### Running with Docker Compose
+
+The easiest way to run the application locally is using Docker Compose, which will automatically set up the database, run migrations, and seed the database.
+
+#### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+
+#### Steps
+
+1. Clone the repository
+2. Start the application using Docker Compose:
+
+```bash
+docker-compose up
+```
+
+This command will:
+- Build the application image
+- Start a PostgreSQL database
+- Run database migrations automatically
+- Seed the database with initial data
+- Start the application server
+
+3. Access the application at [http://localhost:3000](http://localhost:3000)
+
+To stop the application, press `Ctrl+C` in the terminal where Docker Compose is running, or run:
+
+```bash
+docker-compose down
+```
+
+To remove all data volumes and start fresh:
+
+```bash
+docker-compose down -v
+```
+
+### Manual Installation
 
 1. Clone the repository
 2. Install dependencies:

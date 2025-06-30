@@ -25,7 +25,7 @@ export async function fetchGitLabSecurityFindings(gitlabUrl: string, personalAcc
         if (project.visibility == 'public') {
           allSecurityFindings.push({
             id: 'gitlab_public_project',
-            key: `public-repo-${project.id}`,
+            key: `gitlab-public-repo-${project.id}`,
             title: `Repository is public.`,
             description: `${project.name_with_namespace} is public repo`,
             additionalInfo: {
@@ -91,7 +91,7 @@ export async function fetchGitLabSecurityFindings(gitlabUrl: string, personalAcc
               // Create a security finding for unprotected default branch
               const securityFinding = {
                 id: 'gitlab_unprotected_default_branch',
-                key: `unprotected-default-branch-${project.id}`,
+                key: `gitlab-unprotected-default-branch-${project.id}`,
                 title: title,
                 description: description,
                 additionalInfo: {
@@ -131,7 +131,7 @@ export async function fetchGitLabSecurityFindings(gitlabUrl: string, personalAcc
               // Create a security finding for members without expiry
               const securityFinding = {
                 id: 'gitlab_repo_owner_with_expiry',
-                key: `owner-expiry-${project.id}-${member.id}`,
+                key: `gitlab-owner-expiry-${project.id}-${member.id}`,
                 title: `Repo Owner have expiry date on repository`,
                 description: `${member.name} (${member.email || 'No email'}) is owner of ${project.name_with_namespace} have expiry set.`,
                 additionalInfo: {
@@ -169,7 +169,7 @@ export async function fetchGitLabSecurityFindings(gitlabUrl: string, personalAcc
               // Create a security finding for members without expiry
               const securityFinding = {
                 id: 'gitlab_repo_access_without_expiry',
-                key: `no-expiry-${project.id}-${member.id}`,
+                key: `gitlab-no-expiry-${project.id}-${member.id}`,
                 title: `User without expiry date on repository`,
                 description: `${member.name} (${member.email || 'No email'}) does not have expiry on repo ${project.name_with_namespace}`,
                 additionalInfo: {
