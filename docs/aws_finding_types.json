@@ -142,7 +142,6 @@
       "severity": "Critical"
     },
     {
-      "id": "cb61ef18-a498-456c-985c-78a45e19f4fe",
       "name": "AWS: S3 Bucket Without Replication Enabled",
       "category": {
         "product": "Cloud",
@@ -154,7 +153,6 @@
       "severity": "Medium"
     },
     {
-      "id": "95e1284f-a514-4396-bf64-cd003818790c",
       "name": "AWS: S3 Bucket Without Versioning Enabled",
       "category": {
         "product": "Cloud",
@@ -166,7 +164,6 @@
       "severity": "Medium"
     },
     {
-      "id": "9af2594c-3999-49c9-bd3d-2f4b091f99c0",
       "name": "AWS: S3 Bucket Without Object-Level Logging",
       "category": {
         "product": "Cloud",
@@ -178,7 +175,6 @@
       "severity": "Medium"
     },
     {
-      "id": "f108bd28-9870-453f-a439-01818e85bdc7",
       "name": "AWS: S3 Bucket Without MFA Delete Enabled",
       "category": {
         "product": "Cloud",
@@ -190,7 +186,6 @@
       "severity": "High"
     },
     {
-      "id": "2df6f1b8-e41c-4ab5-a466-992ce485a367",
       "name": "AWS: S3 Bucket Without Lifecycle Policies",
       "category": {
         "product": "Cloud",
@@ -202,7 +197,6 @@
       "severity": "Medium"
     },
     {
-      "id": "89366ebe-ca0b-45fc-a9cb-135674e0a49b",
       "name": "AWS: S3 Bucket Without AWS CloudTrail Logging",
       "category": {
         "product": "Cloud",
@@ -214,7 +208,6 @@
       "severity": "Medium"
     },
     {
-      "id": "67d0995d-7b4a-40c5-a43f-7a98d20faac6",
       "name": "AWS: S3 Bucket Without Access Logging",
       "category": {
         "product": "Cloud",
@@ -226,7 +219,6 @@
       "severity": "Medium"
     },
     {
-      "id": "5e2aac4b-d8be-43dc-b324-84fdf63f760e",
       "name": "AWS: S3 Bucket Policy Allows Public Write",
       "category": {
         "product": "Cloud",
@@ -238,7 +230,6 @@
       "severity": "Critical"
     },
     {
-      "id": "f3915412-eef9-47d9-8448-e04462de8ba2",
       "name": "AWS: S3 Bucket Policy Allows Public Read",
       "category": {
         "product": "Cloud",
@@ -250,7 +241,6 @@
       "severity": "High"
     },
     {
-      "id": "f7ae03e3-1303-4404-b6f5-a7f97e52105e",
       "name": "AWS: S3 Bucket Policy Allows Public List",
       "category": {
         "product": "Cloud",
@@ -262,7 +252,6 @@
       "severity": "Medium"
     },
     {
-      "id": "f50ae197-fa0a-4caa-be95-79aed91eed63",
       "name": "AWS: S3 Bucket ACL Allows Public Write",
       "category": {
         "product": "Cloud",
@@ -274,7 +263,6 @@
       "severity": "Critical"
     },
     {
-      "id": "f8c9f979-29f0-4ada-b09e-a149937a55d4",
       "name": "AWS: S3 Bucket ACL Allows Public Read",
       "category": {
         "product": "Cloud",
@@ -286,7 +274,6 @@
       "severity": "High"
     },
     {
-      "id": "3e1d0535-d82f-4ed1-9664-d2c50905db17",
       "name": "S3 Bucket Policy Not Existent",
       "category": {
         "product": "SaaS",
@@ -298,7 +285,7 @@
       "severity": "Low"
     },
     {
-      "id": "0b3227dd-63d3-46bc-97b3-e62d9c11567a",
+
       "name": "S3 Bucket Encryption in Transit Disabled",
       "category": {
         "product": "SaaS",
@@ -310,7 +297,6 @@
       "severity": "Medium"
     },
     {
-      "id": "970d2ca8-e189-42a8-8e86-9f674fcb1aea",
       "name": "S3 Bucket Lifecycle Disabled",
       "category": {
         "product": "SaaS",
@@ -322,7 +308,7 @@
       "severity": "Low"
     },
     {
-      "id": "518697ff-3f7e-463e-acf3-79d106599f0e",
+
       "name": "S3 Bucket MFA Delete Disabled",
       "category": {
         "product": "SaaS",
@@ -334,7 +320,6 @@
       "severity": "Medium"
     },
     {
-      "id": "4e976e0d-b545-4c4a-99c5-a2f5d9a6f3d8",
       "name": "S3 Bucket Versioning Disabled",
       "category": {
         "product": "SaaS",
@@ -346,7 +331,6 @@
       "severity": "Low"
     },
     {
-      "id": "84ba76fa-4703-490e-ab75-1b554993c054",
       "name": "S3 Bucket Access Logging Disabled",
       "category": {
         "product": "SaaS",
@@ -358,7 +342,6 @@
       "severity": "Low"
     },
     {
-      "id": "0ff170dc-be6b-46fa-a1cf-95ca7d067f4b",
       "name": "S3 Bucket Objects Can Be Public",
       "category": {
         "product": "SaaS",
@@ -370,7 +353,6 @@
       "severity": "Medium"
     },
     {
-      "id": "d69ab398-fba8-4e71-bf49-60af48d00cbc",
       "name": "S3 Bucket Server Side Encryption Disabled",
       "category": {
         "product": "SaaS",
@@ -382,7 +364,6 @@
       "severity": "Medium"
     },
     {
-      "id": "6b1276e3-88e8-4150-a4d5-1b8273f11078",
       "name": "S3 Bucket Publicly Accessible",
       "category": {
         "product": "SaaS",
@@ -392,18 +373,6 @@
       "description": "",
       "vendor": "Amazon Web Services",
       "severity": "Critical"
-    },
-    {
-      "id": "8de72710-b23a-4d94-915e-26ef7249d21e",
-      "name": "IAM Role with Cross-Account Access",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "High"
     },
   ]
 }

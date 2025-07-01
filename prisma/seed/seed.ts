@@ -524,6 +524,13 @@ async function main() {
         "description": "IAM users with console access that have not logged in for over 90 days, indicating potentially unused accounts that should be disabled or removed.",
         "type": "posture"
       },
+      {
+        "key": "aws_iam_role_cross_account_access",
+        "name": "IAM Role with Cross-Account Access",
+        "severity": "high",
+        "description": "IAM roles that allow cross-account access, which increases the risk surface and should be reviewed to ensure it's necessary and secure.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_public_s3_bucket",
       //   "name": "Public S3 Bucket",

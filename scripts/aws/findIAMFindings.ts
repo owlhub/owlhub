@@ -13,9 +13,12 @@ import {
   GenerateCredentialReportCommand,
   GetCredentialReportCommand,
   GetAccountPasswordPolicyCommand,
-  GetAccountPasswordPolicyCommandOutput
+  GetAccountPasswordPolicyCommandOutput,
+  ListRolesCommand,
+  ListRolesCommandOutput,
+  GetRoleCommand,
+  GetRoleCommandOutput
 } from '@aws-sdk/client-iam';
-import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 
 /**
  * Find IAM users with access keys not rotated for more than 90 days,
@@ -26,7 +29,8 @@ import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
  * check if IAM account password policy exists,
  * check if IAM account password policy minimum length is less than 8,
  * check if IAM account password policy max age is greater than 90 days,
- * and check if IAM account password policy re-use prevention is less than 5
+ * check if IAM account password policy re-use prevention is less than 5,
+ * and check for IAM roles with cross-account access
  * @param credentials - AWS credentials
  * @param region - AWS region
  * @param accountId
@@ -34,7 +38,7 @@ import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
  */
 export async function findIAMFindings(credentials: any, region: string, accountId: string | null = null) {
   try {
-    console.log('Finding IAM users with access keys not rotated for more than 90 days, inactive access keys over 90 days, passwords older than 90 days, console users without MFA enabled, root user access key usage within the last 90 days, checking if IAM account password policy exists, checking if IAM account password policy minimum length is less than 8, checking if IAM account password policy max age is greater than 90 days, and checking if IAM account password policy re-use prevention is less than 5');
+    console.log('Finding IAM users with access keys not rotated for more than 90 days, inactive access keys over 90 days, passwords older than 90 days, console users without MFA enabled, root user access key usage within the last 90 days, checking if IAM account password policy exists, checking if IAM account password policy minimum length is less than 8, checking if IAM account password policy max age is greater than 90 days, checking if IAM account password policy re-use prevention is less than 5, and checking for IAM roles with cross-account access');
 
     const iamClient = new IAMClient({
       region,
@@ -60,6 +64,7 @@ export async function findIAMFindings(credentials: any, region: string, accountI
     const rootUserLoggedInFindings: any[] = [];
     const passwordPolicyFindings: any[] = [];
     const inactiveConsoleLoginFindings: any[] = [];
+    const crossAccountRoleFindings: any[] = [];
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
@@ -311,10 +316,21 @@ export async function findIAMFindings(credentials: any, region: string, accountI
       console.error('Error checking IAM account password policy:', policyError);
     }
 
-    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys, ${inactiveFindings.length} IAM users with inactive access keys over 90 days, ${oldPasswordFindings.length} IAM users with passwords older than 90 days, ${mfaDisabledFindings.length} IAM users with console access but without MFA enabled, ${inactiveConsoleLoginFindings.length} IAM users with console logins inactive over 90 days, ${rootUserAccessKeyUsedFindings.length} instances of root user access key usage within the last 90 days, ${rootUserMFADisabledFindings.length} instances of root user without MFA enabled, ${rootUserHasAccessKeysFindings.length} instances of root user with access keys, ${rootUserLoggedInFindings.length} instances of root user logged in within the last 90 days, and ${passwordPolicyFindings.length} instances of IAM account password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5)`);
+    // Check for IAM roles with cross-account access
+    try {
+      const crossAccountRolesFindings = await checkIAMRolesWithCrossAccountAccess(iamClient, accountId);
+      if (crossAccountRolesFindings.length > 0) {
+        crossAccountRoleFindings.push(...crossAccountRolesFindings);
+        findings.push(...crossAccountRolesFindings);
+      }
+    } catch (crossAccountError) {
+      console.error('Error checking for IAM roles with cross-account access:', crossAccountError);
+    }
+
+    console.log(`Found ${notRotatedFindings.length} IAM users with old access keys, ${inactiveFindings.length} IAM users with inactive access keys over 90 days, ${oldPasswordFindings.length} IAM users with passwords older than 90 days, ${mfaDisabledFindings.length} IAM users with console access but without MFA enabled, ${inactiveConsoleLoginFindings.length} IAM users with console logins inactive over 90 days, ${rootUserAccessKeyUsedFindings.length} instances of root user access key usage within the last 90 days, ${rootUserMFADisabledFindings.length} instances of root user without MFA enabled, ${rootUserHasAccessKeysFindings.length} instances of root user with access keys, ${rootUserLoggedInFindings.length} instances of root user logged in within the last 90 days, ${passwordPolicyFindings.length} instances of IAM account password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5), and ${crossAccountRoleFindings.length} IAM roles with cross-account access`);
     return findings;
   } catch (error) {
-    console.error('Error finding IAM users with old or inactive access keys, old passwords, without MFA, console logins inactive over 90 days, root user access key usage, root user without MFA, root user with access keys, root user logged in within the last 90 days, or checking password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5):', error);
+    console.error('Error finding IAM users with old or inactive access keys, old passwords, without MFA, console logins inactive over 90 days, root user access key usage, root user without MFA, root user with access keys, root user logged in within the last 90 days, checking password policy issues (missing, minimum length less than 8, max age greater than 90 days, or re-use prevention less than 5), or checking for IAM roles with cross-account access:', error);
     return [];
   }
 }
@@ -1173,6 +1189,186 @@ async function checkIAMUserConsoleLoginInactive(iamClient: IAMClient, ninetyDays
   } catch (error) {
     console.error('Error checking for IAM users with console logins inactive over 90 days:', error);
     return [];
+  }
+}
+
+/**
+ * Check for IAM roles with cross-account access
+ * @param iamClient - IAM client
+ * @param accountId - AWS account ID
+ * @returns Array of findings for IAM roles with cross-account access
+ */
+async function checkIAMRolesWithCrossAccountAccess(iamClient: IAMClient, accountId: string | null = null): Promise<any[]> {
+  try {
+    console.log('Checking for IAM roles with cross-account access');
+    const findings: any[] = [];
+
+    // Get all IAM roles
+    const roles = await getAllIAMRoles(iamClient);
+    console.log(`Found ${roles.length} IAM roles`);
+
+    // Check each role for cross-account access
+    for (const role of roles) {
+      // Skip if RoleName is undefined
+      if (!role.RoleName) continue;
+
+      // Get detailed role information including trust policy
+      const roleDetails = await getRoleDetails(iamClient, role.RoleName);
+
+      // Skip if AssumeRolePolicyDocument is undefined
+      if (!roleDetails?.AssumeRolePolicyDocument) continue;
+
+      // Parse the trust policy
+      let trustPolicy;
+      try {
+        // The AssumeRolePolicyDocument is URL-encoded JSON
+        const decodedPolicy = decodeURIComponent(roleDetails.AssumeRolePolicyDocument);
+        trustPolicy = JSON.parse(decodedPolicy);
+      } catch (error) {
+        console.error(`Error parsing trust policy for role ${role.RoleName}:`, error);
+        continue;
+      }
+
+      // Check if the trust policy allows cross-account access
+      const crossAccountAccess = checkTrustPolicyForCrossAccountAccess(trustPolicy, accountId);
+
+      if (crossAccountAccess.hasCrossAccountAccess) {
+        const finding = {
+          id: 'aws_iam_role_cross_account_access',
+          key: `aws-iam-role-cross-account-access-${role.Arn}`,
+          title: `IAM Role (${role.RoleName}) with Cross-Account Access`,
+          description: `IAM role ${role.RoleName} (${role.Arn}) allows cross-account access from AWS account(s) ${crossAccountAccess.trustedAccounts.join(', ')}. While this may be intentional, it increases the risk surface and should be reviewed to ensure it's necessary and secure.`,
+          additionalInfo: {
+            roleName: role.RoleName,
+            roleArn: role.Arn,
+            trustedAccounts: crossAccountAccess.trustedAccounts,
+            ...(accountId && { accountId })
+          }
+        };
+
+        findings.push(finding);
+      }
+    }
+
+    return findings;
+  } catch (error) {
+    console.error('Error checking for IAM roles with cross-account access:', error);
+    return [];
+  }
+}
+
+/**
+ * Get all IAM roles
+ * @param iamClient - IAM client
+ * @returns Array of IAM roles
+ */
+async function getAllIAMRoles(iamClient: IAMClient) {
+  try {
+    const roles = [];
+    let marker;
+
+    do {
+      const command: ListRolesCommand = new ListRolesCommand({ Marker: marker });
+      const response: ListRolesCommandOutput = await iamClient.send(command);
+
+      if (response.Roles) {
+        roles.push(...response.Roles);
+      }
+
+      marker = response.Marker;
+    } while (marker);
+
+    return roles;
+  } catch (error) {
+    console.error('Error getting IAM roles:', error);
+    return [];
+  }
+}
+
+/**
+ * Get detailed information for an IAM role
+ * @param iamClient - IAM client
+ * @param roleName - IAM role name
+ * @returns Role details including trust policy
+ */
+async function getRoleDetails(iamClient: IAMClient, roleName: string) {
+  try {
+    const command: GetRoleCommand = new GetRoleCommand({ RoleName: roleName });
+    const response: GetRoleCommandOutput = await iamClient.send(command);
+
+    return response.Role;
+  } catch (error) {
+    console.error(`Error getting details for role ${roleName}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Check if a trust policy allows cross-account access
+ * @param trustPolicy - The trust policy document
+ * @param currentAccountId - The current AWS account ID
+ * @returns Object indicating if cross-account access is allowed and which accounts are trusted
+ */
+function checkTrustPolicyForCrossAccountAccess(trustPolicy: any, currentAccountId: string | null = null): { hasCrossAccountAccess: boolean, trustedAccounts: string[] } {
+  try {
+    const trustedAccounts: string[] = [];
+    let hasCrossAccountAccess = false;
+
+    // Check if the policy has statements
+    if (!trustPolicy.Statement) {
+      return { hasCrossAccountAccess: false, trustedAccounts: [] };
+    }
+
+    // Ensure Statement is an array
+    const statements = Array.isArray(trustPolicy.Statement) ? trustPolicy.Statement : [trustPolicy.Statement];
+
+    // Check each statement for cross-account access
+    for (const statement of statements) {
+      // Skip if Effect is not "Allow"
+      if (statement.Effect !== 'Allow') continue;
+
+      // Check Principal for AWS accounts
+      if (statement.Principal && statement.Principal.AWS) {
+        const principals = Array.isArray(statement.Principal.AWS) ? statement.Principal.AWS : [statement.Principal.AWS];
+
+        for (const principal of principals) {
+          // Check if the principal is an AWS account ARN or ID
+          if (typeof principal === 'string') {
+            // Extract account ID from ARN or use the principal directly if it's an account ID
+            let accountId = principal;
+
+            // If it's an ARN, extract the account ID
+            if (principal.startsWith('arn:aws:iam::')) {
+              const match = principal.match(/arn:aws:iam::(\d+):/);
+              if (match && match[1]) {
+                accountId = match[1];
+              }
+            }
+
+            // Check if this is a different account than the current one
+            if (accountId !== currentAccountId && accountId !== '*' && !accountId.includes('root')) {
+              hasCrossAccountAccess = true;
+              if (!trustedAccounts.includes(accountId)) {
+                trustedAccounts.push(accountId);
+              }
+            }
+
+            // Special case: '*' means all AWS accounts, which is definitely cross-account access
+            if (accountId === '*') {
+              hasCrossAccountAccess = true;
+              if (!trustedAccounts.includes('*')) {
+                trustedAccounts.push('*');
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return { hasCrossAccountAccess, trustedAccounts };
+  } catch (error) {
+    console.error('Error checking trust policy for cross-account access:', error);
+    return { hasCrossAccountAccess: false, trustedAccounts: [] };
   }
 }
 
