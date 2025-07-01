@@ -66,7 +66,14 @@ export async function processAWSIntegration(integration: any, appId: string, pri
 
     let accountId = null;
     try {
-      const identityCommand = new GetCallerIdentityCommand({});
+      const identityCommand = new GetCallerIdentityCommand({
+        region,
+        credentials: {
+          accessKeyId: credentials.accessKeyId,
+          secretAccessKey: credentials.secretAccessKey,
+          sessionToken: credentials.sessionToken
+        }
+      });
       const identityResponse = await stsClient.send(identityCommand);
       accountId = identityResponse.Account;
       console.log(`Got AWS account ID: ${accountId}`);
