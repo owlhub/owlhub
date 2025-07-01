@@ -55,25 +55,18 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     console.log(`Successfully assumed role for integration: ${integration.name}`);
 
     // Get the AWS account ID
-    const stsClient = new STSClient([{
-      region,
+    const stsClient = new STSClient({
+      region: region,
       credentials: {
-        accessKeyId: credentials.accessKeyId,
-        secretAccessKey: credentials.secretAccessKey,
-        sessionToken: credentials.sessionToken
+        accessKeyId: credentials.accessKeyId || '',
+        secretAccessKey: credentials.secretAccessKey || '',
+        sessionToken: credentials.sessionToken || ''
       }
-    }]);
+    });
 
     let accountId = null;
     try {
-      const identityCommand = new GetCallerIdentityCommand({
-        region,
-        credentials: {
-          accessKeyId: credentials.accessKeyId,
-          secretAccessKey: credentials.secretAccessKey,
-          sessionToken: credentials.sessionToken
-        }
-      });
+      const identityCommand = new GetCallerIdentityCommand({});
       const identityResponse = await stsClient.send(identityCommand);
       accountId = identityResponse.Account;
       console.log(`Got AWS account ID: ${accountId}`);
@@ -144,4 +137,3 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     console.error(`Error processing AWS integration ${integration.name}:`, error);
   }
 }
-
