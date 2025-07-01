@@ -84,26 +84,21 @@ async function processIntegrations() {
             console.log(`Added integration app finding for: ${appFinding.name} in integration: ${integration.name}`);
           }
         }
-      }
 
-      // Process based on app type
-      switch (app.name) {
-        case 'GitLab':
-          for (const integration of integrations) {
+        // Process based on app type
+        switch (app.name) {
+          case 'GitLab':
             await processGitLabIntegration(integration, appId, prisma, appFindings);
-          }
-          break;
-        case 'AWS':
-          for (const integration of integrations) {
+            break;
+          case 'AWS':
             await processAWSIntegration(integration, appId, prisma, appFindings)
-          }
-        // Add cases for other app types as they are implemented
-        default:
-          console.log(`No processor implemented for app type: ${app.name}`);
-      }
+            break;
+          default:
+            console.log(`No processor implemented for app type: ${app.name}`);
+        }
 
-      console.log('Updating active and hidden counts in integrationFinding table');
-      for (const integration of integrations) {
+        console.log('Updating active and hidden counts in integrationFinding table');
+
         // Get all security findings for this integration
         const integrationFindings = await prisma.integrationFinding.findMany({
           where: {

@@ -248,7 +248,7 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
         }[]}
         onRowClick={handleRowClick}
         keyExtractor={(finding) => finding.id}
-        defaultRowsPerPage={10}
+        defaultRowsPerPage={20}
         emptyMessage="No app findings found"
         selectable={true}
         onSelectionChange={handleSelectionChange}

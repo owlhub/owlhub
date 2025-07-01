@@ -16,7 +16,7 @@ import {
  * @param integration - The AWS integration to process
  * @param appId - The ID of the AWS app
  * @param prisma - The Prisma client instance
- * @param securityFindings - App findings for this app type
+ * @param appFindings - App findings for this app type
  */
 export async function processAWSIntegration(integration: any, appId: string, prisma: PrismaClient, appFindings: any[] = []) {
   try {
