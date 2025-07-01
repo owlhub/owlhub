@@ -10,7 +10,6 @@
   },
   "result": [
     {
-      "id": "70fe0596-28bc-41dd-a2c3-1486fb0fb1dd",
       "name": "AWS: S3 Bucket Policy Allows Any Authenticated User to Write",
       "category": {
         "product": "Cloud",
@@ -22,7 +21,6 @@
       "severity": "Critical"
     },
     {
-      "id": "c6b3a745-b535-45ea-b2c0-ba8a139ca634",
       "name": "AWS: S3 Bucket Policy Allows Any Authenticated User to Read",
       "category": {
         "product": "Cloud",
@@ -34,7 +32,6 @@
       "severity": "High"
     },
     {
-      "id": "319c9715-b86d-4215-bdfa-c5d9b3a5cc83",
       "name": "AWS: S3 Bucket Policy Allows Any Authenticated User to List",
       "category": {
         "product": "Cloud",
@@ -46,7 +43,6 @@
       "severity": "Medium"
     },
     {
-      "id": "4431eaeb-63e3-43c1-a4bc-029f09da66fd",
       "name": "AWS: S3 Bucket Policy Allows Any Authenticated User to Delete",
       "category": {
         "product": "Cloud",
@@ -58,7 +54,6 @@
       "severity": "Medium"
     },
     {
-      "id": "e324242c-5feb-41a3-8d91-f70611471fad",
       "name": "AWS: S3 Bucket ACL Allows Public ACP Read",
       "category": {
         "product": "Cloud",
@@ -70,7 +65,6 @@
       "severity": "High"
     },
     {
-      "id": "09bc7d1f-e682-43bc-a4ce-e6e03b408244",
       "name": "AWS: S3 Bucket ACL Allows Any Authenticated User to Write",
       "category": {
         "product": "Cloud",
@@ -82,7 +76,6 @@
       "severity": "Critical"
     },
     {
-      "id": "fda31c4d-24dc-43d4-8a84-a1a9e1df01a1",
       "name": "AWS: S3 Bucket ACL Allows Any Authenticated User to Read",
       "category": {
         "product": "Cloud",
@@ -94,7 +87,6 @@
       "severity": "High"
     },
     {
-      "id": "9392a460-c566-4e0d-b06b-01d87dc84d7c",
       "name": "AWS: S3 Bucket ACL Allows Any Authenticated User to Write ACP",
       "category": {
         "product": "Cloud",
@@ -106,7 +98,6 @@
       "severity": "Critical"
     },
     {
-      "id": "7232e46b-3539-4080-b905-022f1091556c",
       "name": "AWS: S3 Bucket ACL Allows Any Authenticated User to Read ACP",
       "category": {
         "product": "Cloud",
@@ -118,7 +109,6 @@
       "severity": "High"
     },
     {
-      "id": "bbbeacbc-6692-4121-a785-d634da1e5c56",
       "name": "AWS: S3 Bucket Policy Allows Public Delete",
       "category": {
         "product": "Cloud",
@@ -130,7 +120,6 @@
       "severity": "Medium"
     },
     {
-      "id": "5b792c7f-2546-4fcd-96dc-a58a53fea7e0",
       "name": "AWS: S3 Bucket ACL Allows Public ACP Write",
       "category": {
         "product": "Cloud",

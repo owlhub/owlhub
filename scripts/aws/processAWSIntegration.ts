@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { findIAMFindings } from './findIAMFindings';
 import { findACMFindings } from './findACMFindings';
+import { findS3Findings } from './findS3Findings';
 import {
   assumeRole
 } from './utils'
@@ -107,8 +108,12 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const acmFindings = await findACMFindings(credentials, region, accountId);
     console.log(`Found ${acmFindings.length} ACM findings in AWS`);
 
+    // Find S3 bucket issues (publicly accessible buckets)
+    const s3Findings = await findS3Findings(credentials, region, accountId);
+    console.log(`Found ${s3Findings.length} S3 findings in AWS`);
+
     // Combine all findings
-    const foundAppFindings = [...iamFindings, ...acmFindings];
+    const foundAppFindings = [...iamFindings, ...acmFindings, ...s3Findings];
 
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);
 

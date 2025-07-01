@@ -531,19 +531,13 @@ async function main() {
         "description": "IAM roles that allow cross-account access, which increases the risk surface and should be reviewed to ensure it's necessary and secure.",
         "type": "posture"
       },
-      // {
-      //   "key": "aws_public_s3_bucket",
-      //   "name": "Public S3 Bucket",
-      //   "severity": "critical",
-      //   "description": "S3 bucket with public read or write access, potentially exposing sensitive data to the internet."
-      // },
-      //
-      // {
-      //   "key": "aws_root_account_access_key",
-      //   "name": "Root Account Access Key",
-      //   "severity": "critical",
-      //   "description": "AWS root account has active access keys, which is a security best practice violation."
-      // },
+      {
+        "key": "aws_s3_bucket_publicly_accessible",
+        "name": "S3 Bucket Publicly Accessible",
+        "severity": "critical",
+        "description": "S3 bucket is configured to allow public access, which could lead to unauthorized access to sensitive data.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",
