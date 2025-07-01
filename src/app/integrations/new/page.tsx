@@ -20,6 +20,7 @@ interface App {
     required: boolean;
     placeholder?: string;
     description?: string;
+    default?: boolean | string | number;
   }[];
 }
 
@@ -169,7 +170,20 @@ export default function NewIntegrationPage() {
     setSelectedAppId(appId);
 
     // Reset config values when app changes
-    setConfigValues({});
+    const newConfigValues: Record<string, string> = {};
+
+    // Initialize boolean fields with default values
+    const selectedApp = apps.find(app => app.id === appId);
+    if (selectedApp) {
+      selectedApp.configFields.forEach(field => {
+        if (field.type === 'boolean') {
+          // Set default value for boolean fields (default to false if not specified)
+          newConfigValues[field.name] = field.default === true ? 'true' : 'false';
+        }
+      });
+    }
+
+    setConfigValues(newConfigValues);
     setFormErrors({});
 
     // Fetch app details
@@ -600,14 +614,38 @@ export default function NewIntegrationPage() {
                 {field.label} {field.required && '*'}
               </label>
               <div className="relative">
-                <input
-                  type={field.type === 'password' && !visiblePasswords[field.name] ? 'password' : 'text'}
-                  id={field.name}
-                  value={configValues[field.name] || ''}
-                  onChange={(e) => handleConfigChange(field.name, e.target.value)}
-                  className={`w-full p-2 border rounded-md ${formErrors[field.name] ? 'border-red-500' : 'border-gray-300'} ${field.type === 'password' ? 'pr-10' : ''}`}
-                  placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
-                />
+                {field.type === 'boolean' ? (
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => handleConfigChange(field.name, configValues[field.name] === 'true' ? 'false' : 'true')}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        configValues[field.name] === 'true' ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                      role="switch"
+                      aria-checked={configValues[field.name] === 'true'}
+                      id={field.name}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          configValues[field.name] === 'true' ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span className="ml-2 text-sm text-gray-600">
+                      {configValues[field.name] === 'true' ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </div>
+                ) : (
+                  <input
+                    type={field.type === 'password' && !visiblePasswords[field.name] ? 'password' : 'text'}
+                    id={field.name}
+                    value={configValues[field.name] || ''}
+                    onChange={(e) => handleConfigChange(field.name, e.target.value)}
+                    className={`w-full p-2 border rounded-md ${formErrors[field.name] ? 'border-red-500' : 'border-gray-300'} ${field.type === 'password' ? 'pr-10' : ''}`}
+                    placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                  />
+                )}
                 {field.type === 'password' && (
                   <button
                     type="button"

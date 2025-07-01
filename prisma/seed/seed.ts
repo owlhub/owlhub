@@ -224,6 +224,14 @@ async function main() {
           required: true,
           placeholder: '',
           description: 'The External ID used to establish a secure trust relationship between your AWS account and OwlHub. This should match the External ID used when creating the IAM role.'
+        },
+        {
+          name: 'orgMode',
+          label: 'Organization Mode',
+          type: 'boolean',
+          required: false,
+          default: false,
+          description: 'Enable to automatically discover and add all AWS accounts in your organization. The IAM Role ARN should be for the organization management account with permissions to list accounts.'
         }
       ])
     }

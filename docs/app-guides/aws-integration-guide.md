@@ -37,6 +37,9 @@ OwlHub requires specific permissions to scan your AWS environment for security f
 1. In the permissions page, search for and select the following policies:
    - `SecurityAudit` - Provides read-only access to security configuration
 
+   If you plan to use Organization Mode (see below), also add:
+   - `AWSOrganizationsReadOnlyAccess` - Provides read-only access to AWS Organizations
+
 2. Click **Next: Tags** (adding tags is optional)
 3. Click **Next: Review**
 4. Enter a name for the role (e.g., `OwlHub_CASB_Auditor`)
@@ -59,7 +62,51 @@ After creating the role, you need to copy its ARN (Amazon Resource Name) to prov
 2. Enter a name for your integration (e.g., "AWS Production Account")
 3. Paste the IAM Role ARN you copied in Step 4 into the **IAM Role ARN** field
 4. Confirm that the External ID matches the one you used when creating the IAM role
-5. Click **Create Integration**
+5. (Optional) Enable **Organization Mode** if you want to automatically discover and add all AWS accounts in your organization (see below)
+6. Click **Create Integration**
+
+### Organization Mode
+
+Organization Mode allows OwlHub to automatically discover all AWS accounts in your organization and create integrations for them. This is useful if you have multiple AWS accounts and want to monitor them all from a single OwlHub instance.
+
+**Prerequisites for Organization Mode:**
+
+- The IAM role must be created in the AWS Organizations management account
+- The IAM role must have the `AWSOrganizationsReadOnlyAccess` policy attached
+- The same IAM role name must exist in all member accounts with the same permissions
+- All member accounts must trust the OwlHub AWS account with the same External ID
+
+**How Organization Mode works:**
+
+1. When enabled, OwlHub will use the AWS Organizations API to discover all accounts in your organization
+2. For each discovered account, OwlHub will create a new integration using the same role name pattern
+3. The integration name will include the account name and ID for easy identification
+4. Findings for each account will be tracked separately in OwlHub
+
+**Note:** If you enable Organization Mode, make sure the IAM role exists in all member accounts with the same name and permissions. You can use AWS CloudFormation StackSets or AWS Organizations Service Control Policies to deploy the role across your organization.
+
+### Deploying IAM Roles Across Your Organization
+
+To simplify the deployment of the required IAM role across all accounts in your AWS organization, OwlHub provides a CloudFormation template and deployment guide. This approach is recommended when using Organization Mode.
+
+#### Using CloudFormation StackSets
+
+CloudFormation StackSets allows you to deploy the IAM role to all accounts in your organization with a single operation:
+
+1. Download the [OwlHub IAM Role CloudFormation Template](/assets/templates/owlhub-role-template.yaml)
+2. Follow the instructions in the [StackSet Deployment Guide](/integrations/guide/aws-stackset-deployment-guide.md)
+
+The CloudFormation template automatically:
+- Creates the IAM role with the necessary permissions
+- Sets up the trust relationship with OwlHub's AWS account
+- Configures a unique External ID for each account (base External ID + account ID)
+- Ensures consistent role configuration across all accounts
+
+When using this approach with Organization Mode:
+1. Deploy the CloudFormation template to all accounts using StackSets
+2. In OwlHub, use the base External ID (without account suffix) when setting up the integration
+3. Enable Organization Mode
+4. OwlHub will automatically discover all accounts and create integrations with the correct account-specific External IDs
 
 ## Step 6: Verify the Integration
 

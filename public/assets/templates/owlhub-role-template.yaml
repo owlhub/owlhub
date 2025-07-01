@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create IAM role for OwlHub integration across AWS accounts'
+
+Parameters:
+  OwlHubAccountId:
+    Type: String
+    Description: The AWS account ID of OwlHub
+    Default: '123456789012'  # Replace with actual OwlHub AWS account ID
+  
+  BaseExternalId:
+    Type: String
+    Description: The base external ID provided by OwlHub (without account ID suffix)
+
+  RoleName:
+    Type: String
+    Description: The name of the IAM role to create
+    Default: 'OwlHub_CASB_Auditor'
+
+Resources:
+  OwlHubIntegrationRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref RoleName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${OwlHubAccountId}:root'
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Sub '${BaseExternalId}-${AWS::AccountId}'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/SecurityAudit'
+      Path: '/'
+      Description: 'IAM role for OwlHub security scanning integration'
+
+Outputs:
+  RoleARN:
+    Description: The ARN of the created IAM role
+    Value: !GetAtt OwlHubIntegrationRole.Arn

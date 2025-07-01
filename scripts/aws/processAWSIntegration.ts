@@ -1,10 +1,15 @@
 import { PrismaClient } from '@prisma/client';
-import { AssumeRoleCommand, STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
+import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { findIAMFindings } from './findIAMFindings';
 import { findACMFindings } from './findACMFindings';
 import {
+  assumeRole
+} from './utils'
+import { discoverAWSAccounts, createIntegrationsForAccounts } from './discoverAWSAccounts';
+import {
   addIntegrationFindingDetails
 } from "../utils/common";
+
 
 /**
  * Process an AWS integration
@@ -21,6 +26,10 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const roleArn = config.roleArn;
     const externalId = config.externalId;
     const region = config.region || 'us-east-1';
+    const orgMode = config.orgMode === "true";
+
+    console.log(`orgMode: ${orgMode}`);
+
 
     if (!roleArn) {
       console.error(`Integration ${integration.name} is missing required configuration: roleArn`);
@@ -61,8 +70,33 @@ export async function processAWSIntegration(integration: any, appId: string, pri
       const identityResponse = await stsClient.send(identityCommand);
       accountId = identityResponse.Account;
       console.log(`Got AWS account ID: ${accountId}`);
+
+      // If org mode is enabled, discover AWS accounts and create integrations for them
+      if (orgMode) {
+        console.log(`Organization mode is enabled for integration: ${integration.name}. Discovering AWS accounts...`);
+
+        // Discover AWS accounts in the organization
+        const accounts = await discoverAWSAccounts(roleArn, externalId, region);
+
+        if (accounts.length > 0) {
+          console.log(`Discovered ${accounts.length} AWS accounts in the organization`);
+
+          // Create integrations for discovered accounts
+          const createdIntegrationIds = await createIntegrationsForAccounts(
+            accounts,
+            roleArn,
+            externalId,
+            appId,
+            prisma
+          );
+
+          console.log(`Created ${createdIntegrationIds.length} new integrations for discovered AWS accounts`);
+        } else {
+          console.log('No AWS accounts discovered in the organization');
+        }
+      }
     } catch (error) {
-      console.error('Error getting AWS account ID:', error);
+      console.error('Error getting AWS account ID or discovering accounts:', error);
     }
 
     // Find IAM users with access keys not rotated for more than 90 days, inactive access keys, passwords older than 90 days, console users without MFA enabled, and root user access key usage within the last 90 days
@@ -104,46 +138,3 @@ export async function processAWSIntegration(integration: any, appId: string, pri
   }
 }
 
-/**
- * Assume an AWS role
- * @param roleArn - The ARN of the role to assume
- * @param externalId - The external ID to use when assuming the role (optional)
- * @param region - The AWS region to use
- * @returns The credentials for the assumed role, or null if the role could not be assumed
- */
-async function assumeRole(roleArn: string, externalId?: string, region: string = 'us-east-1') {
-  try {
-    console.log(`Assuming role: ${roleArn} with external ID: ${externalId || 'none'}`);
-
-    const stsClient = new STSClient({ region });
-
-    const assumeRoleParams: any = {
-      RoleArn: roleArn,
-      RoleSessionName: 'OwlHubSecurityScan',
-      DurationSeconds: 3600, // 1 hour
-    };
-
-    // Add external ID if provided
-    if (externalId) {
-      assumeRoleParams.ExternalId = externalId;
-    }
-
-    const command = new AssumeRoleCommand(assumeRoleParams);
-    const response = await stsClient.send(command);
-
-    if (!response.Credentials) {
-      console.error('No credentials returned from AssumeRole operation');
-      return null;
-    }
-
-    return {
-      accessKeyId: response.Credentials.AccessKeyId,
-      secretAccessKey: response.Credentials.SecretAccessKey,
-      sessionToken: response.Credentials.SessionToken,
-      expiration: response.Credentials.Expiration
-    };
-  } catch (error) {
-    console.error('Error assuming role:', error);
-    return null;
-  }
-}
