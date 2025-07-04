@@ -21,30 +21,30 @@ BEGIN
     -- For DELETE operations
     ELSIF (TG_OP = 'DELETE') THEN
         IF OLD.hidden = TRUE THEN
-            -- Decrement hiddenCount
+            -- Decrement hiddenCount, ensuring it doesn't go below zero
             UPDATE integration_findings
-            SET "hiddenCount" = "hiddenCount" - 1
+            SET "hiddenCount" = GREATEST("hiddenCount" - 1, 0)
             WHERE "integrationId" = OLD."integrationId" AND "appFindingId" = OLD."appFindingId";
         ELSE
-            -- Decrement activeCount
+            -- Decrement activeCount, ensuring it doesn't go below zero
             UPDATE integration_findings
-            SET "activeCount" = "activeCount" - 1
+            SET "activeCount" = GREATEST("activeCount" - 1, 0)
             WHERE "integrationId" = OLD."integrationId" AND "appFindingId" = OLD."appFindingId";
         END IF;
-    
+
     -- For UPDATE operations (when hidden status changes)
     ELSIF (TG_OP = 'UPDATE') AND (OLD.hidden IS DISTINCT FROM NEW.hidden) THEN
         IF NEW.hidden = TRUE THEN
             -- Changed from active to hidden
             UPDATE integration_findings
-            SET "activeCount" = "activeCount" - 1,
+            SET "activeCount" = GREATEST("activeCount" - 1, 0),
                 "hiddenCount" = "hiddenCount" + 1
             WHERE "integrationId" = NEW."integrationId" AND "appFindingId" = NEW."appFindingId";
         ELSE
             -- Changed from hidden to active
             UPDATE integration_findings
             SET "activeCount" = "activeCount" + 1,
-                "hiddenCount" = "hiddenCount" - 1
+                "hiddenCount" = GREATEST("hiddenCount" - 1, 0)
             WHERE "integrationId" = NEW."integrationId" AND "appFindingId" = NEW."appFindingId";
         END IF;
 
@@ -58,7 +58,7 @@ BEGIN
               AND ("lastDetectedAt" IS NULL OR "lastDetectedAt" < NEW."lastDetectedAt");
         END IF;
     END IF;
-    
+
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;

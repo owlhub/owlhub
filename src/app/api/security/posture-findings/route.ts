@@ -123,47 +123,9 @@ async function handleSingleFindingUpdate(findingId: string, hidden: boolean) {
     data: { hidden },
   });
 
-  // Get the current counts
-  const integrationSecurityFinding = await prisma.integrationFinding.findFirst({
-    where: {
-      integrationId: findingDetail.integrationId,
-      appFindingId: findingDetail.appFindingId,
-    },
-  });
-
-  if (!integrationSecurityFinding) {
-    return NextResponse.json({ error: "Integration security finding not found" }, { status: 404 });
-  }
-
-  // Calculate the new counts
-  let activeCount = integrationSecurityFinding.activeCount;
-  let hiddenCount = integrationSecurityFinding.hiddenCount;
-
-  // If the status changed from active to hidden
-  if (hidden && !findingDetail.hidden) {
-    activeCount -= 1;
-    hiddenCount += 1;
-  }
-  // If the status changed from hidden to active
-  else if (!hidden && findingDetail.hidden) {
-    activeCount += 1;
-    hiddenCount -= 1;
-  }
-
-  // Update the counts
-  await prisma.integrationFinding.update({
-    where: { id: integrationSecurityFinding.id },
-    data: {
-      activeCount,
-      hiddenCount,
-    },
-  });
-
   return NextResponse.json({
     success: true,
     finding: updatedFinding,
-    activeCount,
-    hiddenCount,
   });
 }
 
@@ -202,7 +164,7 @@ async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
   }, {} as Record<string, { integrationId: string; appFindingId: string; findings: typeof findings }> );
 
   // Process each group in a transaction
-  const results = await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const groupResults = [];
 
     for (const key in findingGroups) {
@@ -220,72 +182,17 @@ async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
         },
       });
 
-      // Get the current counts
-      const integrationSecurityFinding = await tx.integrationFinding.findFirst({
-        where: {
-          integrationId: group.integrationId,
-          appFindingId: group.appFindingId,
-        },
+      groupResults.push({
+        integrationId: group.integrationId,
+        appFindingId: group.appFindingId,
       });
-
-      if (!integrationSecurityFinding) {
-        continue;
-      }
-
-      // Calculate count changes
-      let activeCountChange = 0;
-      let hiddenCountChange = 0;
-
-      for (const finding of group.findings) {
-        // If the status changed from active to hidden
-        if (hidden && !finding.hidden) {
-          activeCountChange -= 1;
-          hiddenCountChange += 1;
-        }
-        // If the status changed from hidden to active
-        else if (!hidden && finding.hidden) {
-          activeCountChange += 1;
-          hiddenCountChange -= 1;
-        }
-      }
-
-      // Only update if there are changes
-      if (activeCountChange !== 0 || hiddenCountChange !== 0) {
-        const updatedCounts = await tx.integrationFinding.update({
-          where: { id: integrationSecurityFinding.id },
-          data: {
-            activeCount: {
-              increment: activeCountChange,
-            },
-            hiddenCount: {
-              increment: hiddenCountChange,
-            },
-          },
-          select: {
-            activeCount: true,
-            hiddenCount: true,
-          },
-        });
-
-        groupResults.push({
-          integrationId: group.integrationId,
-          appFindingId: group.appFindingId,
-          activeCount: updatedCounts.activeCount,
-          hiddenCount: updatedCounts.hiddenCount,
-        });
-      }
     }
 
     return groupResults;
   });
 
-  // Return the first group's counts (assuming all findings are from the same group)
-  const firstResult = results[0] || { activeCount: 0, hiddenCount: 0 };
-
   return NextResponse.json({
     success: true,
     updatedCount: findingIds.length,
-    activeCount: firstResult.activeCount,
-    hiddenCount: firstResult.hiddenCount,
   });
 }
