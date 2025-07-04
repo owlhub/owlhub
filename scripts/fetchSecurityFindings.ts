@@ -124,7 +124,7 @@ async function processIntegrations() {
         const appFindings = await fetchAppSecurityFindingsFromDatabase(appId, prisma);
 
         // Process all integrations with a maximum concurrency of 10
-        const MAX_CONCURRENCY = 2;
+        const MAX_CONCURRENCY = 5;
         console.log(`Processing ${integrations.length} integrations with max concurrency of ${MAX_CONCURRENCY}`);
 
         // Create a queue of integrations to process

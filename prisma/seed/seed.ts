@@ -643,6 +643,13 @@ async function main() {
         "description": "Flags VPCs that do not contain any subnets, which may indicate unused or abandoned resources.",
         "type": "posture"
       },
+      {
+        "key": "aws_vpc_blackhole_routes",
+        "name": "Blackhole Routes in VPC",
+        "severity": "medium",
+        "description": "Detects route tables with blackhole routes, which may be caused by deleted or misconfigured targets.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",

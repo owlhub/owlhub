@@ -1,9 +1,4 @@
 {
   "version": 2,
-  "crons": [
-    {
-      "path": "/api/security/scan",
-      "schedule": "0 0 * * *"
-    }
-  ]
+  "crons": []
 }

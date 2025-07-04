@@ -275,5 +275,16 @@
       "vendor": "Amazon Web Services",
       "severity": "Medium"
     },
+    {
+      "name": "Blackhole Routes in VPC",
+      "category": {
+        "product": "VPC",
+        "type": "Posture",
+        "observation": "Connectivity Issue"
+      },
+      "description": "Detects route tables with blackhole routes, which may be caused by deleted or misconfigured targets.",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
   ]
 }

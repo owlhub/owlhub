@@ -30,6 +30,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     const igwNotAttachedFindings: any[] = [];
     const unusedRouteTableFindings: any[] = [];
     const emptyVpcFindings: any[] = [];
+    const blackholeRouteFindings: any[] = [];
 
     // Check each region for VPC issues
     for (const regionName of regions) {
@@ -191,6 +192,33 @@ export async function findVPCFindings(credentials: any, region: string, accountI
           unusedRouteTableFindings.push(finding);
           findings.push(finding);
         }
+
+        // Check for blackhole routes in the route table
+        const blackholeRoutes = findBlackholeRoutes(routeTable);
+
+        if (blackholeRoutes.length > 0) {
+          const destinationCidrs = blackholeRoutes.map(route => route.DestinationCidrBlock || route.DestinationIpv6CidrBlock || 'Unknown').join(', ');
+
+          const finding = {
+            id: 'aws_vpc_blackhole_routes',
+            key: `aws-vpc-blackhole-routes-${accountId}-${regionName}-${routeTable.RouteTableId}`,
+            title: `Blackhole Routes in VPC Route Table in Region ${regionName}`,
+            description: `Route table (${routeTable.RouteTableId}) in region ${regionName} has blackhole routes, which may be caused by deleted or misconfigured targets. Affected destinations: ${destinationCidrs}`,
+            additionalInfo: {
+              routeTableId: routeTable.RouteTableId,
+              region: regionName,
+              vpcId: routeTable.VpcId,
+              blackholeRoutes: blackholeRoutes.map(route => ({
+                destinationCidr: route.DestinationCidrBlock || route.DestinationIpv6CidrBlock || 'Unknown',
+                targetType: getRouteTargetType(route)
+              })),
+              ...(accountId && { accountId })
+            }
+          };
+
+          blackholeRouteFindings.push(finding);
+          findings.push(finding);
+        }
       }
     }
 
@@ -200,6 +228,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     console.log(`Found ${igwNotAttachedFindings.length} Internet Gateways not attached to any VPC across all regions`);
     console.log(`Found ${igwNotRoutedFindings.length} Internet Gateways not properly routed across all regions`);
     console.log(`Found ${unusedRouteTableFindings.length} unused route tables across all regions`);
+    console.log(`Found ${blackholeRouteFindings.length} route tables with blackhole routes across all regions`);
     return findings;
   } catch (error) {
     console.error('Error finding VPC issues:', error);
@@ -447,4 +476,65 @@ async function checkVpcHasSubnets(ec2Client: EC2Client, vpcId: string) {
     // In case of error, we'll assume the VPC might have subnets
     return true;
   }
+}
+
+/**
+ * Check if a route table has blackhole routes
+ * @param routeTable - Route table object
+ * @returns Array of blackhole routes found in the route table
+ */
+function findBlackholeRoutes(routeTable: any) {
+  const blackholeRoutes: any[] = [];
+
+  // Check if the route table has routes
+  if (routeTable.Routes && routeTable.Routes.length > 0) {
+    // Check each route for blackhole state
+    for (const route of routeTable.Routes) {
+      if (route.State === 'blackhole') {
+        blackholeRoutes.push(route);
+      }
+    }
+  }
+
+  return blackholeRoutes;
+}
+
+/**
+ * Get the type of target for a route
+ * @param route - Route object
+ * @returns String describing the type of target
+ */
+function getRouteTargetType(route: any): string {
+  if (route.GatewayId) {
+    if (route.GatewayId.startsWith('igw-')) {
+      return 'Internet Gateway';
+    } else if (route.GatewayId.startsWith('vgw-')) {
+      return 'Virtual Private Gateway';
+    } else if (route.GatewayId.startsWith('tgw-')) {
+      return 'Transit Gateway';
+    } else if (route.GatewayId === 'local') {
+      return 'Local';
+    }
+    return `Gateway (${route.GatewayId})`;
+  } else if (route.NatGatewayId) {
+    return 'NAT Gateway';
+  } else if (route.InstanceId) {
+    return 'EC2 Instance';
+  } else if (route.VpcPeeringConnectionId) {
+    return 'VPC Peering Connection';
+  } else if (route.NetworkInterfaceId) {
+    return 'Network Interface';
+  } else if (route.TransitGatewayId) {
+    return 'Transit Gateway';
+  } else if (route.EgressOnlyInternetGatewayId) {
+    return 'Egress Only Internet Gateway';
+  } else if (route.CarrierGatewayId) {
+    return 'Carrier Gateway';
+  } else if (route.LocalGatewayId) {
+    return 'Local Gateway';
+  } else if (route.VpcEndpointId) {
+    return 'VPC Endpoint';
+  }
+
+  return 'Unknown';
 }
