@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import FilterSection from './FilterSection';
 import FindingsTable, { FilterState, Finding as FindingsTableFinding } from './FindingsTable';
@@ -20,14 +20,14 @@ export default function ClientWrapper({ findings, integrations }: ClientWrapperP
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Default filter values
-  const defaultFilters: FilterState = {
+  // Default filter values - memoized to prevent recreation on every render
+  const defaultFilters = useMemo<FilterState>(() => ({
     status: ['active'],
     severity: ['critical', 'high', 'medium', 'low'],
     integration: '',
     dateFrom: '',
     dateTo: ''
-  };
+  }), []);
 
   // Initialize filters from URL query parameters or use defaults
   const [filters, setFilters] = useState<FilterState>(() => {
