@@ -123,9 +123,29 @@ async function handleSingleFindingUpdate(findingId: string, hidden: boolean) {
     data: { hidden },
   });
 
+  // Get updated counts for this integration and app finding
+  const [activeCount, hiddenCount] = await Promise.all([
+    prisma.integrationFindingDetail.count({
+      where: {
+        integrationId: findingDetail.integrationId,
+        appFindingId: findingDetail.appFindingId,
+        hidden: false,
+      },
+    }),
+    prisma.integrationFindingDetail.count({
+      where: {
+        integrationId: findingDetail.integrationId,
+        appFindingId: findingDetail.appFindingId,
+        hidden: true,
+      },
+    }),
+  ]);
+
   return NextResponse.json({
     success: true,
     finding: updatedFinding,
+    activeCount,
+    hiddenCount,
   });
 }
 
@@ -190,6 +210,38 @@ async function handleBulkFindingUpdate(findingIds: string[], hidden: boolean) {
 
     return groupResults;
   });
+
+  // For bulk updates, we'll use the first finding's integration and app finding IDs
+  // to calculate the counts, assuming all findings in the bulk update belong to the same group
+  // If there are multiple groups, this will return counts for the first group
+  if (findings.length > 0) {
+    const firstFinding = findings[0];
+
+    // Get updated counts for this integration and app finding
+    const [activeCount, hiddenCount] = await Promise.all([
+      prisma.integrationFindingDetail.count({
+        where: {
+          integrationId: firstFinding.integrationId,
+          appFindingId: firstFinding.appFindingId,
+          hidden: false,
+        },
+      }),
+      prisma.integrationFindingDetail.count({
+        where: {
+          integrationId: firstFinding.integrationId,
+          appFindingId: firstFinding.appFindingId,
+          hidden: true,
+        },
+      }),
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      updatedCount: findingIds.length,
+      activeCount,
+      hiddenCount,
+    });
+  }
 
   return NextResponse.json({
     success: true,
