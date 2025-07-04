@@ -601,6 +601,34 @@ async function main() {
         "description": "S3 bucket does not have MFA Delete enabled, which increases the risk of accidental or malicious deletion of objects.",
         "type": "posture"
       },
+      {
+        "key": "aws_default_vpc_exists",
+        "name": "Default VPC Exists in Region",
+        "severity": "low",
+        "description": "Default VPCs are automatically created and may be over-permissive. It's recommended to delete them if unused.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_vpc_flow_logs_not_enabled",
+        "name": "VPC Flow Logs Not Enabled",
+        "severity": "medium",
+        "description": "Detects VPCs without Flow Logs, reducing the ability to monitor and audit network activity.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_igw_not_attached_to_vpc",
+        "name": "Internet Gateway Not Attached to VPC",
+        "severity": "low",
+        "description": "Flags IGWs that are not connected to any vpc, indicating possible unused setup.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_igw_not_properly_routed",
+        "name": "Internet Gateway Not Properly Routed",
+        "severity": "low",
+        "description": "Flags IGWs that are not connected to any route table, indicating possible misconfiguration or unused setup.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",

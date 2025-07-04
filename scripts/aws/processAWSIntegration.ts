@@ -3,6 +3,7 @@ import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { findIAMFindings } from './findIAMFindings';
 import { findACMFindings } from './findACMFindings';
 import { findS3Findings } from './findS3Findings';
+import { findVPCFindings } from './findVPCFindings';
 import {
   assumeRole
 } from './utils'
@@ -112,8 +113,12 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const s3Findings = await findS3Findings(credentials, region, accountId);
     console.log(`Found ${s3Findings.length} S3 findings in AWS`);
 
+    // Find VPC issues (default VPCs)
+    const vpcFindings = await findVPCFindings(credentials, region, accountId);
+    console.log(`Found ${vpcFindings.length} VPC findings in AWS`);
+
     // Combine all findings
-    const foundAppFindings = [...iamFindings, ...acmFindings, ...s3Findings];
+    const foundAppFindings = [...iamFindings, ...acmFindings, ...s3Findings, ...vpcFindings];
 
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);
 
