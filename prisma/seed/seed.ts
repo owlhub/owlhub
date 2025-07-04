@@ -602,7 +602,7 @@ async function main() {
         "type": "posture"
       },
       {
-        "key": "aws_default_vpc_exists",
+        "key": "aws_vpc_default_vpc_exists",
         "name": "Default VPC Exists in Region",
         "severity": "low",
         "description": "Default VPCs are automatically created and may be over-permissive. It's recommended to delete them if unused.",
@@ -616,17 +616,31 @@ async function main() {
         "type": "posture"
       },
       {
-        "key": "aws_igw_not_attached_to_vpc",
+        "key": "aws_vpc_igw_not_attached_to_vpc",
         "name": "Internet Gateway Not Attached to VPC",
         "severity": "low",
         "description": "Flags IGWs that are not connected to any vpc, indicating possible unused setup.",
         "type": "posture"
       },
       {
-        "key": "aws_igw_not_properly_routed",
+        "key": "aws_vpc_igw_not_properly_routed",
         "name": "Internet Gateway Not Properly Routed",
         "severity": "low",
         "description": "Flags IGWs that are not connected to any route table, indicating possible misconfiguration or unused setup.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_vpc_unused_route_table",
+        "name": "Unused Route Table Detected",
+        "severity": "low",
+        "description": "Detects route tables that are not associated with any subnet, which could be cleanup candidates.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_vpc_empty_without_subnets",
+        "name": "Empty VPC Without Subnets",
+        "severity": "low",
+        "description": "Flags VPCs that do not contain any subnets, which may indicate unused or abandoned resources.",
         "type": "posture"
       },
       // {

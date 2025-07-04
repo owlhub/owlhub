@@ -4,7 +4,8 @@ import {
   DescribeRegionsCommand,
   DescribeFlowLogsCommand,
   DescribeInternetGatewaysCommand,
-  DescribeRouteTablesCommand
+  DescribeRouteTablesCommand,
+  DescribeSubnetsCommand
 } from '@aws-sdk/client-ec2';
 
 /**
@@ -27,6 +28,8 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     const flowLogsNotEnabledFindings: any[] = [];
     const igwNotRoutedFindings: any[] = [];
     const igwNotAttachedFindings: any[] = [];
+    const unusedRouteTableFindings: any[] = [];
+    const emptyVpcFindings: any[] = [];
 
     // Check each region for VPC issues
     for (const regionName of regions) {
@@ -47,8 +50,8 @@ export async function findVPCFindings(credentials: any, region: string, accountI
       if (defaultVpcs.length > 0) {
         for (const vpc of defaultVpcs) {
           const finding = {
-            id: 'aws_default_vpc_exists',
-            key: `aws-default-vpc-exists-${accountId}-${regionName}-${vpc.VpcId}`,
+            id: 'aws_vpc_default_vpc_exists',
+            key: `aws-vpc-default-vpc-exists-${accountId}-${regionName}-${vpc.VpcId}`,
             title: `Default VPC Exists in Region ${regionName}`,
             description: `Default VPC (${vpc.VpcId}) exists in region ${regionName}. Default VPCs are automatically created and may be over-permissive. It's recommended to delete them if unused.`,
             additionalInfo: {
@@ -89,6 +92,27 @@ export async function findVPCFindings(credentials: any, region: string, accountI
           flowLogsNotEnabledFindings.push(finding);
           findings.push(finding);
         }
+
+        // Check if the VPC has any subnets
+        const hasSubnets = await checkVpcHasSubnets(ec2Client, vpc.VpcId);
+
+        if (!hasSubnets) {
+          const finding = {
+            id: 'aws_vpc_empty_without_subnets',
+            key: `aws-vpc-empty-without-subnets-${accountId}-${regionName}-${vpc.VpcId}`,
+            title: `Empty VPC Without Subnets in Region ${regionName}`,
+            description: `VPC (${vpc.VpcId}) in region ${regionName} does not contain any subnets, which may indicate unused or abandoned resources.`,
+            additionalInfo: {
+              vpcId: vpc.VpcId,
+              region: regionName,
+              cidrBlock: vpc.CidrBlock,
+              ...(accountId && { accountId })
+            }
+          };
+
+          emptyVpcFindings.push(finding);
+          findings.push(finding);
+        }
       }
 
       // Check for Internet Gateways not connected to any route table
@@ -102,8 +126,8 @@ export async function findVPCFindings(credentials: any, region: string, accountI
 
         if (!isAttached) {
           const finding = {
-            id: 'aws_igw_not_attached_to_vpc',
-            key: `aws-igw-not-attached-to-vpc-${accountId}-${regionName}-${igw.InternetGatewayId}`,
+            id: 'aws_vpc_igw_not_attached_to_vpc',
+            key: `aws-vpc-igw-not-attached-to-vpc-${accountId}-${regionName}-${igw.InternetGatewayId}`,
             title: `Internet Gateway Not Attached to VPC in Region ${regionName}`,
             description: `Internet Gateway (${igw.InternetGatewayId}) in region ${regionName} is not connected to any vpc, indicating possible unused setup.`,
             additionalInfo: {
@@ -120,8 +144,8 @@ export async function findVPCFindings(credentials: any, region: string, accountI
 
           if (!isConnected) {
             const finding = {
-              id: 'aws_igw_not_properly_routed',
-              key: `aws-igw-not-properly-routed-${accountId}-${regionName}-${igw.InternetGatewayId}`,
+              id: 'aws_vpc_igw_not_properly_routed',
+              key: `aws-vpc-igw-not-properly-routed-${accountId}-${regionName}-${igw.InternetGatewayId}`,
               title: `Internet Gateway Not Properly Routed in Region ${regionName}`,
               description: `Internet Gateway (${igw.InternetGatewayId}) in region ${regionName} is not connected to any route table, indicating possible misconfiguration or unused setup.`,
               additionalInfo: {
@@ -136,12 +160,46 @@ export async function findVPCFindings(credentials: any, region: string, accountI
           }
         }
       }
+
+      // Check for route tables not associated with any subnet
+      const allRouteTables = await findAllRouteTables(ec2Client);
+
+      for (const routeTable of allRouteTables) {
+        if (!routeTable.RouteTableId) continue;
+
+        // Skip the main route table for VPCs as they're expected to exist
+        if (routeTable.Associations && routeTable.Associations.some(assoc => assoc.Main === true)) {
+          continue;
+        }
+
+        const isAssociated = isRouteTableAssociatedWithSubnet(routeTable);
+
+        if (!isAssociated) {
+          const finding = {
+            id: 'aws_vpc_unused_route_table',
+            key: `aws-vpc-unused-route-table-${accountId}-${regionName}-${routeTable.RouteTableId}`,
+            title: `Unused Route Table Detected in Region ${regionName}`,
+            description: `Route table (${routeTable.RouteTableId}) in region ${regionName} is not associated with any subnet, which could be a cleanup candidate.`,
+            additionalInfo: {
+              routeTableId: routeTable.RouteTableId,
+              region: regionName,
+              vpcId: routeTable.VpcId,
+              ...(accountId && { accountId })
+            }
+          };
+
+          unusedRouteTableFindings.push(finding);
+          findings.push(finding);
+        }
+      }
     }
 
     console.log(`Found ${defaultVpcFindings.length} default VPCs across all regions`);
     console.log(`Found ${flowLogsNotEnabledFindings.length} VPCs without flow logs across all regions`);
+    console.log(`Found ${emptyVpcFindings.length} empty VPCs without subnets across all regions`);
     console.log(`Found ${igwNotAttachedFindings.length} Internet Gateways not attached to any VPC across all regions`);
     console.log(`Found ${igwNotRoutedFindings.length} Internet Gateways not properly routed across all regions`);
+    console.log(`Found ${unusedRouteTableFindings.length} unused route tables across all regions`);
     return findings;
   } catch (error) {
     console.error('Error finding VPC issues:', error);
@@ -324,4 +382,69 @@ function checkIgwAttachedToVpc(igw: any) {
 
   // If no attachments or no 'attached' attachments, return false
   return false;
+}
+
+/**
+ * Find all route tables in a region
+ * @param ec2Client - EC2 client
+ * @returns Array of all route tables
+ */
+async function findAllRouteTables(ec2Client: EC2Client) {
+  try {
+    const command = new DescribeRouteTablesCommand({});
+
+    const response = await ec2Client.send(command);
+    return response.RouteTables || [];
+  } catch (error) {
+    console.error('Error finding route tables:', error);
+    return [];
+  }
+}
+
+/**
+ * Check if a route table is associated with any subnet
+ * @param routeTable - Route table object
+ * @returns True if the route table is associated with any subnet, false otherwise
+ */
+function isRouteTableAssociatedWithSubnet(routeTable: any) {
+  // Check if the route table has any associations
+  if (routeTable.Associations && routeTable.Associations.length > 0) {
+    // Check if any association is with a subnet
+    for (const association of routeTable.Associations) {
+      if (association.SubnetId) {
+        return true;
+      }
+    }
+  }
+
+  // If no associations or no subnet associations, return false
+  return false;
+}
+
+/**
+ * Check if a VPC has any subnets
+ * @param ec2Client - EC2 client
+ * @param vpcId - VPC ID to check
+ * @returns True if the VPC has any subnets, false otherwise
+ */
+async function checkVpcHasSubnets(ec2Client: EC2Client, vpcId: string) {
+  try {
+    const command = new DescribeSubnetsCommand({
+      Filters: [
+        {
+          Name: 'vpc-id',
+          Values: [vpcId]
+        }
+      ]
+    });
+
+    const response = await ec2Client.send(command);
+
+    // If there are any subnets for this VPC, return true
+    return (response.Subnets && response.Subnets.length > 0);
+  } catch (error) {
+    console.error(`Error checking subnets for VPC ${vpcId}:`, error);
+    // In case of error, we'll assume the VPC might have subnets
+    return true;
+  }
 }
