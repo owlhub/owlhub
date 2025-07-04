@@ -538,6 +538,69 @@ async function main() {
         "description": "S3 bucket is configured to allow public access, which could lead to unauthorized access to sensitive data.",
         "type": "posture"
       },
+      {
+        "key": "aws_s3_bucket_versioning_disabled",
+        "name": "S3 Bucket Versioning Disabled",
+        "severity": "low",
+        "description": "S3 bucket does not have versioning enabled, which increases the risk of accidental deletion or overwrite of objects.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_s3_bucket_replication_disabled",
+        "name": "S3 Bucket Without Replication Enabled",
+        "severity": "medium",
+        "description": "S3 bucket does not have replication enabled, which increases the risk of data loss in case of a regional outage or disaster.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_s3_bucket_server_side_encryption_disabled",
+        "name": "S3 Bucket Server Side Encryption Disabled",
+        "severity": "medium",
+        "description": "S3 bucket does not have server-side encryption enabled, which increases the risk of unauthorized access to sensitive data if the bucket is compromised.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_s3_bucket_access_logging_disabled",
+        "name": "S3 Bucket Access Logging Disabled",
+        "severity": "low",
+        "description": "S3 bucket does not have access logging enabled, which makes it difficult to track access to the bucket and investigate security incidents.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_s3_bucket_lifecycle_disabled",
+        "name": "S3 Bucket Lifecycle Disabled",
+        "severity": "low",
+        "description": "S3 bucket does not have lifecycle policies enabled, which can lead to increased storage costs and reduced performance over time.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_s3_bucket_policy_not_existent",
+        "name": "S3 Bucket Policy Not Existent",
+        "severity": "low",
+        "description": "S3 bucket does not have a bucket policy, which may leave the bucket vulnerable to unauthorized access or actions.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_s3_bucket_object_level_logging_disabled",
+        "name": "S3 Bucket Without Object-Level Logging",
+        "severity": "medium",
+        "description": "S3 bucket does not have object-level logging enabled, which makes it difficult to track and audit object-level operations on the bucket.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_s3_bucket_encryption_in_transit_disabled",
+        "name": "S3 Bucket Encryption in Transit Disabled",
+        "severity": "medium",
+        "description": "S3 bucket does not enforce encryption in transit (HTTPS), which could allow sensitive data to be intercepted during transmission.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_s3_bucket_mfa_delete_disabled",
+        "name": "S3 Bucket MFA Delete Disabled",
+        "severity": "medium",
+        "description": "S3 bucket does not have MFA Delete enabled, which increases the risk of accidental or malicious deletion of objects.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",

@@ -83,7 +83,8 @@ export async function addIntegrationFindingDetails(
                             description: finding.description || 'No description provided',
                             additionalInfo: typeof finding.additionalInfo === 'string'
                                 ? finding.additionalInfo
-                                : JSON.stringify(finding.additionalInfo || {})
+                                : JSON.stringify(finding.additionalInfo || {}),
+                            lastDetectedAt: new Date()
                         }
                     });
 
@@ -97,7 +98,8 @@ export async function addIntegrationFindingDetails(
                             description: finding.description || 'No description provided',
                             additionalInfo: typeof finding.additionalInfo === 'string'
                                 ? finding.additionalInfo
-                                : JSON.stringify(finding.additionalInfo || {})
+                                : JSON.stringify(finding.additionalInfo || {}),
+                            lastDetectedAt: new Date()
                         }
                     });
                     console.log(`Updated integration security finding detail for: ${finding.name || finding.title} in integration: ${integration.name}`);

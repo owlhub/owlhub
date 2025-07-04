@@ -223,6 +223,7 @@ model IntegrationFindingDetail {
   description    String
   hidden         Boolean     @default(false)
   additionalInfo String // JSON data for additional information
+  lastDetectedAt DateTime    @default(now())
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   integration    Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
@@ -231,4 +232,20 @@ model IntegrationFindingDetail {
   @@index([integrationId])
   @@index([appFindingId])
   @@map("integration_finding_details")
+}
+
+model BackgroundJob {
+  id        String    @id @default(cuid())
+  name      String // Name of the job
+  status    String // 'running', 'completed', 'failed'
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+  error     String? // Error message if job failed
+  metadata  String? // JSON data for additional information
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([name])
+  @@index([status])
+  @@map("background_jobs")
 }

@@ -131,28 +131,6 @@
       "severity": "Critical"
     },
     {
-      "name": "AWS: S3 Bucket Without Replication Enabled",
-      "category": {
-        "product": "Cloud",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": null,
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
-    },
-    {
-      "name": "AWS: S3 Bucket Without Versioning Enabled",
-      "category": {
-        "product": "Cloud",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": null,
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
-    },
-    {
       "name": "AWS: S3 Bucket Without Object-Level Logging",
       "category": {
         "product": "Cloud",
@@ -263,17 +241,6 @@
       "severity": "High"
     },
     {
-      "name": "S3 Bucket Policy Not Existent",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Low"
-    },
-    {
 
       "name": "S3 Bucket Encryption in Transit Disabled",
       "category": {
@@ -284,17 +251,6 @@
       "description": "",
       "vendor": "Amazon Web Services",
       "severity": "Medium"
-    },
-    {
-      "name": "S3 Bucket Lifecycle Disabled",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Low"
     },
     {
 
@@ -309,28 +265,6 @@
       "severity": "Medium"
     },
     {
-      "name": "S3 Bucket Versioning Disabled",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Low"
-    },
-    {
-      "name": "S3 Bucket Access Logging Disabled",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Low"
-    },
-    {
       "name": "S3 Bucket Objects Can Be Public",
       "category": {
         "product": "SaaS",
@@ -340,28 +274,6 @@
       "description": "",
       "vendor": "Amazon Web Services",
       "severity": "Medium"
-    },
-    {
-      "name": "S3 Bucket Server Side Encryption Disabled",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
-    },
-    {
-      "name": "S3 Bucket Publicly Accessible",
-      "category": {
-        "product": "SaaS",
-        "type": "Posture",
-        "observation": "Issue"
-      },
-      "description": "",
-      "vendor": "Amazon Web Services",
-      "severity": "Critical"
     },
   ]
 }
