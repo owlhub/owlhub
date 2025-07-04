@@ -168,31 +168,6 @@ export async function findVPCFindings(credentials: any, region: string, accountI
       for (const routeTable of allRouteTables) {
         if (!routeTable.RouteTableId) continue;
 
-        // Skip the main route table for VPCs as they're expected to exist
-        if (routeTable.Associations && routeTable.Associations.some(assoc => assoc.Main === true)) {
-          continue;
-        }
-
-        const isAssociated = isRouteTableAssociatedWithSubnet(routeTable);
-
-        if (!isAssociated) {
-          const finding = {
-            id: 'aws_vpc_unused_route_table',
-            key: `aws-vpc-unused-route-table-${accountId}-${regionName}-${routeTable.RouteTableId}`,
-            title: `Unused Route Table Detected in Region ${regionName}`,
-            description: `Route table (${routeTable.RouteTableId}) in region ${regionName} is not associated with any subnet, which could be a cleanup candidate.`,
-            additionalInfo: {
-              routeTableId: routeTable.RouteTableId,
-              region: regionName,
-              vpcId: routeTable.VpcId,
-              ...(accountId && { accountId })
-            }
-          };
-
-          unusedRouteTableFindings.push(finding);
-          findings.push(finding);
-        }
-
         // Check for blackhole routes in the route table
         const blackholeRoutes = findBlackholeRoutes(routeTable);
 
@@ -217,6 +192,31 @@ export async function findVPCFindings(credentials: any, region: string, accountI
           };
 
           blackholeRouteFindings.push(finding);
+          findings.push(finding);
+        }
+
+        // Skip the main route table for VPCs as they're expected to exist
+        if (routeTable.Associations && routeTable.Associations.some(assoc => assoc.Main === true)) {
+          continue;
+        }
+
+        const isAssociated = isRouteTableAssociatedWithSubnet(routeTable);
+
+        if (!isAssociated) {
+          const finding = {
+            id: 'aws_vpc_unused_route_table',
+            key: `aws-vpc-unused-route-table-${accountId}-${regionName}-${routeTable.RouteTableId}`,
+            title: `Unused Route Table Detected in Region ${regionName}`,
+            description: `Route table (${routeTable.RouteTableId}) in region ${regionName} is not associated with any subnet, which could be a cleanup candidate.`,
+            additionalInfo: {
+              routeTableId: routeTable.RouteTableId,
+              region: regionName,
+              vpcId: routeTable.VpcId,
+              ...(accountId && { accountId })
+            }
+          };
+
+          unusedRouteTableFindings.push(finding);
           findings.push(finding);
         }
       }
