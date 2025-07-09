@@ -650,6 +650,13 @@ async function main() {
         "description": "Detects route tables with blackhole routes, which may be caused by deleted or misconfigured targets.",
         "type": "posture"
       },
+      {
+        "key": "aws_vpc_no_eni_resources",
+        "name": "VPC Does Not Contain Any ENI-Provisioning Resource",
+        "severity": "low",
+        "description": "Detects Virtual Private Clouds (VPCs) that do not host any active resource capable of provisioning an Elastic Network Interface (ENI). This includes EC2 instances, RDS, NAT Gateways, Load Balancers, Lambda functions (in VPC), and other services that generate ENIs. Empty VPCs may be stale, misconfigured, or safe to delete.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",

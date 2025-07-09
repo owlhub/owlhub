@@ -276,15 +276,15 @@
       "severity": "Medium"
     },
     {
-      "name": "Blackhole Routes in VPC",
+      "name": "VPC Does Not Contain Any ENI-Provisioning Resource",
       "category": {
         "product": "VPC",
         "type": "Posture",
-        "observation": "Connectivity Issue"
+        "observation": "Staleness"
       },
-      "description": "Detects route tables with blackhole routes, which may be caused by deleted or misconfigured targets.",
+      "description": "Detects Virtual Private Clouds (VPCs) that do not host any active resource capable of provisioning an Elastic Network Interface (ENI). This includes EC2 instances, RDS, NAT Gateways, Load Balancers, Lambda functions (in VPC), and other services that generate ENIs. Empty VPCs may be stale, misconfigured, or safe to delete.",
       "vendor": "Amazon Web Services",
-      "severity": "Medium"
+      "severity": "Low"
     },
   ]
 }

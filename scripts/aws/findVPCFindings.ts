@@ -5,7 +5,8 @@ import {
   DescribeFlowLogsCommand,
   DescribeInternetGatewaysCommand,
   DescribeRouteTablesCommand,
-  DescribeSubnetsCommand
+  DescribeSubnetsCommand,
+  DescribeNetworkInterfacesCommand
 } from '@aws-sdk/client-ec2';
 
 /**
@@ -31,6 +32,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     const unusedRouteTableFindings: any[] = [];
     const emptyVpcFindings: any[] = [];
     const blackholeRouteFindings: any[] = [];
+    const noEniResourcesFindings: any[] = [];
 
     // Check each region for VPC issues
     for (const regionName of regions) {
@@ -112,6 +114,27 @@ export async function findVPCFindings(credentials: any, region: string, accountI
           };
 
           emptyVpcFindings.push(finding);
+          findings.push(finding);
+        }
+
+        // Check if the VPC has any ENI-provisioning resources
+        const hasEniResources = await checkVpcHasEniResources(ec2Client, vpc.VpcId);
+
+        if (!hasEniResources) {
+          const finding = {
+            id: 'aws_vpc_no_eni_resources',
+            key: `aws-vpc-no-eni-resources-${accountId}-${regionName}-${vpc.VpcId}`,
+            title: `VPC Does Not Contain Any ENI-Provisioning Resource in Region ${regionName}`,
+            description: `VPC (${vpc.VpcId}) in region ${regionName} does not host any active resource capable of provisioning an Elastic Network Interface (ENI). This includes EC2 instances, RDS, NAT Gateways, Load Balancers, Lambda functions (in VPC), and other services that generate ENIs. Empty VPCs may be stale, misconfigured, or safe to delete.`,
+            additionalInfo: {
+              vpcId: vpc.VpcId,
+              region: regionName,
+              cidrBlock: vpc.CidrBlock,
+              ...(accountId && { accountId })
+            }
+          };
+
+          noEniResourcesFindings.push(finding);
           findings.push(finding);
         }
       }
@@ -225,6 +248,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     console.log(`Found ${defaultVpcFindings.length} default VPCs across all regions`);
     console.log(`Found ${flowLogsNotEnabledFindings.length} VPCs without flow logs across all regions`);
     console.log(`Found ${emptyVpcFindings.length} empty VPCs without subnets across all regions`);
+    console.log(`Found ${noEniResourcesFindings.length} VPCs without ENI-provisioning resources across all regions`);
     console.log(`Found ${igwNotAttachedFindings.length} Internet Gateways not attached to any VPC across all regions`);
     console.log(`Found ${igwNotRoutedFindings.length} Internet Gateways not properly routed across all regions`);
     console.log(`Found ${unusedRouteTableFindings.length} unused route tables across all regions`);
@@ -474,6 +498,34 @@ async function checkVpcHasSubnets(ec2Client: EC2Client, vpcId: string) {
   } catch (error) {
     console.error(`Error checking subnets for VPC ${vpcId}:`, error);
     // In case of error, we'll assume the VPC might have subnets
+    return true;
+  }
+}
+
+/**
+ * Check if a VPC has any ENI-provisioning resources
+ * @param ec2Client - EC2 client
+ * @param vpcId - VPC ID to check
+ * @returns True if the VPC has any ENI-provisioning resources, false otherwise
+ */
+async function checkVpcHasEniResources(ec2Client: EC2Client, vpcId: string) {
+  try {
+    const command = new DescribeNetworkInterfacesCommand({
+      Filters: [
+        {
+          Name: 'vpc-id',
+          Values: [vpcId]
+        }
+      ]
+    });
+
+    const response = await ec2Client.send(command);
+
+    // If there are any network interfaces for this VPC, return true
+    return (response.NetworkInterfaces && response.NetworkInterfaces.length > 0);
+  } catch (error) {
+    console.error(`Error checking ENI resources for VPC ${vpcId}:`, error);
+    // In case of error, we'll assume the VPC might have ENI resources
     return true;
   }
 }
