@@ -506,7 +506,6 @@ async function checkPasswordPolicyExists(iamClient: IAMClient, accountId: string
         title: 'IAM Account Password Policy Does Not Exist',
         description: 'The AWS account does not have an IAM password policy configured. This is a critical security risk as it allows users to set weak passwords, increasing the risk of unauthorized access.',
         additionalInfo: {
-          recommendation: 'Configure an IAM password policy with strong requirements including minimum length, complexity, and rotation periods.',
           accountId: accountId
         }
       };

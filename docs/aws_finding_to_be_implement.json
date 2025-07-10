@@ -275,16 +275,5 @@
       "vendor": "Amazon Web Services",
       "severity": "Medium"
     },
-    {
-      "name": "Elastic IP Allocated but Not Attached to Any Resource",
-      "category": {
-        "product": "EC2",
-        "type": "Cost",
-        "observation": "Waste"
-      },
-      "description": "Detects Elastic IPs (EIPs) that are allocated in your AWS account but not associated with any EC2 instance, NAT Gateway, or ENI. These unassociated EIPs incur hourly charges and can consume quota unnecessarily. They should be released or reassigned to avoid waste.",
-      "vendor": "Amazon Web Services",
-      "severity": "Low"
-    },
   ]
 }
