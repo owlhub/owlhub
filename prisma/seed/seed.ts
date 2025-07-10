@@ -657,6 +657,20 @@ async function main() {
         "description": "Detects Virtual Private Clouds (VPCs) that do not host any active resource capable of provisioning an Elastic Network Interface (ENI). This includes EC2 instances, RDS, NAT Gateways, Load Balancers, Lambda functions (in VPC), and other services that generate ENIs. Empty VPCs may be stale, misconfigured, or safe to delete.",
         "type": "posture"
       },
+      {
+        "key": "aws_ec2_unattached_eni",
+        "name": "Unattached Elastic Network Interface (ENI)",
+        "severity": "low",
+        "description": "Detects Elastic Network Interfaces (ENIs) that are not attached to any resource such as EC2 instances, Lambda functions, NAT Gateways, or Load Balancers. Unattached ENIs may indicate leftover infrastructure from terminated resources and should be reviewed for cleanup.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_ec2_unattached_eip",
+        "name": "Elastic IP Allocated but Not Attached to Any Resource",
+        "severity": "low",
+        "description": "Detects Elastic IPs (EIPs) that are allocated in your AWS account but not associated with any EC2 instance, NAT Gateway, or ENI. These unassociated EIPs incur hourly charges and can consume quota unnecessarily. They should be released or reassigned to avoid waste.",
+        "type": "cost"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",

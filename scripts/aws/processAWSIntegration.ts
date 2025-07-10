@@ -4,6 +4,7 @@ import { findIAMFindings } from './findIAMFindings';
 import { findACMFindings } from './findACMFindings';
 import { findS3Findings } from './findS3Findings';
 import { findVPCFindings } from './findVPCFindings';
+import { findEC2Findings } from './findEC2Findings';
 import {
   assumeRole
 } from './utils'
@@ -117,8 +118,12 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const vpcFindings = await findVPCFindings(credentials, region, accountId);
     console.log(`Found ${vpcFindings.length} VPC findings in AWS`);
 
+    // Find EC2 issues (unattached ENIs)
+    const ec2Findings = await findEC2Findings(credentials, region, accountId);
+    console.log(`Found ${ec2Findings.length} EC2 findings in AWS`);
+
     // Combine all findings
-    const foundAppFindings = [...iamFindings, ...acmFindings, ...s3Findings, ...vpcFindings];
+    const foundAppFindings = [...iamFindings, ...acmFindings, ...s3Findings, ...vpcFindings, ...ec2Findings];
 
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);
 

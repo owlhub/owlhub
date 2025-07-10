@@ -276,13 +276,13 @@
       "severity": "Medium"
     },
     {
-      "name": "VPC Does Not Contain Any ENI-Provisioning Resource",
+      "name": "Elastic IP Allocated but Not Attached to Any Resource",
       "category": {
-        "product": "VPC",
-        "type": "Posture",
-        "observation": "Staleness"
+        "product": "EC2",
+        "type": "Cost",
+        "observation": "Waste"
       },
-      "description": "Detects Virtual Private Clouds (VPCs) that do not host any active resource capable of provisioning an Elastic Network Interface (ENI). This includes EC2 instances, RDS, NAT Gateways, Load Balancers, Lambda functions (in VPC), and other services that generate ENIs. Empty VPCs may be stale, misconfigured, or safe to delete.",
+      "description": "Detects Elastic IPs (EIPs) that are allocated in your AWS account but not associated with any EC2 instance, NAT Gateway, or ENI. These unassociated EIPs incur hourly charges and can consume quota unnecessarily. They should be released or reassigned to avoid waste.",
       "vendor": "Amazon Web Services",
       "severity": "Low"
     },
