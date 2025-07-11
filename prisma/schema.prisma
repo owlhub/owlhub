@@ -12,7 +12,7 @@ datasource db {
 }
 
 model User {
-  id                     String                  @id @default(cuid())
+  id                     String                  @id @default(uuid())
   name                   String?
   email                  String                  @unique
   emailVerified          DateTime?
@@ -31,7 +31,7 @@ model User {
 }
 
 model Account {
-  id                String  @id @default(cuid())
+  id                String  @id @default(uuid())
   userId            String
   type              String
   provider          String
@@ -51,7 +51,7 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -70,7 +70,7 @@ model VerificationToken {
 }
 
 model Role {
-  id          String     @id @default(cuid())
+  id          String     @id @default(uuid())
   name        String     @unique
   description String?
   createdAt   DateTime   @default(now())
@@ -82,7 +82,7 @@ model Role {
 }
 
 model UserRole {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   userId    String
   roleId    String
   createdAt DateTime @default(now())
@@ -95,7 +95,7 @@ model UserRole {
 }
 
 model Page {
-  id          String     @id @default(cuid())
+  id          String     @id @default(uuid())
   path        String     @unique
   name        String
   description String?
@@ -107,7 +107,7 @@ model Page {
 }
 
 model PageRole {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   pageId    String
   roleId    String
   createdAt DateTime @default(now())
@@ -120,7 +120,7 @@ model PageRole {
 }
 
 model App {
-  id                     String                  @id @default(cuid())
+  id                     String                  @id @default(uuid())
   name                   String                  @unique
   type                   String
   description            String?
@@ -138,7 +138,7 @@ model App {
 }
 
 model AppFinding {
-  id                        String                     @id @default(cuid())
+  id                        String                     @id @default(uuid())
   key                       String                     @unique
   name                      String
   severity                  String // 'low', 'medium', 'high', 'critical'
@@ -155,7 +155,7 @@ model AppFinding {
 }
 
 model Action {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   name        String
   description String
   appId       String
@@ -167,7 +167,7 @@ model Action {
 }
 
 model Integration {
-  id                        String                     @id @default(cuid())
+  id                        String                     @id @default(uuid())
   name                      String // User-defined name for this integration
   appId                     String
   config                    String // JSON string of configuration values
@@ -183,7 +183,7 @@ model Integration {
 }
 
 model IntegrationMembership {
-  id             String      @id @default(cuid())
+  id             String      @id @default(uuid())
   integrationId  String
   appId          String
   userId         String
@@ -199,7 +199,7 @@ model IntegrationMembership {
 }
 
 model IntegrationFinding {
-  id             String      @id @default(cuid())
+  id             String      @id @default(uuid())
   integrationId  String
   appFindingId   String
   activeCount    Int         @default(0)
@@ -216,7 +216,7 @@ model IntegrationFinding {
 }
 
 model IntegrationFindingDetail {
-  id             String      @id @default(cuid())
+  id             String      @id @default(uuid())
   integrationId  String
   appFindingId   String
   key            String      @unique
@@ -235,7 +235,7 @@ model IntegrationFindingDetail {
 }
 
 model BackgroundJob {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid())
   name      String // Name of the job
   status    String // 'running', 'completed', 'failed'
   startTime DateTime  @default(now())
@@ -248,4 +248,106 @@ model BackgroundJob {
   @@index([name])
   @@index([status])
   @@map("background_jobs")
+}
+
+model Webhook {
+  id          String         @id @default(uuid())
+  name        String // Name of the webhook
+  description String? // Description of the webhook
+  token       String         @unique // Secret token for authentication
+  isEnabled   Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  flows       Flow[]         @relation("WebhookToFlow") // Flows triggered by this webhook
+  events      WebhookEvent[]
+
+  @@map("webhooks")
+}
+
+model WebhookEvent {
+  id        String    @id @default(uuid())
+  webhookId String
+  payload   String // JSON payload of the event
+  status    String // 'pending', 'processing', 'completed', 'failed'
+  error     String? // Error message if processing failed
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  webhook   Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  flowRuns  FlowRun[]
+
+  @@index([webhookId])
+  @@index([status])
+  @@map("webhook_events")
+}
+
+model Flow {
+  id           String      @id @default(uuid())
+  name         String // Name of the flow
+  description  String? // Description of the flow
+  parentFlowId String? // Parent flow for nested flows
+  config       String // JSON configuration for the flow
+  isEnabled    Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  webhooks     Webhook[]   @relation("WebhookToFlow")
+  parentFlow   Flow?       @relation("FlowToFlow", fields: [parentFlowId], references: [id], onDelete: SetNull)
+  childFlows   Flow[]      @relation("FlowToFlow")
+  flowRuns     FlowRun[]
+  queueItems   QueueItem[]
+
+  @@index([parentFlowId])
+  @@map("flows")
+}
+
+model FlowRun {
+  id             String        @id @default(uuid())
+  flowId         String
+  webhookEventId String?
+  status         String // 'pending', 'processing', 'completed', 'failed'
+  input          String // JSON input data
+  output         String? // JSON output data
+  error          String? // Error message if run failed
+  startTime      DateTime      @default(now())
+  endTime        DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  flow           Flow          @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  webhookEvent   WebhookEvent? @relation(fields: [webhookEventId], references: [id], onDelete: SetNull)
+  queueItems     QueueItem[]
+
+  @@index([flowId])
+  @@index([status])
+  @@map("flow_runs")
+}
+
+model Queue {
+  id          String      @id @default(uuid())
+  name        String      @unique // Name of the queue
+  description String? // Description of the queue
+  isEnabled   Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  items       QueueItem[]
+
+  @@map("queues")
+}
+
+model QueueItem {
+  id        String   @id @default(uuid())
+  queueId   String
+  flowId    String
+  flowRunId String?
+  status    String // 'pending', 'processing', 'completed', 'failed'
+  payload   String // JSON payload
+  error     String? // Error message if processing failed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  queue     Queue    @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  flow      Flow     @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  flowRun   FlowRun? @relation(fields: [flowRunId], references: [id], onDelete: SetNull)
+
+  @@index([queueId])
+  @@index([flowId])
+  @@index([status])
+  @@map("queue_items")
 }
