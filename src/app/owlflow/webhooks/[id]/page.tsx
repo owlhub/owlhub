@@ -307,7 +307,7 @@ export default function WebhookDetailPage() {
             label: resettingToken ? "Resetting..." : "Reset Token",
             onClick: handleResetToken,
             variant: "primary",
-            disabled: resettingToken
+            isDisabled: resettingToken
           }
         ]}
       >
@@ -337,7 +337,7 @@ export default function WebhookDetailPage() {
             label: changingStatus ? "Updating..." : (webhook.isEnabled ? "Disable" : "Enable"),
             onClick: handleToggleStatus,
             variant: "primary",
-            disabled: changingStatus
+            isDisabled: changingStatus
           }
         ]}
       >

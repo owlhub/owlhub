@@ -397,7 +397,7 @@ export default function WebhooksPage() {
             label: creatingWebhook ? "Creating..." : "Create Webhook",
             onClick: handleCreateWebhook,
             variant: "primary",
-            disabled: creatingWebhook
+            isDisabled: creatingWebhook
           }
         ]}
       >

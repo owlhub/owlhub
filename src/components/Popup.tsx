@@ -8,6 +8,7 @@ interface PopupButton {
   variant?: "primary" | "secondary" | "danger";
   className?: string;
   style?: React.CSSProperties;
+  isDisabled?: boolean;
 }
 
 interface PopupProps {
@@ -78,6 +79,7 @@ export default function Popup({
                 onClick={button.onClick}
                 className={button.className || buttonStyles.className}
                 style={button.style || buttonStyles.style}
+                disabled={button.isDisabled}
               >
                 {button.label}
               </button>
