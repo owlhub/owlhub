@@ -136,7 +136,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: {
+      name?: string;
+      description?: string | null;
+      isEnabled?: boolean;
+    } = {
       ...(name !== undefined && { name }),
       ...(description !== undefined && { description }),
       ...(isEnabled !== undefined && { isEnabled })
@@ -216,14 +220,3 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// Helper function to generate a secure random token
-function generateSecureToken(): string {
-  // In a real implementation, use a secure random generator
-  // This is a simple implementation for demonstration purposes
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 32; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
-}
