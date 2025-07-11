@@ -37,17 +37,21 @@ export default function FlowsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [showAddFlowMenu, setShowAddFlowMenu] = useState(false);
 
   // Confirmation dialog states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
   const [confirmationFlow, setConfirmationFlow] = useState<Flow | null>(null);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (openMenuId && !(event.target as Element).closest('.menu-container')) {
         setOpenMenuId(null);
+      }
+      if (showAddFlowMenu && !(event.target as Element).closest('.add-flow-menu-container')) {
+        setShowAddFlowMenu(false);
       }
     };
 
@@ -55,7 +59,7 @@ export default function FlowsPage() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [openMenuId]);
+  }, [openMenuId, showAddFlowMenu]);
 
   // Function to handle flow deletion
   const handleDeleteFlow = async (flowId: string) => {
@@ -161,11 +165,14 @@ export default function FlowsPage() {
           <h1 className="text-2xl font-bold">Flows</h1>
           <div className="flex space-x-2">
             <button 
-              className="px-2 py-1 rounded-md text-white inline-block opacity-50 cursor-not-allowed"
+              className="px-2 py-1 rounded-md text-white inline-flex items-center opacity-50 cursor-not-allowed"
               style={{ background: 'var(--primary-blue)' }}
               disabled
             >
               Add New Flow
+              <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
           </div>
         </div>
@@ -179,14 +186,47 @@ export default function FlowsPage() {
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Flows</h1>
-          <div className="flex space-x-2">
-            <Link 
-              href="/owlflow/flows/new"
-              className="px-2 py-1 rounded-md text-white inline-block"
+          <div className="flex space-x-2 relative add-flow-menu-container">
+            <button 
+              onClick={() => setShowAddFlowMenu(!showAddFlowMenu)}
+              className="px-2 py-1 rounded-md text-white inline-flex items-center"
               style={{ background: 'var(--primary-blue)' }}
             >
               Add New Flow
-            </Link>
+              <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showAddFlowMenu && (
+              <div 
+                className="absolute right-0 mt-1 w-48 rounded-md shadow-lg z-50 add-flow-menu-container"
+                style={{ 
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border-color)',
+                  top: '100%'
+                }}
+              >
+                <div className="py-1">
+                  <Link 
+                    href="/owlflow/flows/new"
+                    className="block w-full text-left px-4 py-2 text-sm transition-colors hover:bg-[rgba(222,235,255,0.9)] hover:text-[#0052CC]"
+                    style={{ color: 'var(--foreground)' }}
+                    onClick={() => setShowAddFlowMenu(false)}
+                  >
+                    Form Editor
+                  </Link>
+                  <Link 
+                    href="/owlflow/flows/canvas"
+                    className="block w-full text-left px-4 py-2 text-sm transition-colors hover:bg-[rgba(222,235,255,0.9)] hover:text-[#0052CC]"
+                    style={{ color: 'var(--foreground)' }}
+                    onClick={() => setShowAddFlowMenu(false)}
+                  >
+                    Canvas Editor
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <p className="text-red-500">Error: {error}</p>
@@ -257,14 +297,47 @@ export default function FlowsPage() {
       {/* Header with buttons */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Flows</h1>
-        <div className="flex space-x-2">
-          <Link 
-            href="/owlflow/flows/new"
-            className="px-2 py-1 rounded-md text-white inline-block"
+        <div className="flex space-x-2 relative add-flow-menu-container">
+          <button 
+            onClick={() => setShowAddFlowMenu(!showAddFlowMenu)}
+            className="px-2 py-1 rounded-md text-white inline-flex items-center"
             style={{ background: 'var(--primary-blue)' }}
           >
             Add New Flow
-          </Link>
+            <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showAddFlowMenu && (
+            <div 
+              className="absolute right-0 mt-1 w-48 rounded-md shadow-lg z-50 add-flow-menu-container"
+              style={{ 
+                background: 'var(--card-bg)',
+                border: '1px solid var(--border-color)',
+                top: '100%'
+              }}
+            >
+              <div className="py-1">
+                <Link 
+                  href="/owlflow/flows/new"
+                  className="block w-full text-left px-4 py-2 text-sm transition-colors hover:bg-[rgba(222,235,255,0.9)] hover:text-[#0052CC]"
+                  style={{ color: 'var(--foreground)' }}
+                  onClick={() => setShowAddFlowMenu(false)}
+                >
+                  Form Editor
+                </Link>
+                <Link 
+                  href="/owlflow/flows/canvas"
+                  className="block w-full text-left px-4 py-2 text-sm transition-colors hover:bg-[rgba(222,235,255,0.9)] hover:text-[#0052CC]"
+                  style={{ color: 'var(--foreground)' }}
+                  onClick={() => setShowAddFlowMenu(false)}
+                >
+                  Canvas Editor
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

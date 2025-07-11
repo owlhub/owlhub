@@ -51,9 +51,9 @@ export async function POST(
     }
 
     // Get the payload from the request
-    let payload;
+    let body;
     try {
-      payload = await request.json();
+      body = await request.json();
     } catch (error) {
       console.error("Error parsing webhook payload:", error);
       return NextResponse.json(
@@ -61,6 +61,12 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    // Create a payload object that includes both headers and body
+    const payload = {
+      headers: Object.fromEntries(request.headers.entries()),
+      body: body,
+    };
 
     // Create a webhook event
     const webhookEvent = await prisma.webhookEvent.create({
