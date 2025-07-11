@@ -178,7 +178,7 @@ export default function WebhookDetailPage() {
         throw new Error('Failed to update webhook status');
       }
 
-      const data = await response.json();
+      await response.json();
 
       // Update the webhook with the new status
       setWebhook(prev => prev ? {
@@ -505,7 +505,7 @@ export default function WebhookDetailPage() {
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Use this URL with the token in the 'OWLHUB-TOKEN' header to send events to this webhook.
+            Use this URL with the token in the &apos;OWLHUB-TOKEN&apos; header to send events to this webhook.
           </p>
         </div>
       </div>

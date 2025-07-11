@@ -6,25 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Popup from "@/components/Popup";
 
-interface Flow {
-  id: string;
-  name: string;
-  description?: string;
-  isEnabled: boolean;
-  webhooks: {
-    id: string;
-    name: string;
-  }[];
-  parentFlow?: {
-    id: string;
-    name: string;
-  };
-  _count: {
-    childFlows: number;
-    flowRuns: number;
-    queueItems: number;
-  };
-}
 
 interface Webhook {
   id: string;

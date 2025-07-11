@@ -50,7 +50,8 @@ export async function GET() {
     });
 
     // Remove tokens from the response
-    const webhooksWithoutTokens = webhooks.map(({ token, ...webhookWithoutToken }) => {
+    const webhooksWithoutTokens = webhooks.map((webhook) => {
+      const { token, ...webhookWithoutToken } = webhook;
       return webhookWithoutToken;
     });
 
