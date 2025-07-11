@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
 // POST: Receive webhook events
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+   request: NextRequest,
+   { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
-    
+    const { id } = await params;
+
     // Get the token from the HTTP header
     const token = request.headers.get('OWLHUB-TOKEN');
-    
+
     if (!token) {
       return NextResponse.json(
         { error: "Authentication token is required" },
@@ -143,13 +140,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 }
 
 // GET: Verify webhook is active (for testing)
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+   request: NextRequest,
+   { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
-    
+    const { id } = await params;
+
     // Get the token from the HTTP header
     const token = request.headers.get('OWLHUB-TOKEN');
-    
+
     if (!token) {
       return NextResponse.json(
         { error: "Authentication token is required" },

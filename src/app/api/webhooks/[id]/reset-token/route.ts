@@ -34,7 +34,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const { id } = params;
+    const paramsObj = await params;
+    const { id } = paramsObj;
 
     // Check if the webhook exists
     const existingWebhook = await prisma.webhook.findUnique({

@@ -1,5 +1,31 @@
 import { prisma } from "@/src/lib/prisma";
 
+// Define interfaces for the types used in the processor
+interface Flow {
+  id: string;
+  name: string;
+  isEnabled: boolean;
+  config: string;
+  parentFlowId?: string;
+}
+
+interface FlowRun {
+  id: string;
+  flowId: string;
+  status: string;
+  input: string;
+}
+
+interface FlowStep {
+  type: 'integration' | 'transform' | 'condition';
+  integrationId?: string;
+  transform?: string;
+  condition?: string;
+}
+
+// Define a type for the payload/input data
+type PayloadData = Record<string, unknown>;
+
 /**
  * Process queue items
  * @param queueName The name of the queue to process (default: 'default')
@@ -62,7 +88,7 @@ export async function processQueue(queueName: string = 'default', batchSize: num
         const payload = JSON.parse(item.payload);
 
         // Execute the flow
-        const result = await executeFlow(item.flow, payload, item.flowRun);
+        const result = await executeFlow(item.flow, payload);
 
         // Update the queue item status
         await prisma.queueItem.update({
@@ -126,10 +152,9 @@ export async function processQueue(queueName: string = 'default', batchSize: num
  * Execute a flow with the given payload
  * @param flow The flow to execute
  * @param payload The payload to process
- * @param flowRun The flow run record (optional)
  * @returns The result of the flow execution
  */
-async function executeFlow(flow: any, payload: any, flowRun?: any): Promise<any> {
+async function executeFlow(flow: Flow, payload: PayloadData): Promise<PayloadData> {
   try {
     // Check if flow is enabled
     if (!flow.isEnabled) {
@@ -215,7 +240,7 @@ async function executeFlow(flow: any, payload: any, flowRun?: any): Promise<any>
  * @param flow The parent flow
  * @returns The result of the step execution
  */
-async function executeFlowStep(step: any, input: any, flow: any): Promise<any> {
+async function executeFlowStep(step: FlowStep, input: PayloadData, flow: Flow): Promise<PayloadData> {
   try {
     // Check if step has a type
     if (!step.type) {
@@ -245,7 +270,7 @@ async function executeFlowStep(step: any, input: any, flow: any): Promise<any> {
  * @param input The input data
  * @returns The result of the integration execution
  */
-async function executeIntegrationStep(step: any, input: any): Promise<any> {
+async function executeIntegrationStep(step: FlowStep, input: PayloadData): Promise<PayloadData> {
   try {
     // Check if step has an integration ID
     if (!step.integrationId) {
@@ -300,7 +325,7 @@ async function executeIntegrationStep(step: any, input: any): Promise<any> {
  * @param input The input data
  * @returns The transformed data
  */
-function executeTransformStep(step: any, input: any): any {
+function executeTransformStep(step: FlowStep, input: PayloadData): PayloadData {
   try {
     // Check if step has a transform function
     if (!step.transform) {
@@ -323,7 +348,7 @@ function executeTransformStep(step: any, input: any): any {
  * @param flow The parent flow
  * @returns The result of the condition execution
  */
-function executeConditionStep(step: any, input: any, flow: any): any {
+function executeConditionStep(step: FlowStep, input: PayloadData, flow: Flow): PayloadData {
   try {
     // Check if step has a condition
     if (!step.condition) {
