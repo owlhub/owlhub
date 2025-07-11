@@ -9,12 +9,6 @@ interface Flow {
   parentFlowId?: string;
 }
 
-interface FlowRun {
-  id: string;
-  flowId: string;
-  status: string;
-  input: string;
-}
 
 interface FlowStep {
   type: 'integration' | 'transform' | 'condition';
@@ -254,7 +248,7 @@ async function executeFlowStep(step: FlowStep, input: PayloadData, flow: Flow): 
       case 'transform':
         return executeTransformStep(step, input);
       case 'condition':
-        return executeConditionStep(step, input, flow);
+        return executeConditionStep(step, input);
       default:
         throw new Error(`Unknown step type: ${step.type}`);
     }
@@ -345,10 +339,9 @@ function executeTransformStep(step: FlowStep, input: PayloadData): PayloadData {
  * Execute a condition step
  * @param step The step configuration
  * @param input The input data
- * @param flow The parent flow
  * @returns The result of the condition execution
  */
-function executeConditionStep(step: FlowStep, input: PayloadData, flow: Flow): PayloadData {
+function executeConditionStep(step: FlowStep, input: PayloadData): PayloadData {
   try {
     // Check if step has a condition
     if (!step.condition) {
