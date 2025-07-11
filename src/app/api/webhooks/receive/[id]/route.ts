@@ -67,7 +67,7 @@ export async function POST(
       data: {
         webhookId: webhook.id,
         payload: JSON.stringify(payload),
-        status: 'pending'
+        status: webhook.flows.length === 0 ? 'completed' : 'pending'
       }
     });
 

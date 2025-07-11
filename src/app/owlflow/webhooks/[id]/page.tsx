@@ -249,7 +249,6 @@ export default function WebhookDetailPage() {
           >
             ← Back to Webhooks
           </Link>
-          <h1 className="text-2xl font-bold">Webhook Details</h1>
         </div>
         <p>Loading webhook details...</p>
       </div>
@@ -266,7 +265,6 @@ export default function WebhookDetailPage() {
           >
             ← Back to Webhooks
           </Link>
-          <h1 className="text-2xl font-bold">Webhook Details</h1>
         </div>
         <p className="text-red-500">Error: {error}</p>
       </div>
@@ -283,7 +281,6 @@ export default function WebhookDetailPage() {
           >
             ← Back to Webhooks
           </Link>
-          <h1 className="text-2xl font-bold">Webhook Details</h1>
         </div>
         <p>Webhook not found.</p>
       </div>
