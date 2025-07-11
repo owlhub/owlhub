@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
     const parentFlowId = searchParams.get('parentFlowId');
 
     // Build the query
-    const where: any = {};
+    const where: {
+      parentFlowId?: string | null;
+    } = {};
     if (parentFlowId) {
       where.parentFlowId = parentFlowId;
     }
@@ -187,7 +189,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the flow
-    const flowData: any = {
+    const flowData: {
+      name: string;
+      description?: string | null;
+      parentFlowId?: string | null;
+      config: string;
+      isEnabled: boolean;
+      webhooks?: {
+        connect: { id: string };
+      };
+    } = {
       name,
       description,
       parentFlowId,

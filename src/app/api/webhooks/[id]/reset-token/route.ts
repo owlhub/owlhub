@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const token = generateSecureToken();
 
     // Update the webhook with the new token
-    const updatedWebhook = await prisma.webhook.update({
+    await prisma.webhook.update({
       where: { id },
       data: {
         token

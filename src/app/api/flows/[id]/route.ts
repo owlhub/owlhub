@@ -177,7 +177,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Update the flow
-    const updateData: any = {
+    const updateData: {
+      name?: string;
+      description?: string | null;
+      parentFlowId?: string | null;
+      config?: string;
+      isEnabled?: boolean;
+      webhooks?: {
+        connect?: { id: string };
+      };
+    } = {
       ...(name !== undefined && { name }),
       ...(description !== undefined && { description }),
       ...(parentFlowId !== undefined && { parentFlowId }),
