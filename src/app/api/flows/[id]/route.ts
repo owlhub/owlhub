@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/lib/auth";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
 
 // GET: Fetch a specific flow by ID
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+   request: NextRequest,
+   { params }: { params: Promise<{ id: string }> }
+) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
@@ -34,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Get the flow
     const flow = await prisma.flow.findUnique({
@@ -100,7 +98,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // PATCH: Update a flow
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(
+   request: NextRequest,
+   { params }: { params: Promise<{ id: string }> }
+) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
@@ -125,7 +126,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { name, description, webhookId, parentFlowId, config, isEnabled } = body;
 
@@ -234,7 +235,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE: Delete a flow
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+   request: NextRequest,
+   { params }: { params: Promise<{ id: string }> }
+) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
@@ -259,7 +263,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Check if the flow exists
     const existingFlow = await prisma.flow.findUnique({
