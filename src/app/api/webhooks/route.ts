@@ -28,9 +28,15 @@ export async function GET() {
   }
 
   try {
-    // Get all webhooks
+    // Get all webhooks (excluding token field)
     const webhooks = await prisma.webhook.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        isEnabled: true,
+        createdAt: true,
+        updatedAt: true,
         flows: {
           select: {
             id: true,
@@ -49,10 +55,7 @@ export async function GET() {
       }
     });
 
-    // Remove tokens from the response
-    const webhooksWithoutTokens = webhooks.map(({ token, ...webhookWithoutToken }) => webhookWithoutToken);
-
-    return NextResponse.json({ webhooks: webhooksWithoutTokens });
+    return NextResponse.json({ webhooks });
   } catch (error) {
     console.error("Error fetching webhooks:", error);
     return NextResponse.json(
