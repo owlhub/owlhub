@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/lib/auth";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
 
 // POST: Reset a webhook token
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+   request: NextRequest,
+   { params }: { params: Promise<{ id: string }> }
+) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
@@ -34,8 +32,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const paramsObj = await params;
-    const { id } = paramsObj;
+    const { id } = await params;
 
     // Check if the webhook exists
     const existingWebhook = await prisma.webhook.findUnique({
