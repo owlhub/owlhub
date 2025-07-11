@@ -165,7 +165,7 @@ async function executeFlow(flow: Flow, payload: PayloadData): Promise<PayloadDat
     if (config.steps && Array.isArray(config.steps)) {
       for (const step of config.steps) {
         // Execute the step
-        result = await executeFlowStep(step, result, flow);
+        result = await executeFlowStep(step, result);
       }
     }
 
@@ -231,10 +231,9 @@ async function executeFlow(flow: Flow, payload: PayloadData): Promise<PayloadDat
  * Execute a flow step
  * @param step The step configuration
  * @param input The input data
- * @param flow The parent flow
  * @returns The result of the step execution
  */
-async function executeFlowStep(step: FlowStep, input: PayloadData, flow: Flow): Promise<PayloadData> {
+async function executeFlowStep(step: FlowStep, input: PayloadData): Promise<PayloadData> {
   try {
     // Check if step has a type
     if (!step.type) {
