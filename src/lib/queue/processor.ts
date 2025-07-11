@@ -6,7 +6,7 @@ interface Flow {
   name: string;
   isEnabled: boolean;
   config: string;
-  parentFlowId?: string;
+  parentFlowId?: string | null;
 }
 
 
