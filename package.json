@@ -20,6 +20,7 @@
     "@aws-sdk/client-ec2": "^3.839.0",
     "@aws-sdk/client-iam": "^3.485.0",
     "@aws-sdk/client-organizations": "^3.485.0",
+    "@aws-sdk/client-rds": "^3.840.0",
     "@aws-sdk/client-s3": "^3.840.0",
     "@aws-sdk/client-sts": "^3.485.0",
     "@fortawesome/fontawesome-svg-core": "^6.5.1",

@@ -671,6 +671,20 @@ async function main() {
         "description": "Detects Elastic IPs (EIPs) that are allocated in your AWS account but not associated with any EC2 instance, NAT Gateway, or ENI. These unassociated EIPs incur hourly charges and can consume quota unnecessarily. They should be released or reassigned to avoid waste.",
         "type": "cost"
       },
+      {
+        "key": "aws_rds_instance_without_ri",
+        "name": "RDS Instance Running Without Matching Reserved Instance",
+        "severity": "medium",
+        "description": "Detects RDS instances that are consistently running on-demand without a corresponding Reserved Instance (RI) covering their instance type, region, and availability zone. Lack of RIs for predictable workloads leads to unnecessarily high hourly charges. Purchasing RIs for sustained usage can optimize cost efficiency.",
+        "type": "cost"
+      },
+      {
+        "key": "aws_rds_cluster_without_ri",
+        "name": "RDS Cluster Running Without Matching Reserved Instance",
+        "severity": "medium",
+        "description": "Detects RDS clusters that are consistently running on-demand without a corresponding Reserved Instance (RI) covering their instance type, region, and availability zone. Lack of RIs for predictable workloads leads to unnecessarily high hourly charges. Purchasing RIs for sustained usage can optimize cost efficiency.",
+        "type": "cost"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",

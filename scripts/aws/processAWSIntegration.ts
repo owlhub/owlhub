@@ -5,6 +5,7 @@ import { findACMFindings } from './findACMFindings';
 import { findS3Findings } from './findS3Findings';
 import { findVPCFindings } from './findVPCFindings';
 import { findEC2Findings } from './findEC2Findings';
+import { findRDSFindings } from './findRDSFindings';
 import {
   assumeRole
 } from './utils'
@@ -122,8 +123,12 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const ec2Findings = await findEC2Findings(credentials, region, accountId);
     console.log(`Found ${ec2Findings.length} EC2 findings in AWS`);
 
+    // Find RDS issues (instances and clusters without matching Reserved Instances)
+    const rdsFindings = await findRDSFindings(credentials, region, accountId);
+    console.log(`Found ${rdsFindings.length} RDS findings in AWS`);
+
     // Combine all findings
-    const foundAppFindings = [...iamFindings, ...acmFindings, ...s3Findings, ...vpcFindings, ...ec2Findings];
+    const foundAppFindings = [...iamFindings, ...acmFindings, ...s3Findings, ...vpcFindings, ...ec2Findings, ...rdsFindings];
 
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);
 
