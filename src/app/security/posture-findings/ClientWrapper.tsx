@@ -10,15 +10,18 @@ interface Integration {
   name: string;
 }
 
-
 interface ClientWrapperProps {
   findings: FindingsTableFinding[];
   integrations: Integration[];
 }
 
-export default function ClientWrapper({ findings, integrations }: ClientWrapperProps) {
+export default function ClientWrapper({ findings: initialFindings, integrations: initialIntegrations }: ClientWrapperProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [findings, setFindings] = useState<FindingsTableFinding[]>(initialFindings);
+  const [integrations, setIntegrations] = useState<Integration[]>(initialIntegrations);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoadingIntegrations, setIsLoadingIntegrations] = useState<boolean>(false);
 
   // Default filter values - memoized to prevent recreation on every render
   const defaultFilters = useMemo<FilterState>(() => ({
@@ -47,7 +50,80 @@ export default function ClientWrapper({ findings, integrations }: ClientWrapperP
     };
   });
 
-  // Sync filters with URL when URL changes
+  // Fetch all active integrations
+  const fetchAllIntegrations = async () => {
+    setIsLoadingIntegrations(true);
+    try {
+      // Fetch data from API
+      const response = await fetch(`/api/security/posture-findings?mode=integrations`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch integrations: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Update state with new data
+      setIntegrations(data.integrations);
+    } catch (error) {
+      console.error('Error fetching integrations:', error);
+    } finally {
+      setIsLoadingIntegrations(false);
+    }
+  };
+
+  // Fetch findings from API with current filters
+  const fetchFindings = async (currentFilters: FilterState) => {
+    setIsLoading(true);
+    try {
+      // Create URL with query parameters
+      const params = new URLSearchParams();
+      params.set('mode', 'summary');
+
+      if (currentFilters.status.length > 0) {
+        params.set('status', currentFilters.status.join(','));
+      }
+
+      if (currentFilters.severity.length > 0) {
+        params.set('severity', currentFilters.severity.join(','));
+      }
+
+      if (currentFilters.integration) {
+        params.set('integration', currentFilters.integration);
+      }
+
+      if (currentFilters.dateFrom) {
+        params.set('dateFrom', currentFilters.dateFrom);
+      }
+
+      if (currentFilters.dateTo) {
+        params.set('dateTo', currentFilters.dateTo);
+      }
+
+      // Fetch data from API
+      const response = await fetch(`/api/security/posture-findings?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch findings: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Update state with new data
+      setFindings(data.findings);
+    } catch (error) {
+      console.error('Error fetching findings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch all active integrations when component mounts
+  useEffect(() => {
+    fetchAllIntegrations();
+  }, []);
+
+  // Sync filters with URL when URL changes and fetch new data
   useEffect(() => {
     const statusParam = searchParams.get('status');
     const severityParam = searchParams.get('severity');
@@ -74,8 +150,9 @@ export default function ClientWrapper({ findings, integrations }: ClientWrapperP
 
     if (filtersChanged) {
       setFilters(newFilters);
+      fetchFindings(newFilters);
     }
-  }, [searchParams, defaultFilters, filters]);
+  }, [searchParams, defaultFilters]);
 
   // Update URL query parameters when filters change
   const handleFilterChange = (newFilters: FilterState) => {
@@ -107,6 +184,9 @@ export default function ClientWrapper({ findings, integrations }: ClientWrapperP
 
     // Update the URL without refreshing the page
     router.push(`?${params.toString()}`, { scroll: false });
+
+    // Fetch new data with the updated filters
+    fetchFindings(newFilters);
   };
 
   return (
@@ -116,10 +196,18 @@ export default function ClientWrapper({ findings, integrations }: ClientWrapperP
         onFilterChange={handleFilterChange}
         filters={filters}
       />
-      <FindingsTable 
-        findings={findings} 
-        filters={filters}
-      />
+
+      {isLoading ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+          <span className="ml-2">Loading...</span>
+        </div>
+      ) : (
+        <FindingsTable 
+          findings={findings} 
+          filters={filters}
+        />
+      )}
     </>
   );
 }

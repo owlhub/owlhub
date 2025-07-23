@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/src/lib/prisma";
 import ClientWrapper from "./ClientWrapper";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 export default async function PostureFindingsPage() {
   const session = await auth().catch(error => {
@@ -15,45 +15,27 @@ export default async function PostureFindingsPage() {
     redirect("/login?redirect=/security/posture-findings");
   }
 
-  // Fetch integration security findings with active or hidden findings
-  const findings = await prisma.integrationFinding.findMany({
-    where: {
-      OR: [
-        { activeCount: { gt: 0 } },
-        { hiddenCount: { gt: 0 } }
-      ]
+  // Get the host from headers for constructing the API URL
+  const headersList = headers();
+  const host = headersList.get('host') || 'localhost:3000';
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+
+  // Fetch findings from the API endpoint
+  const response = await fetch(`${protocol}://${host}/api/security/posture-findings?mode=summary`, {
+    headers: {
+      'Cookie': headersList.get('cookie') || '',
     },
-    include: {
-      integration: {
-        include: {
-          app: true
-        }
-      },
-      appFinding: true
-    },
-    orderBy: {
-      lastDetectedAt: 'desc'
-    }
+    cache: 'no-store',
   });
 
-  // Convert Date objects to strings for the findings
-  const formattedFindings = findings.map(finding => ({
-    ...finding,
-    lastDetectedAt: finding.lastDetectedAt ? finding.lastDetectedAt.toISOString() : null
-  }));
+  if (!response.ok) {
+    throw new Error(`Failed to fetch findings: ${response.statusText}`);
+  }
 
-  // Extract unique integrations for the filter
-  const uniqueIntegrations = Array.from(
-    new Map(
-      findings.map(finding => [
-        finding.integration.id,
-        {
-          id: finding.integration.id,
-          name: finding.integration.name
-        }
-      ])
-    ).values()
-  );
+  const data = await response.json();
+
+  // Extract findings and integrations from the API response
+  const { findings: formattedFindings, integrations: uniqueIntegrations } = data;
 
   return (
     <div className="p-8 max-w-6xl mx-auto">

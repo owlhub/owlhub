@@ -61,66 +61,10 @@ interface FindingsTableProps {
 
 export default function FindingsTable({ findings, filters }: FindingsTableProps) {
   const router = useRouter();
-  const [filteredFindings, setFilteredFindings] = useState<Finding[]>(findings);
   const [selectedFindings, setSelectedFindings] = useState<Finding[]>([]);
 
-  // Function to apply filters to the findings data
-  const applyFilters = useCallback((filterState: FilterState) => {
-    let result = [...findings];
-
-    // Filter by status (active/hidden)
-    if (filterState.status.length > 0) {
-      result = result.filter(finding => {
-        if (filterState.status.includes('active') && finding.activeCount > 0) return true;
-        if (filterState.status.includes('hidden') && finding.hiddenCount > 0) return true;
-        return false;
-      });
-    }
-
-    // Filter by severity
-    if (filterState.severity.length > 0) {
-      result = result.filter(finding => 
-        filterState.severity.includes(finding.appFinding.severity)
-      );
-    }
-
-    // Filter by integration
-    if (filterState.integration) {
-      result = result.filter(finding => 
-        finding.integration.id === filterState.integration
-      );
-    }
-
-    // Filter by date range
-    if (filterState.dateFrom || filterState.dateTo) {
-      result = result.filter(finding => {
-        if (!finding.lastDetectedAt) return false;
-
-        // Format the lastDetectedAt date to YYYY-MM-DD for consistent comparison
-        const detectedDateObj = new Date(finding.lastDetectedAt);
-        const detectedDateFormatted = formatDate(detectedDateObj);
-
-        if (filterState.dateFrom && filterState.dateFrom.trim() !== '') {
-          // Compare dates as strings in YYYY-MM-DD format
-          if (detectedDateFormatted < filterState.dateFrom) return false;
-        }
-
-        if (filterState.dateTo && filterState.dateTo.trim() !== '') {
-          // Compare dates as strings in YYYY-MM-DD format
-          if (detectedDateFormatted > filterState.dateTo) return false;
-        }
-
-        return true;
-      });
-    }
-
-    setFilteredFindings(result);
-  }, [findings]);
-
-  // Apply filters when they change
-  useEffect(() => {
-    applyFilters(filters);
-  }, [filters, findings, applyFilters]);
+  // No need for client-side filtering anymore as it's done on the server
+  // Just use the findings directly as they come from the API already filtered
 
   const handleRowClick = (finding: Finding) => {
     router.push(`/security/posture-findings/${finding.id}`);
@@ -237,7 +181,7 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
       )}
     </div>
       <Table
-        data={filteredFindings}
+        data={findings}
         columns={columns as unknown as {
           header: string;
           accessor: keyof Finding | ((item: Finding) => ReactNode);
