@@ -21,7 +21,8 @@ export default function ClientWrapper({ findings: initialFindings, integrations:
   const [findings, setFindings] = useState<FindingsTableFinding[]>(initialFindings);
   const [integrations, setIntegrations] = useState<Integration[]>(initialIntegrations);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isLoadingIntegrations, setIsLoadingIntegrations] = useState<boolean>(false);
+  // Remove unused state variable
+  // const [isLoadingIntegrations, setIsLoadingIntegrations] = useState<boolean>(false);
 
   // Default filter values - memoized to prevent recreation on every render
   const defaultFilters = useMemo<FilterState>(() => ({
@@ -52,7 +53,6 @@ export default function ClientWrapper({ findings: initialFindings, integrations:
 
   // Fetch all active integrations
   const fetchAllIntegrations = async () => {
-    setIsLoadingIntegrations(true);
     try {
       // Fetch data from API
       const response = await fetch(`/api/security/posture-findings?mode=integrations`);
@@ -67,8 +67,6 @@ export default function ClientWrapper({ findings: initialFindings, integrations:
       setIntegrations(data.integrations);
     } catch (error) {
       console.error('Error fetching integrations:', error);
-    } finally {
-      setIsLoadingIntegrations(false);
     }
   };
 
@@ -152,7 +150,7 @@ export default function ClientWrapper({ findings: initialFindings, integrations:
       setFilters(newFilters);
       fetchFindings(newFilters);
     }
-  }, [searchParams, defaultFilters]);
+  }, [searchParams, defaultFilters, filters.dateFrom, filters.dateTo, filters.integration, filters.severity, filters.status]);
 
   // Update URL query parameters when filters change
   const handleFilterChange = (newFilters: FilterState) => {

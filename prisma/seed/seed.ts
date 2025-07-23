@@ -706,6 +706,13 @@ async function main() {
         "description": "Detects RDS clusters that are consistently running on-demand without a corresponding Reserved Instance (RI) covering their instance type, region, and availability zone. Lack of RIs for predictable workloads leads to unnecessarily high hourly charges. Purchasing RIs for sustained usage can optimize cost efficiency.",
         "type": "cost"
       },
+      {
+        "key": "aws_elb_idle",
+        "name": "Elastic Load Balancer (ELB) Is Idle and Should Be Deleted",
+        "severity": "medium",
+        "description": "Detects Elastic Load Balancers (Classic, ALB, or NLB) that have no registered targets or have served zero or minimal traffic over a defined period (e.g., 7–30 days). Idle ELBs still incur hourly charges and may indicate abandoned infrastructure. These should be reviewed and deleted if no longer required.",
+        "type": "cost"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",

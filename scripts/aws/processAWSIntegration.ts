@@ -8,6 +8,7 @@ import { findEC2Findings } from './findEC2Findings';
 import { findRDSFindings } from './findRDSFindings';
 import { findCloudFrontFindings } from './findCloudFrontFindings';
 import { findEBSFindings } from './findEBSFindings';
+import { findELBFindings } from './findELBFindings';
 import {
   assumeRole
 } from './utils'
@@ -137,6 +138,10 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const ebsFindings = await findEBSFindings(credentials, region, accountId);
     console.log(`Found ${ebsFindings.length} EBS findings in AWS`);
 
+    // Find ELB issues (idle load balancers)
+    const elbFindings = await findELBFindings(credentials, region, accountId);
+    console.log(`Found ${elbFindings.length} ELB findings in AWS`);
+
     // Combine all findings
     const foundAppFindings = [
       ...iamFindings,
@@ -146,7 +151,8 @@ export async function processAWSIntegration(integration: any, appId: string, pri
       ...ec2Findings,
       ...rdsFindings,
       ...cloudFrontFindings,
-      ...ebsFindings
+      ...ebsFindings,
+      ...elbFindings
     ];
 
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);
