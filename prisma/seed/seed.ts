@@ -679,6 +679,13 @@ async function main() {
         "type": "posture"
       },
       {
+        "key": "aws_ebs_gp2_volumes",
+        "name": "EBS Volumes Using gp2 Instead of gp3",
+        "severity": "medium",
+        "description": "Detects Amazon EBS volumes still using the gp2 volume type. AWS recommends migrating to gp3 for better performance tuning and lower cost. gp3 offers higher baseline performance, separate IOPS/bandwidth configuration, and up to 20% cost savings compared to gp2.",
+        "type": "posture"
+      },
+      {
         "key": "aws_rds_instance_without_ri",
         "name": "RDS Instance Running Without Matching Reserved Instance",
         "severity": "medium",

@@ -7,6 +7,7 @@ import { findVPCFindings } from './findVPCFindings';
 import { findEC2Findings } from './findEC2Findings';
 import { findRDSFindings } from './findRDSFindings';
 import { findCloudFrontFindings } from './findCloudFrontFindings';
+import { findEBSFindings } from './findEBSFindings';
 import {
   assumeRole
 } from './utils'
@@ -132,6 +133,10 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const cloudFrontFindings = await findCloudFrontFindings(credentials, region, accountId);
     console.log(`Found ${cloudFrontFindings.length} CloudFront findings in AWS`);
 
+    // Find EBS issues (volumes using gp2 instead of gp3)
+    const ebsFindings = await findEBSFindings(credentials, region, accountId);
+    console.log(`Found ${ebsFindings.length} EBS findings in AWS`);
+
     // Combine all findings
     const foundAppFindings = [
       ...iamFindings,
@@ -140,7 +145,8 @@ export async function processAWSIntegration(integration: any, appId: string, pri
       ...vpcFindings,
       ...ec2Findings,
       ...rdsFindings,
-      ...cloudFrontFindings
+      ...cloudFrontFindings,
+      ...ebsFindings
     ];
 
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);

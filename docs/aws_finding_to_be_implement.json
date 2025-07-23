@@ -291,13 +291,13 @@
       "type": "cost"
     },
     {
-      "name": "CloudFront Distribution Does Not Have Compression Enabled",
+      "name": "EBS Volumes Using gp2 Instead of gp3",
       "category": {
-        "product": "CloudFront",
+        "product": "EC2",
         "type": "Posture",
-        "observation": "Misconfiguration"
+        "observation": "Inefficiency"
       },
-      "description": "Detects CloudFront distributions where content compression (gzip or Brotli) is not enabled. Compression reduces data size over the network, improves performance for clients, and lowers data transfer costs. This setting should be enabled for all distributions that serve compressible content like HTML, CSS, or JavaScript.",
+      "description": "Detects Amazon EBS volumes still using the gp2 volume type. AWS recommends migrating to gp3 for better performance tuning and lower cost. gp3 offers higher baseline performance, separate IOPS/bandwidth configuration, and up to 20% cost savings compared to gp2.",
       "vendor": "Amazon Web Services",
       "severity": "Medium"
     }
