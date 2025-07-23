@@ -289,6 +289,17 @@
       "severity": "medium",
       "description": "Detects RDS clusters that are consistently running on-demand without a corresponding Reserved Instance (RI) covering their instance type, region, and availability zone. Lack of RIs for predictable workloads leads to unnecessarily high hourly charges. Purchasing RIs for sustained usage can optimize cost efficiency.",
       "type": "cost"
+    },
+    {
+      "name": "CloudFront Distribution Does Not Have Compression Enabled",
+      "category": {
+        "product": "CloudFront",
+        "type": "Posture",
+        "observation": "Misconfiguration"
+      },
+      "description": "Detects CloudFront distributions where content compression (gzip or Brotli) is not enabled. Compression reduces data size over the network, improves performance for clients, and lowers data transfer costs. This setting should be enabled for all distributions that serve compressible content like HTML, CSS, or JavaScript.",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
     }
   ]
 }

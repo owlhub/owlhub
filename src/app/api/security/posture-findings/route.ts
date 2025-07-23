@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     const findings = await prisma.integrationFindingDetail.findMany({
       where: whereClause,
       orderBy: {
-        createdAt: 'desc',
+        lastDetectedAt: 'desc',
       },
     });
 

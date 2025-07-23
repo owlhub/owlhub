@@ -6,6 +6,7 @@ import { findS3Findings } from './findS3Findings';
 import { findVPCFindings } from './findVPCFindings';
 import { findEC2Findings } from './findEC2Findings';
 import { findRDSFindings } from './findRDSFindings';
+import { findCloudFrontFindings } from './findCloudFrontFindings';
 import {
   assumeRole
 } from './utils'
@@ -127,8 +128,20 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const rdsFindings = await findRDSFindings(credentials, region, accountId);
     console.log(`Found ${rdsFindings.length} RDS findings in AWS`);
 
+    // Find CloudFront issues (distributions without compression enabled)
+    const cloudFrontFindings = await findCloudFrontFindings(credentials, region, accountId);
+    console.log(`Found ${cloudFrontFindings.length} CloudFront findings in AWS`);
+
     // Combine all findings
-    const foundAppFindings = [...iamFindings, ...acmFindings, ...s3Findings, ...vpcFindings, ...ec2Findings, ...rdsFindings];
+    const foundAppFindings = [
+      ...iamFindings,
+      ...acmFindings,
+      ...s3Findings,
+      ...vpcFindings,
+      ...ec2Findings,
+      ...rdsFindings,
+      ...cloudFrontFindings
+    ];
 
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);
 

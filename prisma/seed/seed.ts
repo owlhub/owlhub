@@ -479,7 +479,7 @@ async function main() {
         "key": "aws_root_user_has_access_keys",
         "name": "AWS Root User has Access Keys",
         "severity": "critical",
-        "description": "The AWS root user has access keys, which is a critical security risk as these keys provide programmatic access with full permissions and should not be used for day-to-day operations.",
+        "description": "The AWS root user has access keys, which is a security risk as the root user should not have programmatic access. Root user access keys should be deleted and IAM users with appropriate permissions should be used instead.",
         "type": "posture"
       },
       {
@@ -670,6 +670,13 @@ async function main() {
         "severity": "low",
         "description": "Detects Elastic IPs (EIPs) that are allocated in your AWS account but not associated with any EC2 instance, NAT Gateway, or ENI. These unassociated EIPs incur hourly charges and can consume quota unnecessarily. They should be released or reassigned to avoid waste.",
         "type": "cost"
+      },
+      {
+        "key": "aws_cloudfront_distribution_compression_disabled",
+        "name": "CloudFront Distribution Does Not Have Compression Enabled",
+        "severity": "medium",
+        "description": "Detects CloudFront distributions where content compression (gzip or Brotli) is not enabled. Compression reduces data size over the network, improves performance for clients, and lowers data transfer costs. This setting should be enabled for all distributions that serve compressible content like HTML, CSS, or JavaScript.",
+        "type": "posture"
       },
       {
         "key": "aws_rds_instance_without_ri",
