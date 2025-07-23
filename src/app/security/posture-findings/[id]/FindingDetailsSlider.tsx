@@ -114,7 +114,10 @@ export default function FindingDetailsSlider({
       }
 
       // Then make the API call
-      const response = await fetch('/api/security/posture-findings', {
+      // Create a URL object to ensure proper URL construction
+      const url = new URL('/api/security/posture-findings', window.location.origin);
+
+      const response = await fetch(url.toString(), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -127,6 +130,12 @@ export default function FindingDetailsSlider({
 
       if (!response.ok) {
         throw new Error('Failed to update finding status');
+      }
+
+      // Check if the response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}`);
       }
 
       const data = await response.json();
@@ -169,7 +178,10 @@ export default function FindingDetailsSlider({
       }
 
       // Make the API call
-      const response = await fetch('/api/security/posture-findings', {
+      // Create a URL object to ensure proper URL construction
+      const url = new URL('/api/security/posture-findings', window.location.origin);
+
+      const response = await fetch(url.toString(), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -182,6 +194,12 @@ export default function FindingDetailsSlider({
 
       if (!response.ok) {
         throw new Error('Failed to update findings status');
+      }
+
+      // Check if the response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}`);
       }
 
       const data = await response.json();

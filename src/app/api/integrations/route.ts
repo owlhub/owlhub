@@ -10,11 +10,16 @@ interface ConfigField {
 }
 
 // GET: Fetch all integrations (application-wide)
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth().catch(error => {
     console.error("Auth error:", error);
     return null;
   });
+
+  // Get query parameters
+  const url = new URL(request.url);
+  const appId = url.searchParams.get('appId');
+  const onlyActive = url.searchParams.get('onlyActive');
 
   // Check if the user is authenticated
   if (!session?.user) {
@@ -35,27 +40,43 @@ export async function GET() {
   }
 
   try {
-    // Get all integrations (application-wide)
+    // Build where clause based on query parameters
+    const whereClause: any = {};
+
+    // Filter by appId if provided
+    if (appId) {
+      whereClause.appId = appId;
+    }
+
+    // Filter by active status if provided
+    if (onlyActive === 'true') {
+      whereClause.isEnabled = true;
+    }
+
+    // Get all integrations (application-wide) without config field
     const integrations = await prisma.integration.findMany({
-      include: {
-        app: true
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        appId: true,
+        isEnabled: true,
+        createdAt: true,
+        updatedAt: true,
+        app: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'
       }
     });
 
-    // Transform the config from JSON string to object
-    const transformedIntegrations = integrations.map(integration => ({
-      ...integration,
-      config: JSON.parse(integration.config),
-      app: {
-        ...integration.app,
-        configFields: JSON.parse(integration.app.configFields)
-      }
-    }));
-
-    return NextResponse.json({ integrations: transformedIntegrations });
+    return NextResponse.json({ integrations: integrations });
   } catch (error) {
     console.error("Error fetching integrations:", error);
     return NextResponse.json(

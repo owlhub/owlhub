@@ -9,6 +9,73 @@ interface ConfigField {
   [key: string]: unknown;
 }
 
+// GET: Retrieve a single integration
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth().catch(error => {
+    console.error("Auth error:", error);
+    return null;
+  });
+
+  // Check if the user is authenticated
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  // Only allow super users to retrieve integrations
+  const isSuperUser = session.user.isSuperUser;
+
+  if (!isSuperUser) {
+    return NextResponse.json(
+      { error: "Forbidden" },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const { id } = await params;
+    // Retrieve the integration
+    const integration = await prisma.integration.findFirst({
+      where: {
+        id: id
+      },
+      include: {
+        app: true
+      }
+    });
+
+    if (!integration) {
+      return NextResponse.json(
+        { error: "Integration not found" },
+        { status: 404 }
+      );
+    }
+
+    // Transform the config from JSON string to object
+    const transformedIntegration = {
+      ...integration,
+      config: JSON.parse(integration.config),
+      app: {
+        ...integration.app,
+        configFields: JSON.parse(integration.app.configFields)
+      }
+    };
+
+    return NextResponse.json({ integration: transformedIntegration });
+  } catch (error) {
+    console.error("Error retrieving integration:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
 // Define interface for update data
 interface UpdateData {
   name?: string;

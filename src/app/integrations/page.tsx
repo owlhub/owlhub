@@ -122,25 +122,44 @@ export default function IntegrationsPage() {
   };
 
   // Function to handle opening the configuration modal
-  const handleOpenConfigModal = (integration: Integration) => {
-    // Make a copy of the config values
-    const configCopy = { ...integration.config };
+  const handleOpenConfigModal = async (integration: Integration) => {
+    setUpdatingConfig(true);
 
-    // Ensure boolean fields are properly initialized
-    integration.app.configFields.forEach(field => {
-      if (field.type === 'boolean') {
-        // If the field exists but isn't explicitly 'true', set it to 'false'
-        if (configCopy[field.name] !== 'true') {
-          configCopy[field.name] = 'false';
-        }
+    try {
+      // Fetch the integration details including config and configFields from the individual API
+      const response = await fetch(`/api/integrations/${integration.id}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch integration configuration');
       }
-    });
 
-    setConfigValues(configCopy);
-    setConfigErrors({});
-    setConfirmationIntegration(integration);
-    setShowConfigureModal(true);
-    setOpenMenuId(null);
+      const data = await response.json();
+      const fetchedIntegration = data.integration;
+
+      // Make a copy of the config values from the fetched integration
+      const configCopy = { ...fetchedIntegration.config };
+
+      // Ensure boolean fields are properly initialized
+      fetchedIntegration.app.configFields.forEach((field: { type: string; name: string | number; }) => {
+        if (field.type === 'boolean') {
+          // If the field exists but isn't explicitly 'true', set it to 'false'
+          if (configCopy[field.name] !== 'true') {
+            configCopy[field.name] = 'false';
+          }
+        }
+      });
+
+      setConfigValues(configCopy);
+      setConfigErrors({});
+      setConfirmationIntegration(fetchedIntegration);
+      setShowConfigureModal(true);
+      setOpenMenuId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while fetching configuration');
+      console.error('Error fetching integration configuration:', err);
+    } finally {
+      setUpdatingConfig(false);
+    }
   };
 
   // Function to handle configuration field change
@@ -172,8 +191,8 @@ export default function IntegrationsPage() {
   const validateConfigForm = () => {
     const errors: Record<string, string> = {};
 
-    if (confirmationIntegration?.app.configFields) {
-      confirmationIntegration.app.configFields.forEach(field => {
+    if (confirmationIntegration?.app?.configFields) {
+      confirmationIntegration?.app?.configFields.forEach(field => {
         if (field.required && !configValues[field.name]) {
           errors[field.name] = `${field.label} is required`;
         }
@@ -392,7 +411,7 @@ export default function IntegrationsPage() {
         ]}
       >
         <div className="max-h-[60vh] overflow-y-auto">
-          {confirmationIntegration?.app.configFields.map((field) => (
+          {confirmationIntegration?.app?.configFields?.map((field) => (
             <div key={field.name} className="mb-3">
               <label htmlFor={field.name} className="block text-sm font-medium mb-1">
                 {field.label} {field.required && '*'}

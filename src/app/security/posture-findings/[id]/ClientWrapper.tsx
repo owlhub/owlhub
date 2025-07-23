@@ -40,8 +40,15 @@ export default function ClientWrapper({
       setIsLoading(true);
       setError(null);
 
+      // Create a URL object to ensure proper URL construction
+      const url = new URL('/api/security/posture-findings', window.location.origin);
+      // Add query parameters
+      url.searchParams.set('integrationId', integrationId);
+      url.searchParams.set('appFindingId', appFindingId);
+      url.searchParams.set('hidden', hidden.toString());
+
       const response = await fetch(
-        `/api/security/posture-findings?integrationId=${integrationId}&appFindingId=${appFindingId}&hidden=${hidden}`,
+        url.toString(),
         {
           method: 'GET',
           headers: {
@@ -52,6 +59,12 @@ export default function ClientWrapper({
 
       if (!response.ok) {
         throw new Error(`Failed to fetch ${hidden ? 'hidden' : 'active'} findings`);
+      }
+
+      // Check if the response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}`);
       }
 
       const data = await response.json();

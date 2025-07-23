@@ -1,30 +1,19 @@
-import { auth } from "@/lib/auth";
-import ClientWrapper from "./ClientWrapper";
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function PostureFindingsPage() {
-  const session = await auth().catch(error => {
-    console.error("Auth error:", error);
-    return null;
+import { useSession } from "next-auth/react";
+import ClientWrapper from "./ClientWrapper";
+import { useRouter } from "next/navigation";
+
+export default function PostureFindingsPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated: () => router.push('/login?redirect=/security/posture-findings'),
   });
 
-  // Check if the user is authenticated
-  if (!session?.user) {
-    // Redirect to home page with the current URL as a parameter
-    redirect("/login?redirect=/security/posture-findings");
+  if (status === "loading") {
+    return <></>;
   }
-
-  // Fetch findings from the API endpoint
-  const response = await fetch(`/api/security/posture-findings?mode=summary`);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch findings: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-
-  // Extract findings and integrations from the API response
-  const { findings: formattedFindings, integrations: uniqueIntegrations } = data;
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -36,7 +25,7 @@ export default async function PostureFindingsPage() {
 
       <p className="mb-4">Review and take action against security issues found in your application or cloud</p>
 
-      <ClientWrapper findings={formattedFindings} integrations={uniqueIntegrations} />
+      <ClientWrapper />
     </div>
   );
 }

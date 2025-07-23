@@ -8,21 +8,18 @@ import FindingsTable, { FilterState, Finding as FindingsTableFinding } from './F
 interface Integration {
   id: string;
   name: string;
+  app?: {
+    icon?: string;
+  };
 }
 
-interface ClientWrapperProps {
-  findings: FindingsTableFinding[];
-  integrations: Integration[];
-}
-
-export default function ClientWrapper({ findings: initialFindings, integrations: initialIntegrations }: ClientWrapperProps) {
+export default function ClientWrapper() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [findings, setFindings] = useState<FindingsTableFinding[]>(initialFindings);
-  const [integrations, setIntegrations] = useState<Integration[]>(initialIntegrations);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  // Remove unused state variable
-  // const [isLoadingIntegrations, setIsLoadingIntegrations] = useState<boolean>(false);
+  const [findings, setFindings] = useState<FindingsTableFinding[]>([]);
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoadingIntegrations, setIsLoadingIntegrations] = useState<boolean>(true);
 
   // Default filter values - memoized to prevent recreation on every render
   const defaultFilters = useMemo<FilterState>(() => ({
@@ -53,20 +50,34 @@ export default function ClientWrapper({ findings: initialFindings, integrations:
 
   // Fetch all active integrations
   const fetchAllIntegrations = async () => {
+    setIsLoadingIntegrations(true);
     try {
-      // Fetch data from API
-      const response = await fetch(`/api/security/posture-findings?mode=integrations`);
+      // Fetch data from integrations API
+      // Create a URL object to ensure proper URL construction
+      const url = new URL('/api/integrations', window.location.origin);
+      // Append search params to the URL to get only active integrations
+      url.searchParams.set('onlyActive', 'true');
+
+      const response = await fetch(url.toString());
 
       if (!response.ok) {
         throw new Error(`Failed to fetch integrations: ${response.statusText}`);
       }
 
+      // Check if the response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}`);
+      }
+
       const data = await response.json();
 
       // Update state with new data
-      setIntegrations(data.integrations);
+      setIntegrations(data.integrations || []);
     } catch (error) {
       console.error('Error fetching integrations:', error);
+    } finally {
+      setIsLoadingIntegrations(false);
     }
   };
 
@@ -98,11 +109,25 @@ export default function ClientWrapper({ findings: initialFindings, integrations:
         params.set('dateTo', currentFilters.dateTo);
       }
 
+
       // Fetch data from API
-      const response = await fetch(`/api/security/posture-findings?${params.toString()}`);
+      // Create a URL object to ensure proper URL construction
+      const url = new URL('/api/security/posture-findings', window.location.origin);
+      // Append search params to the URL
+      url.search = params.toString();
+
+      console.log('URL:', url.toString());
+
+      const response = await fetch(url.toString());
 
       if (!response.ok) {
         throw new Error(`Failed to fetch findings: ${response.statusText}`);
+      }
+
+      // Check if the response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}`);
       }
 
       const data = await response.json();
@@ -116,9 +141,10 @@ export default function ClientWrapper({ findings: initialFindings, integrations:
     }
   };
 
-  // Fetch all active integrations when component mounts
+  // Fetch all active integrations and initial findings when component mounts
   useEffect(() => {
     fetchAllIntegrations();
+    fetchFindings(filters);
   }, []);
 
   // Sync filters with URL when URL changes and fetch new data
@@ -193,9 +219,10 @@ export default function ClientWrapper({ findings: initialFindings, integrations:
         integrations={integrations} 
         onFilterChange={handleFilterChange}
         filters={filters}
+        disabled={isLoadingIntegrations}
       />
 
-      {isLoading ? (
+      {isLoading || isLoadingIntegrations ? (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
           <span className="ml-2">Loading...</span>

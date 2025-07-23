@@ -4,6 +4,9 @@ import { auth } from './lib/auth';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
+  // Check if this is an API request
+  const isApiRequest = request.nextUrl.pathname.startsWith('/api/');
+
   try {
     // Check if this is an authentication-related path to avoid potential loops
     const isAuthPath = request.nextUrl.pathname === '/login' ||
@@ -26,15 +29,26 @@ export async function middleware(request: NextRequest) {
 
     console.log(`Middleware: ${request.nextUrl.pathname}`, session);
 
-    // If the user is not logged in, redirect to the home page
+    // If the user is not logged in
     if (!session?.user) {
-      console.log(`Middleware: User not authenticated, redirecting to home page from ${request.nextUrl.pathname}`);
+      console.log(`Middleware: User not authenticated from ${request.nextUrl.pathname}`);
 
+      // For API requests, return JSON response
+      if (isApiRequest) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      // For non-API requests, redirect to login page
       const homeUrl = new URL('/login?redirect='+request.nextUrl.pathname, request.url);
       return NextResponse.redirect(homeUrl);
     }
 
-    // Check if the user has access to the requested page using the API
+    // For API requests, we don't need to check page access
+    if (isApiRequest) {
+      return NextResponse.next();
+    }
+
+    // For non-API requests, check if the user has access to the requested page
     const apiUrl = new URL('/api/auth/page-access', request.url);
     apiUrl.searchParams.set('path', request.nextUrl.pathname);
 
@@ -55,7 +69,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch (error) {
     console.error("Middleware error:", error);
-    // Redirect to error page in case of middleware errors
+
+    // For API requests, return JSON error response
+    if (isApiRequest) {
+      return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+
+    // For non-API requests, redirect to error page
     const errorUrl = new URL('/error', request.url);
     errorUrl.searchParams.set('error', 'ServerError');
     errorUrl.searchParams.set('error_description', 'An error occurred while processing your request.');
