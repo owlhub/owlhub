@@ -32,7 +32,7 @@ export default async function PostureFindingsPage() {
       appFinding: true
     },
     orderBy: {
-      createdAt: 'desc'
+      lastDetectedAt: 'desc'
     }
   });
 
