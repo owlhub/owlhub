@@ -37,14 +37,6 @@ const baseTopbarMenus: Omit<TopbarMenu, 'path'>[] = [
     ]
   },
   {
-    name: "OwlFlow",
-    requiredRole: "superuser", // Only visible to admin users
-    sidebarItems: [
-      { name: "Webhooks", path: "/owlflow/webhooks", icon: "🔄" },
-      { name: "Flows", path: "/owlflow/flows", icon: "🔀" },
-    ]
-  },
-  {
     name: "Security",
     requiredRole: "any", // Visible to all authenticated users
     sidebarItems: [

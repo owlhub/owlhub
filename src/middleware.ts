@@ -76,6 +76,6 @@ export const config = {
      * - error (error page)
      * - unauthorized (unauthorized page)
      */
-    '/((?!api/auth|api/webhooks/receive|_next/static|_next/image|favicon.ico|login|error|unauthorized|assets).*)',
+    '/((?!api/auth|_next/static|_next/image|favicon.ico|login|error|unauthorized|assets).*)',
   ],
 };
