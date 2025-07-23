@@ -6,7 +6,8 @@ import {
   DescribeInternetGatewaysCommand,
   DescribeRouteTablesCommand,
   DescribeSubnetsCommand,
-  DescribeNetworkInterfacesCommand
+  DescribeNetworkInterfacesCommand,
+  DescribeVpcEndpointsCommand
 } from '@aws-sdk/client-ec2';
 
 /**
@@ -33,6 +34,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     const emptyVpcFindings: any[] = [];
     const blackholeRouteFindings: any[] = [];
     const noEniResourcesFindings: any[] = [];
+    const missingGatewayEndpointFindings: any[] = [];
 
     // Check each region for VPC issues
     for (const regionName of regions) {
@@ -136,6 +138,54 @@ export async function findVPCFindings(credentials: any, region: string, accountI
 
           noEniResourcesFindings.push(finding);
           findings.push(finding);
+        }
+
+        // Skip gateway endpoint check for VPCs without ENI resources
+        if (hasEniResources) {
+          // Get all Gateway Endpoints in the region
+          const gatewayEndpoints = await findGatewayEndpoints(ec2Client);
+
+          // Check if the VPC has Gateway Endpoints for S3 and DynamoDB
+          const vpcEndpoints = gatewayEndpoints.filter(endpoint => 
+            endpoint.VpcId === vpc.VpcId
+          );
+
+          const hasS3Endpoint = vpcEndpoints.some(endpoint => 
+            endpoint.ServiceName && endpoint.ServiceName.includes('s3')
+          );
+
+          const hasDynamoDBEndpoint = vpcEndpoints.some(endpoint => 
+            endpoint.ServiceName && endpoint.ServiceName.includes('dynamodb')
+          );
+
+          // If the VPC is missing either S3 or DynamoDB Gateway Endpoint, create a finding
+          if (!hasS3Endpoint || !hasDynamoDBEndpoint) {
+            const missingServices = [];
+            if (!hasS3Endpoint) missingServices.push('S3');
+            if (!hasDynamoDBEndpoint) missingServices.push('DynamoDB');
+
+            const finding = {
+              id: 'aws_vpc_missing_gateway_endpoint',
+              key: `aws-vpc-missing-gateway-endpoint-${accountId}-${regionName}-${vpc.VpcId}`,
+              title: `VPC Missing Gateway Endpoint for ${missingServices.join(' and ')} in Region ${regionName}`,
+              description: `VPC (${vpc.VpcId}) in region ${regionName} does not have a Gateway Endpoint for ${missingServices.join(' and ')}. Without endpoint routing, access defaults to public internet paths, potentially increasing security risks and incurring NAT Gateway data processing charges. Using Gateway Endpoints ensures secure, private access from within the VPC.`,
+              additionalInfo: {
+                vpcId: vpc.VpcId,
+                region: regionName,
+                cidrBlock: vpc.CidrBlock,
+                missingEndpoints: missingServices,
+                existingEndpoints: vpcEndpoints.map(endpoint => ({
+                  endpointId: endpoint.VpcEndpointId,
+                  serviceName: endpoint.ServiceName,
+                  state: endpoint.State
+                })),
+                ...(accountId && { accountId })
+              }
+            };
+
+            missingGatewayEndpointFindings.push(finding);
+            findings.push(finding);
+          }
         }
       }
 
@@ -249,6 +299,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     console.log(`Found ${flowLogsNotEnabledFindings.length} VPCs without flow logs across all regions`);
     console.log(`Found ${emptyVpcFindings.length} empty VPCs without subnets across all regions`);
     console.log(`Found ${noEniResourcesFindings.length} VPCs without ENI-provisioning resources across all regions`);
+    console.log(`Found ${missingGatewayEndpointFindings.length} VPCs without Gateway Endpoints for S3 or DynamoDB across all regions`);
     console.log(`Found ${igwNotAttachedFindings.length} Internet Gateways not attached to any VPC across all regions`);
     console.log(`Found ${igwNotRoutedFindings.length} Internet Gateways not properly routed across all regions`);
     console.log(`Found ${unusedRouteTableFindings.length} unused route tables across all regions`);
@@ -589,4 +640,28 @@ function getRouteTargetType(route: any): string {
   }
 
   return 'Unknown';
+}
+
+/**
+ * Find all Gateway Endpoints in a region
+ * @param ec2Client - EC2 client
+ * @returns Array of Gateway Endpoints
+ */
+async function findGatewayEndpoints(ec2Client: EC2Client) {
+  try {
+    const command = new DescribeVpcEndpointsCommand({
+      Filters: [
+        {
+          Name: 'vpc-endpoint-type',
+          Values: ['Gateway']
+        }
+      ]
+    });
+
+    const response = await ec2Client.send(command);
+    return response.VpcEndpoints || [];
+  } catch (error) {
+    console.error('Error finding Gateway Endpoints:', error);
+    return [];
+  }
 }

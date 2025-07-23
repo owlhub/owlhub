@@ -658,6 +658,13 @@ async function main() {
         "type": "posture"
       },
       {
+        "key": "aws_vpc_missing_gateway_endpoint",
+        "name": "S3 or DynamoDB Traffic Not Routed Through Gateway Endpoint",
+        "severity": "high",
+        "description": "Detects traffic to Amazon S3 or DynamoDB that is not routed through a VPC Gateway Endpoint. Without endpoint routing, access defaults to public internet paths, potentially increasing security risks and incurring NAT Gateway data processing charges. Using Gateway Endpoints ensures secure, private access from within the VPC.",
+        "type": "posture"
+      },
+      {
         "key": "aws_ec2_unattached_eni",
         "name": "Unattached Elastic Network Interface (ENI)",
         "severity": "low",
