@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import ClientWrapper from "./ClientWrapper";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 
 export default async function PostureFindingsPage() {
   const session = await auth().catch(error => {
@@ -15,18 +14,8 @@ export default async function PostureFindingsPage() {
     redirect("/login?redirect=/security/posture-findings");
   }
 
-  // Get the host from headers for constructing the API URL
-  const headersList = headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-
   // Fetch findings from the API endpoint
-  const response = await fetch(`${protocol}://${host}/api/security/posture-findings?mode=summary`, {
-    headers: {
-      'Cookie': headersList.get('cookie') || '',
-    },
-    cache: 'no-store',
-  });
+  const response = await fetch(`/api/security/posture-findings?mode=summary`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch findings: ${response.statusText}`);
