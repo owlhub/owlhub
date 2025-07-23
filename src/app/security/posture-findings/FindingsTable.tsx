@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { useState, useCallback, ReactNode } from 'react';
 import AppIcon from "@/src/components/AppIcon";
 import Link from "next/link";
 import Table from "@/src/components/Table";
