@@ -37,25 +37,18 @@ function CustomPrismaAdapter(p: typeof prisma) {
 
         // Create a super admin role if it doesn't exist
         let superAdminRole = await p.role.findUnique({
-          where: { name: "Super Admin" },
+          where: { name: "Super Administrator - All Privileges" },
         });
 
-        if (!superAdminRole) {
-          superAdminRole = await p.role.create({
+        if (superAdminRole) {
+          // Assign the super admin role to the first user
+          await p.userRole.create({
             data: {
-              name: "Super Admin",
-              description: "Has access to all pages and features",
+              userId: createdUser.id,
+              roleId: superAdminRole.id,
             },
           });
         }
-
-        // Assign the super admin role to the first user
-        await p.userRole.create({
-          data: {
-            userId: createdUser.id,
-            roleId: superAdminRole.id,
-          },
-        });
 
         // Return the updated user
         const updatedUser = await p.user.findUnique({

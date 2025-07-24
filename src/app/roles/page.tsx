@@ -30,7 +30,7 @@ export default async function RolesPage() {
   // Only allow super users or users with admin roles to access the roles list
   const isSuperUser = session.user.isSuperUser;
   const hasAdminRole = session.user.roles && session.user.roles.some(role => 
-    role.name === "Super Admin" || role.name === "Admin"
+    role.name === "Super Administrator - All Privileges"
   );
 
   if (!isSuperUser && !hasAdminRole) {

@@ -8,16 +8,6 @@ export async function middleware(request: NextRequest) {
   const isApiRequest = request.nextUrl.pathname.startsWith('/api/');
 
   try {
-    // Check if this is an authentication-related path to avoid potential loops
-    const isAuthPath = request.nextUrl.pathname === '/login' ||
-      request.nextUrl.pathname === '/error' ||
-      request.nextUrl.pathname.startsWith('/api/auth');
-
-    if (isAuthPath) {
-      // Don't apply middleware to authentication paths
-      return NextResponse.next();
-    }
-
     console.log(`Middleware: ${request.nextUrl.pathname}`);
 
     if (request.nextUrl.pathname === '/') {
@@ -35,7 +25,9 @@ export async function middleware(request: NextRequest) {
 
       // For API requests, return JSON response
       if (isApiRequest) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({
+          error: "Unauthorized"
+        }, { status: 401 });
       }
 
       // For non-API requests, redirect to login page

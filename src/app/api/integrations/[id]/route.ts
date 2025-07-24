@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/lib/auth";
+import {checkApiPermission} from "@/lib/api-permissions";
 
 // Define interface for config fields
 interface ConfigField {
@@ -19,21 +20,17 @@ export async function GET(
     return null;
   });
 
-  // Check if the user is authenticated
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
+  // Check if the user has permission to access this API route
+  const permissionCheck = await checkApiPermission(
+     session,
+     "/api/integrations/:id",
+     "GET"
+  );
 
-  // Only allow super users to retrieve integrations
-  const isSuperUser = session.user.isSuperUser;
-
-  if (!isSuperUser) {
+  if (!permissionCheck.authorized) {
     return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403 }
+       { error: permissionCheck.message },
+       { status: 403 }
     );
   }
 
@@ -94,21 +91,17 @@ export async function PATCH(
     return null;
   });
 
-  // Check if the user is authenticated
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
+  // Check if the user has permission to access this API route
+  const permissionCheck = await checkApiPermission(
+     session,
+     "/api/integrations/:id",
+     "PATCH"
+  );
 
-  // Only allow super users to update integrations
-  const isSuperUser = session.user.isSuperUser;
-
-  if (!isSuperUser) {
+  if (!permissionCheck.authorized) {
     return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403 }
+       { error: permissionCheck.message },
+       { status: 403 }
     );
   }
 
@@ -200,21 +193,17 @@ export async function DELETE(
     return null;
   });
 
-  // Check if the user is authenticated
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
+  // Check if the user has permission to access this API route
+  const permissionCheck = await checkApiPermission(
+     session,
+     "/api/integrations/:id",
+     "DELETE"
+  );
 
-  // Only allow super users to delete integrations
-  const isSuperUser = session.user.isSuperUser;
-
-  if (!isSuperUser) {
+  if (!permissionCheck.authorized) {
     return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403 }
+       { error: permissionCheck.message },
+       { status: 403 }
     );
   }
 

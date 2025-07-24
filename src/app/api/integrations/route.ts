@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/lib/auth";
+import { checkApiPermission } from "@/lib/api-permissions";
 
 // Define interface for config fields
 interface ConfigField {
@@ -16,28 +17,24 @@ export async function GET(request: NextRequest) {
     return null;
   });
 
+  // Check if the user has permission to access this API route
+  const permissionCheck = await checkApiPermission(
+     session,
+     "/api/integrations",
+     "GET"
+  );
+
+  if (!permissionCheck.authorized) {
+    return NextResponse.json(
+       { error: permissionCheck.message },
+       { status: 403 }
+    );
+  }
+
   // Get query parameters
   const url = new URL(request.url);
   const appId = url.searchParams.get('appId');
   const onlyActive = url.searchParams.get('onlyActive');
-
-  // Check if the user is authenticated
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
-  // Only allow super users to access integrations
-  const isSuperUser = session.user.isSuperUser;
-
-  if (!isSuperUser) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403 }
-    );
-  }
 
   try {
     // Build where clause based on query parameters
@@ -93,20 +90,16 @@ export async function POST(request: NextRequest) {
     return null;
   });
 
-  // Check if the user is authenticated
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
+  // Check if the user has permission to access this API route
+  const permissionCheck = await checkApiPermission(
+    session,
+    "/api/integrations",
+    "POST"
+  );
 
-  // Only allow superusers to create integrations
-  const isSuperUser = session.user.isSuperUser;
-
-  if (!isSuperUser) {
+  if (!permissionCheck.authorized) {
     return NextResponse.json(
-      { error: "Forbidden" },
+      { error: permissionCheck.message },
       { status: 403 }
     );
   }

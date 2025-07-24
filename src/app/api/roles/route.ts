@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         description,
+        permissions: {}, // Default empty permissions object
       },
     });
 

@@ -73,7 +73,7 @@ model Role {
   id          String     @id @default(uuid())
   name        String     @unique
   description String?
-  permissions Json? // JSON data for role permissions
+  permissions Json // JSON data for role permissions
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   userRoles   UserRole[]
