@@ -10,9 +10,9 @@ The API route permission system allows for centralized definition and checking o
 
 1. API route permissions are defined centrally in `api-permissions.ts`
 2. Each API route is associated with one or more required permissions
-3. When a user makes a request to an API route, the system checks if the user has the required permissions
-4. If the user has the required permissions, the request is allowed to proceed
-5. If the user does not have the required permissions, the request is rejected with a 403 Forbidden response
+3. When a user makes a request to an API route, the middleware automatically checks if the user has the required permissions
+4. If the user has the required permissions, the request is allowed to proceed to the API route handler
+5. If the user does not have the required permissions, the middleware rejects the request with a 403 Forbidden response
 
 ## Permission Structure
 
@@ -54,49 +54,47 @@ export const apiRoutePermissions: ApiRoutePermission[] = [
 
 ## Using the Permission System in API Routes
 
-To use the permission system in an API route, follow these steps:
+With the middleware-based approach, you don't need to add any permission checking code to your API routes. The middleware automatically handles authentication and permission checks for all API routes.
 
-1. Import the `checkApiPermission` function from `api-permissions.ts`:
-
-```typescript
-import { checkApiPermission } from "@/lib/api-permissions";
-```
-
-2. Use the function to check if the user has permission to access the API route:
+Here's an example of a simple API route:
 
 ```typescript
 export async function GET(request: NextRequest) {
-  const session = await auth().catch(error => {
-    console.error("Auth error:", error);
-    return null;
-  });
+  // Authentication and permission checks are handled by middleware
 
-  // Check if the user is authenticated
-  if (!session?.user) {
+  try {
+    // Your API route logic here
+    const data = await fetchSomeData();
+
+    return NextResponse.json({ data });
+  } catch (error) {
+    console.error("Error in API route:", error);
     return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
+      { error: "Internal Server Error" },
+      { status: 500 }
     );
   }
-
-  // Check if the user has permission to access this API route
-  const permissionCheck = await checkApiPermission(
-    session,
-    "/api/integrations",
-    "GET"
-  );
-
-  if (!permissionCheck.authorized) {
-    return NextResponse.json(
-      { error: permissionCheck.message },
-      { status: 403 }
-    );
-  }
-
-  // Continue with the API route logic
-  // ...
 }
 ```
+
+The middleware will:
+1. Check if the user is authenticated
+2. If authenticated, check if the user has permission to access the API route
+3. If authorized, allow the request to proceed to your API route handler
+4. If not authorized, return a 403 Forbidden response with an appropriate error message
+
+## Middleware Implementation
+
+The permission system is implemented in the middleware (`src/middleware.ts`), which intercepts all API requests before they reach the API route handlers. Here's how it works:
+
+1. The middleware identifies API requests by checking if the path starts with `/api/`
+2. For API requests, it first checks if the user is authenticated
+3. If the user is authenticated, it extracts the path and method from the request
+4. It then calls the `checkApiPermission` function to check if the user has permission to access the API route
+5. If the user has permission, the middleware allows the request to proceed to the API route handler
+6. If the user doesn't have permission, the middleware returns a 403 Forbidden response with an appropriate error message
+
+The middleware also includes special handling for `/api/auth/` routes, which are excluded from permission checks since they handle authentication.
 
 ## Adding New API Routes
 

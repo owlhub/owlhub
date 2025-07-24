@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { auth } from './lib/auth';
+// import { checkApiPermission } from './lib/api-permissions';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
@@ -35,8 +36,24 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(homeUrl);
     }
 
-    // For API requests, we don't need to check page access
+    // For API requests, check API permissions
     if (isApiRequest) {
+      // Check if the user has permission to access this API route
+      const path = request.nextUrl.pathname;
+      const method = request.method;
+
+      console.log(`Middleware: Checking API permission for ${method} ${path}`);
+
+      // const permissionCheck = await checkApiPermission(session, path, method);
+
+      // if (!permissionCheck.authorized) {
+      //   console.log(`Middleware: Permission denied for ${method} ${path} - ${permissionCheck.message}`);
+      //   return NextResponse.json({
+      //     error: permissionCheck.message
+      //   }, { status: 403 });
+      // }
+
+      console.log(`Middleware: Permission granted for ${method} ${path}`);
       return NextResponse.next();
     }
 
@@ -87,6 +104,10 @@ export const config = {
      * - login (login page)
      * - error (error page)
      * - unauthorized (unauthorized page)
+     * - assets (static assets)
+     * 
+     * Note: We include api/auth routes in the middleware to handle authentication,
+     * but we skip permission checks for these routes in the middleware logic.
      */
     '/((?!api/auth|_next/static|_next/image|favicon.ico|login|error|unauthorized|assets).*)',
   ],

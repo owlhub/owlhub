@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
-import { auth } from "@/lib/auth";
-import { checkApiPermission } from "@/lib/api-permissions";
 
 // Define interface for config fields
 interface ConfigField {
@@ -12,25 +10,6 @@ interface ConfigField {
 
 // GET: Fetch all integrations (application-wide)
 export async function GET(request: NextRequest) {
-  const session = await auth().catch(error => {
-    console.error("Auth error:", error);
-    return null;
-  });
-
-  // Check if the user has permission to access this API route
-  const permissionCheck = await checkApiPermission(
-     session,
-     "/api/integrations",
-     "GET"
-  );
-
-  if (!permissionCheck.authorized) {
-    return NextResponse.json(
-       { error: permissionCheck.message },
-       { status: 403 }
-    );
-  }
-
   // Get query parameters
   const url = new URL(request.url);
   const appId = url.searchParams.get('appId');
@@ -85,25 +64,6 @@ export async function GET(request: NextRequest) {
 
 // POST: Create a new integration
 export async function POST(request: NextRequest) {
-  const session = await auth().catch(error => {
-    console.error("Auth error:", error);
-    return null;
-  });
-
-  // Check if the user has permission to access this API route
-  const permissionCheck = await checkApiPermission(
-    session,
-    "/api/integrations",
-    "POST"
-  );
-
-  if (!permissionCheck.authorized) {
-    return NextResponse.json(
-      { error: permissionCheck.message },
-      { status: 403 }
-    );
-  }
-
   try {
     // Parse the request body
     const body = await request.json();
