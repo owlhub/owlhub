@@ -1,5 +1,6 @@
 import { PrismaClient, App } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { seedPredefinedRoles, findOrCreateSuperAdminRole, assignSuperAdminRoleToUser } from './roles';
 
 // Define interfaces for our data structures
 interface ActionData {
@@ -57,43 +58,8 @@ async function makeFirstUserSuperUser() {
     });
     console.log("Updated the first user to be a super user.");
 
-    // Find or create the Super Admin role
-    let superAdminRole = await prisma.role.findUnique({
-      where: { name: "Super Admin" }
-    });
-
-    if (!superAdminRole) {
-      superAdminRole = await prisma.role.create({
-        data: {
-          name: "Super Admin",
-          description: "Has access to all pages and features"
-        }
-      });
-      console.log("Created the Super Admin role.");
-    } else {
-      console.log("Super Admin role already exists.");
-    }
-
-    // Check if the user already has the Super Admin role
-    const existingUserRole = await prisma.userRole.findFirst({
-      where: {
-        userId: firstUser.id,
-        roleId: superAdminRole.id
-      }
-    });
-
-    if (existingUserRole) {
-      console.log("The first user already has the Super Admin role.");
-    } else {
-      // Assign the Super Admin role to the user
-      await prisma.userRole.create({
-        data: {
-          userId: firstUser.id,
-          roleId: superAdminRole.id
-        }
-      });
-      console.log("Assigned the Super Admin role to the first user.");
-    }
+    // Assign the Super Administrator role to the first user
+    await assignSuperAdminRoleToUser(firstUser.id);
 
     console.log("makeFirstUserSuperUser operation completed successfully.");
   } catch (error) {
@@ -102,6 +68,9 @@ async function makeFirstUserSuperUser() {
 }
 
 async function main() {
+  // Seed predefined roles first
+  await seedPredefinedRoles();
+
   // Check if any users exist
   const userCount = await prisma.user.count();
 
@@ -122,28 +91,8 @@ async function main() {
       },
     });
 
-    // Check if Super Admin role exists
-    let superAdminRole = await prisma.role.findUnique({
-      where: { name: 'Super Admin' },
-    });
-
-    // Create Super Admin role if it doesn't exist
-    if (!superAdminRole) {
-      superAdminRole = await prisma.role.create({
-        data: {
-          name: 'Super Admin',
-          description: 'Has access to all pages and features',
-        },
-      });
-    }
-
-    // Assign Super Admin role to the admin user
-    await prisma.userRole.create({
-      data: {
-        userId: adminUser.id,
-        roleId: superAdminRole.id,
-      },
-    });
+    // Assign Super Administrator role to the admin user
+    await assignSuperAdminRoleToUser(adminUser.id);
 
     console.log('Default admin user created successfully.');
   }
