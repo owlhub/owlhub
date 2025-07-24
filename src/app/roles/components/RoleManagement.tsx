@@ -31,8 +31,6 @@ export default function RoleManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newRoleName, setNewRoleName] = useState("");
-  const [newRoleDescription, setNewRoleDescription] = useState("");
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -67,46 +65,6 @@ export default function RoleManagement() {
     fetchData();
   }, []);
 
-  // Create a new role
-  const handleCreateRole = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccessMessage(null);
-
-    if (!newRoleName.trim()) {
-      setError("Role name is required");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/roles", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: newRoleName,
-          description: newRoleDescription,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create role");
-      }
-
-      const data = await response.json();
-      setRoles([...roles, { ...data.role, pages: [], users: [] }]);
-      setNewRoleName("");
-      setNewRoleDescription("");
-      setSuccessMessage("Role created successfully");
-
-      // Refresh the page to show the new role
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    }
-  };
 
   // Attach a user to a role
   const handleAttachUser = async (e: React.FormEvent) => {
@@ -227,43 +185,6 @@ export default function RoleManagement() {
         </div>
       )}
 
-      {/* Create new role form */}
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm">
-        <h3 className="text-xl font-bold mb-4">Create New Role</h3>
-        <form onSubmit={handleCreateRole} className="space-y-4">
-          <div>
-            <label htmlFor="roleName" className="block text-sm font-medium mb-1">
-              Role Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="roleName"
-              value={newRoleName}
-              onChange={(e) => setNewRoleName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="roleDescription" className="block text-sm font-medium mb-1">
-              Description
-            </label>
-            <textarea
-              id="roleDescription"
-              value={newRoleDescription}
-              onChange={(e) => setNewRoleDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              rows={3}
-            />
-          </div>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Create Role
-          </button>
-        </form>
-      </div>
 
       {/* Attach user to role form */}
       <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm">

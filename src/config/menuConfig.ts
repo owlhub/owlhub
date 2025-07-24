@@ -37,14 +37,14 @@ const baseTopbarMenus: Omit<TopbarMenu, 'path'>[] = [
     ]
   },
   {
-    name: "Security",
+    name: "CASB",
     requiredRole: "any", // Visible to all authenticated users
     sidebarItems: [
-      { name: "Overview",  path: "/security" },
-      { name: "Posture Findings", path: "/security/posture-findings", icon: "🔒" },
-      { name: "Vulnerabilities", path: "/security/vulnerabilities", icon: "🛡️" },
-      { name: "Scans", path: "/security/scans", icon: "🔍" },
-      { name: "Reports", path: "/security/reports", icon: "📋" }
+      { name: "Overview",  path: "/casb" },
+      { name: "Posture Findings", path: "/casb/posture-findings", icon: "🔒" },
+      { name: "Vulnerabilities", path: "/casb/vulnerabilities", icon: "🛡️" },
+      { name: "Scans", path: "/casb/scans", icon: "🔍" },
+      { name: "Reports", path: "/casb/reports", icon: "📋" }
     ]
   },
   {
