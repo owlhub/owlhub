@@ -125,6 +125,13 @@ export const apiRoutePermissions: ApiRoutePermission[] = [
     ]
   },
   {
+    path: "/api/casb/overview",
+    method: "GET",
+    requiredPermissions: [
+      { resource: "casb", action: "read" }
+    ]
+  },
+  {
     path: "/api/casb/posture-findings",
     method: "GET",
     requiredPermissions: [

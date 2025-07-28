@@ -16,6 +16,10 @@ const predefinedRoles = [
       member: {
         read: true,
         edit: true
+      },
+      casb: {
+        read: true,
+        edit: true
       }
     }
   },
@@ -31,6 +35,10 @@ const predefinedRoles = [
       member: {
         read: true,
         edit: false
+      },
+      casb: {
+        read: true,
+        edit: true
       }
     }
   },
@@ -44,6 +52,10 @@ const predefinedRoles = [
         install: false
       },
       member: {
+        read: true,
+        edit: false
+      },
+      casb: {
         read: true,
         edit: false
       }
