@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import AppIcon from "@/components/AppIcon";
 
 // Define interfaces for API response data
+
 interface RecentFinding {
   id: string;
   key: string;
@@ -55,6 +57,7 @@ interface OverviewData {
       total: number;
     };
   };
+  enabledIntegrationsCount: number;
   recentFindings: RecentFinding[];
 }
 
@@ -151,7 +154,8 @@ export default function CASBPage() {
   const mediumCount = overview.severityCounts.medium?.total || 0;
   const lowCount = overview.severityCounts.low?.total || 0;
 
-  // No longer using integrationCounts
+  // Get integration count
+  const enabledIntegrationsCount = overview.enabledIntegrationsCount;
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -166,11 +170,10 @@ export default function CASBPage() {
           borderTopColor: 'var(--primary-blue)',
           color: 'var(--foreground)'
         }}>
-          <h2 className="text-lg font-semibold mb-2">Medium Risk Findings</h2>
-          <p className="text-3xl font-bold">{mediumCount}</p>
+          <h2 className="text-lg font-semibold mb-2">Enabled Integrations</h2>
+          <p className="text-3xl font-bold">{enabledIntegrationsCount}</p>
           <div className="text-sm mt-2">
-            <span className="mr-3">Active: {overview.severityCounts.medium?.active || 0}</span>
-            <span>Hidden: {overview.severityCounts.medium?.hidden || 0}</span>
+            <span>Cloud apps with active monitoring</span>
           </div>
         </div>
 
@@ -236,13 +239,11 @@ export default function CASBPage() {
                       <td className="px-4 py-3">{finding.description}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center">
-                          {finding.integration.app.icon && (
-                            <img 
-                              src={finding.integration.app.icon} 
-                              alt={finding.integration.app.name} 
-                              className="w-5 h-5 mr-2" 
-                            />
-                          )}
+                          <AppIcon 
+                            iconName={finding.integration.app.name} 
+                            size={20} 
+                            className="mr-2" 
+                          />
                           {finding.integration.name}
                         </div>
                       </td>

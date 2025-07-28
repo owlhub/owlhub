@@ -26,6 +26,7 @@ import { checkApiPermission } from "@/lib/api-permissions";
  *         total: number
  *       }
  *     },
+ *     enabledIntegrationsCount: number,
  *     recentFindings: [
  *       {
  *         id: string,
@@ -90,7 +91,12 @@ export async function GET(request: NextRequest) {
     const totalHidden = severityCounts.reduce((sum, item) => sum + (item._sum.hiddenCount || 0), 0);
     const totalFindings = totalActive + totalHidden;
 
-    // No longer getting counts by integration
+    // Get count of enabled integrations
+    const enabledIntegrationsCount = await prisma.integration.count({
+      where: {
+        isEnabled: true
+      }
+    });
 
     // Get recent findings (last 7 days)
     const sevenDaysAgo = new Date();
@@ -157,6 +163,7 @@ export async function GET(request: NextRequest) {
         totalActive,
         totalHidden,
         severityCounts: formattedSeverityCounts,
+        enabledIntegrationsCount,
         recentFindings: formattedRecentFindings
       }
     });
