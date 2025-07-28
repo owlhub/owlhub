@@ -1,6 +1,9 @@
-import { auth } from "@/lib/auth";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 // Define interfaces for API response data
 interface IntegrationCount {
@@ -36,12 +39,11 @@ interface RecentFinding {
 
 // Function to fetch data from the CASB overview API
 async function fetchCASBOverview() {
-  const response = await fetch(`${process.env.NEXTAUTH_URL}/api/casb/overview`, {
+  const response = await fetch(`/api/casb/overview`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
-    cache: 'no-store', // Disable caching to always get fresh data
   });
 
   if (!response.ok) {
@@ -51,21 +53,103 @@ async function fetchCASBOverview() {
   return response.json();
 }
 
-export default async function CASBPage() {
-  const session = await auth().catch(error => {
-    console.error("Auth error:", error);
-    return null;
-  });
+// Define interface for overview data
+interface OverviewData {
+  totalFindings: number;
+  totalActive: number;
+  totalHidden: number;
+  severityCounts: {
+    [severity: string]: {
+      active: number;
+      hidden: number;
+      total: number;
+    };
+  };
+  integrationCounts: IntegrationCount[];
+  recentFindings: RecentFinding[];
+}
 
-  // Check if the user is authenticated
-  if (!session?.user) {
-    // Redirect to home page with the current URL as a parameter
-    redirect("/login?redirect=/casb/overview");
+export default function CASBPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [overview, setOverview] = useState<OverviewData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check if the user is authenticated
+    if (status === "unauthenticated") {
+      router.push("/login?redirect=/casb/overview");
+      return;
+    }
+
+    // Only fetch data if the user is authenticated
+    if (status === "authenticated") {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          const data = await fetchCASBOverview();
+          setOverview(data.overview);
+          setError(null);
+        } catch (err) {
+          console.error("Error fetching CASB overview:", err);
+          setError("Failed to fetch CASB overview data. Please try again later.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }
+  }, [status, router]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="p-8 max-w-6xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold">CASB Dashboard</h1>
+        </header>
+        <div className="flex justify-center items-center h-64">
+          <p className="text-lg">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Fetch data from the CASB overview API
-  const data = await fetchCASBOverview();
-  const overview = data.overview;
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-8 max-w-6xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold">CASB Dashboard</h1>
+        </header>
+        <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-8">
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If no overview data is available yet, show a placeholder
+  if (!overview) {
+    return (
+      <div className="p-8 max-w-6xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold">CASB Dashboard</h1>
+        </header>
+        <div className="flex justify-center items-center h-64">
+          <p className="text-lg">No data available</p>
+        </div>
+      </div>
+    );
+  }
 
   // Extract counts for dashboard widgets
   const totalFindings = overview.totalFindings;
