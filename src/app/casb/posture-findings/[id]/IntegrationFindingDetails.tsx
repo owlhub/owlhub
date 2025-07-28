@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import ClientWrapper from "./ClientWrapper";
 
 interface IntegrationFinding {
