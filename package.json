@@ -12,8 +12,7 @@
     "migrate:create": "npx prisma format && npx prisma migrate dev --name",
     "migrate:deploy": "npx prisma migrate deploy",
     "migrate:reset": "npx prisma migrate reset",
-    "migrate:check": "npx ts-node -P tsconfig.scripts.json scripts/check-migrations.ts",
-    "postinstall": "prisma generate"
+    "migrate:check": "npx ts-node -P tsconfig.scripts.json scripts/check-migrations.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
