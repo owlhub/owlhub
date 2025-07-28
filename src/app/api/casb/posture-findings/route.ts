@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
+import { auth } from "@/lib/auth";
+import { checkApiPermission } from "@/lib/api-permissions";
 
 // Define interface for where clause for summary findings
 interface WhereClause {
@@ -13,6 +15,20 @@ interface WhereClause {
 
 export async function GET(request: NextRequest) {
   try {
+    // Get the session
+    const session = await auth();
+
+    // Check if the user has permission to access this API route
+    const permissionCheck = await checkApiPermission(session, "/api/casb/posture-findings", "GET");
+
+    if (!permissionCheck.authorized) {
+      console.log(`API Route: Permission denied for GET /api/posture-findings/ - ${permissionCheck.message}`);
+      return NextResponse.json({
+        error: permissionCheck.message
+      }, { status: 403 });
+    }
+
+
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
 
