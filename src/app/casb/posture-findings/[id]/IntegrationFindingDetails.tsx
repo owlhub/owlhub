@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from "next/link";
 import ClientWrapper from "./ClientWrapper";
 
+// Define valid severity levels
+const SEVERITY_LEVELS = ['low', 'medium', 'high', 'critical'];
+
 interface IntegrationFinding {
   id: string;
   integrationId: string;
@@ -33,6 +36,56 @@ export default function IntegrationFindingDetails({ id }: IntegrationFindingDeta
   const [integrationFinding, setIntegrationFinding] = useState<IntegrationFinding | null>(null);
   const [activeCount, setActiveCount] = useState(0);
   const [hiddenCount, setHiddenCount] = useState(0);
+  const [isUpdatingSeverity, setIsUpdatingSeverity] = useState(false);
+  const [severityUpdateError, setSeverityUpdateError] = useState<string | null>(null);
+
+  // Function to handle severity change
+  const handleSeverityChange = async (newSeverity: string) => {
+    if (!integrationFinding || newSeverity === integrationFinding.severity) {
+      return; // No change or no finding
+    }
+
+    try {
+      setIsUpdatingSeverity(true);
+      setSeverityUpdateError(null);
+
+      const response = await fetch(`/api/casb/posture-findings/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          severity: newSeverity
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update severity: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.integrationFinding) {
+        throw new Error('Failed to update severity. Please try again.');
+      }
+
+      // Update the integration finding with the new data
+      setIntegrationFinding({
+        ...integrationFinding,
+        severity: data.integrationFinding.severity
+      });
+
+      // Update counts if they changed
+      if (data.activeCount !== undefined) setActiveCount(data.activeCount);
+      if (data.hiddenCount !== undefined) setHiddenCount(data.hiddenCount);
+
+    } catch (err) {
+      console.error("Error updating severity:", err);
+      setSeverityUpdateError("Failed to update severity. Please try again.");
+    } finally {
+      setIsUpdatingSeverity(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,8 +153,10 @@ export default function IntegrationFindingDetails({ id }: IntegrationFindingDeta
         return { bg: 'rgba(234, 88, 12, 0.1)', color: 'rgb(234, 88, 12)' };
       case 'medium':
         return { bg: 'rgba(234, 179, 8, 0.1)', color: 'rgb(234, 179, 8)' };
-      default:
+      case 'low':
         return { bg: 'rgba(34, 197, 94, 0.1)', color: 'rgb(34, 197, 94)' };
+      default:
+        return { bg: 'rgba(107, 114, 128, 0.1)', color: 'rgb(107, 114, 128)' };
     }
   };
 
@@ -161,16 +216,41 @@ export default function IntegrationFindingDetails({ id }: IntegrationFindingDeta
       <header className="mb-8">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">{integrationFinding.appFinding.name}</h1>
-          <span 
-            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" 
-            style={{ 
-              background: severityStyle.bg,
-              color: severityStyle.color
-            }}
-          >
-            {integrationFinding.severity.charAt(0).toUpperCase() +
-               integrationFinding.severity.slice(1)}
-          </span>
+          <div className="flex items-center">
+            {severityUpdateError && (
+              <div className="mr-3 text-red-600 text-sm">
+                {severityUpdateError}
+              </div>
+            )}
+            <div className="relative">
+              <select
+                value={integrationFinding.severity}
+                onChange={(e) => handleSeverityChange(e.target.value)}
+                disabled={isUpdatingSeverity}
+                className="appearance-none px-3 py-1 pr-8 rounded-full text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ 
+                  background: severityStyle.bg,
+                  color: severityStyle.color,
+                  borderColor: 'transparent'
+                }}
+              >
+                {SEVERITY_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                {isUpdatingSeverity ? (
+                  <div className="animate-spin h-4 w-4 border-b-2 border-current"></div>
+                ) : (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
