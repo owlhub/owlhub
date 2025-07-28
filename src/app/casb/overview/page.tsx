@@ -2,6 +2,38 @@ import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+// Define interfaces for API response data
+interface IntegrationCount {
+  integrationId: string;
+  integrationName: string;
+  appName: string;
+  appIcon: string | null;
+  active: number;
+  hidden: number;
+  total: number;
+}
+
+interface RecentFinding {
+  id: string;
+  key: string;
+  description: string;
+  hidden: boolean;
+  lastDetectedAt: string | Date;
+  integration: {
+    id: string;
+    name: string;
+    app: {
+      name: string;
+      icon: string | null;
+    };
+  };
+  finding: {
+    id: string;
+    name: string;
+    severity: string;
+  };
+}
+
 // Function to fetch data from the CASB overview API
 async function fetchCASBOverview() {
   const response = await fetch(`${process.env.NEXTAUTH_URL}/api/casb/overview`, {
@@ -123,7 +155,7 @@ export default async function CASBPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {overview.recentFindings.map((finding) => (
+                  {overview.recentFindings.map((finding: RecentFinding) => (
                     <tr key={finding.id} className="border-b border-border hover:bg-muted/50">
                       <td className="px-4 py-3">{finding.description}</td>
                       <td className="px-4 py-3">
@@ -175,7 +207,7 @@ export default async function CASBPage() {
       <div>
         <h2 className="text-xl font-bold mb-4">Findings by Integration</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {overview.integrationCounts.map((integration) => (
+          {overview.integrationCounts.map((integration: IntegrationCount) => (
             <div key={integration.integrationId} className="bg-card rounded-lg shadow-sm p-4">
               <div className="flex items-center mb-2">
                 {integration.appIcon && (
