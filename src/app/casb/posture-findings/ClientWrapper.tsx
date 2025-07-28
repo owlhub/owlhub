@@ -64,12 +64,6 @@ export default function ClientWrapper() {
         throw new Error(`Failed to fetch integrations: ${response.statusText}`);
       }
 
-      // Check if the response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Expected JSON response but got ${contentType}`);
-      }
-
       const data = await response.json();
 
       // Update state with new data
@@ -87,7 +81,6 @@ export default function ClientWrapper() {
     try {
       // Create URL with query parameters
       const params = new URLSearchParams();
-      params.set('mode', 'summary');
 
       if (currentFilters.status.length > 0) {
         params.set('status', currentFilters.status.join(','));
@@ -109,7 +102,6 @@ export default function ClientWrapper() {
         params.set('dateTo', currentFilters.dateTo);
       }
 
-
       // Fetch data from API
       // Create a URL object to ensure proper URL construction
       const url = new URL('/api/casb/posture-findings', window.location.origin);
@@ -122,12 +114,6 @@ export default function ClientWrapper() {
 
       if (!response.ok) {
         throw new Error(`Failed to fetch findings: ${response.statusText}`);
-      }
-
-      // Check if the response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Expected JSON response but got ${contentType}`);
       }
 
       const data = await response.json();
