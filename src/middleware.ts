@@ -36,24 +36,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(homeUrl);
     }
 
-    // For API requests, check API permissions
+    // For API requests, just pass through (permissions will be checked in individual routes)
     if (isApiRequest) {
-      // Check if the user has permission to access this API route
       const path = request.nextUrl.pathname;
       const method = request.method;
-
-      console.log(`Middleware: Checking API permission for ${method} ${path}`);
-
-      // const permissionCheck = await checkApiPermission(session, path, method);
-
-      // if (!permissionCheck.authorized) {
-      //   console.log(`Middleware: Permission denied for ${method} ${path} - ${permissionCheck.message}`);
-      //   return NextResponse.json({
-      //     error: permissionCheck.message
-      //   }, { status: 403 });
-      // }
-
-      console.log(`Middleware: Permission granted for ${method} ${path}`);
+      console.log(`Middleware: API request detected for ${method} ${path}, passing through to route handler`);
       return NextResponse.next();
     }
 
@@ -111,4 +98,5 @@ export const config = {
      */
     '/((?!api/auth|_next/static|_next/image|favicon.ico|login|error|unauthorized|assets).*)',
   ],
+  runtime: "nodejs",
 };

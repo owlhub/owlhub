@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
+import { auth } from "@/lib/auth";
+import { checkApiPermission } from "@/lib/api-permissions";
 
 // GET: Fetch all available apps
 export async function GET() {
+  // Get the session
+  const session = await auth();
+
+  // Check if the user has permission to access this API route
+  const permissionCheck = await checkApiPermission(session, "/api/apps", "GET");
+
+  if (!permissionCheck.authorized) {
+    console.log(`API Route: Permission denied for GET /api/apps - ${permissionCheck.message}`);
+    return NextResponse.json({
+      error: permissionCheck.message
+    }, { status: 403 });
+  }
   try {
     // Get all apps
     const apps = await prisma.app.findMany({

@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
+import { auth } from "@/lib/auth";
+import { checkApiPermission } from "@/lib/api-permissions";
 
 // GET: Fetch security findings and actions for a specific app
 export async function GET(request: NextRequest) {
+  // Get the session
+  const session = await auth();
+
+  // Check if the user has permission to access this API route
+  const permissionCheck = await checkApiPermission(session, "/api/apps/details", "GET");
+
+  if (!permissionCheck.authorized) {
+    console.log(`API Route: Permission denied for GET /api/apps/details - ${permissionCheck.message}`);
+    return NextResponse.json({
+      error: permissionCheck.message
+    }, { status: 403 });
+  }
+
   // Get the app ID from the query parameters
   const url = new URL(request.url);
   const appId = url.searchParams.get('appId');
