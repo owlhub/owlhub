@@ -1,19 +1,22 @@
-"use client";
-
-import {useSession} from "next-auth/react";
-import { useRouter } from "next/navigation";
+import {redirect} from "next/navigation";
 import IntegrationFindingDetails from "./IntegrationFindingDetails";
+import {auth} from "@/lib/auth";
 
 export default async function PostureFindingDetailsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const router = useRouter();
-  const { status } = useSession({
-    required: true,
-    onUnauthenticated: () => router.push('/login?redirect=/casb/overview'),
+  const session = await auth().catch(error => {
+    console.error("Auth error:", error);
+    return null;
   });
+
+  // Check if the user is authenticated
+  if (!session?.user) {
+    // Redirect to home page with the current URL as a parameter
+    redirect(`/?redirect=/casb/posture-findings`);
+  }
 
   // Get the finding ID from params
   const { id } = await params;
