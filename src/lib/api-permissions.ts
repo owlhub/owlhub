@@ -418,6 +418,7 @@ export async function checkApiPermission(
   path: string,
   method: string
 ): Promise<{ authorized: boolean; message?: string; params?: Record<string, string> }> {
+  method = method.toUpperCase();
   console.log(`\n=== API Permission Check ===`);
   console.log(`Path: ${path}`);
   console.log(`Method: ${method}`);

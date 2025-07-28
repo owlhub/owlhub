@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const session = await auth();
 
     // Check if the user has permission to access this API route
-    const permissionCheck = await checkApiPermission(session, "/api/casb/posture-findings", "GET");
+    const permissionCheck = await checkApiPermission(session, "/api/casb/posture-findings", request.method);
 
     if (!permissionCheck.authorized) {
       console.log(`API Route: Permission denied for GET /api/posture-findings/ - ${permissionCheck.message}`);

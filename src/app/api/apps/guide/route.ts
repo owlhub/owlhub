@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const session = await auth();
 
   // Check if the user has permission to access this API route
-  const permissionCheck = await checkApiPermission(session, "/api/apps/guide", "GET");
+  const permissionCheck = await checkApiPermission(session, "/api/apps/guide", request.method);
 
   if (!permissionCheck.authorized) {
     console.log(`API Route: Permission denied for GET /api/apps/guide - ${permissionCheck.message}`);

@@ -24,7 +24,7 @@ export async function GET(
   const permissionCheck = await checkApiPermission(
      session,
      "/api/integrations/:id",
-     "GET"
+     request.method
   );
 
   if (!permissionCheck.authorized) {
@@ -95,7 +95,7 @@ export async function PATCH(
   const permissionCheck = await checkApiPermission(
      session,
      "/api/integrations/:id",
-     "PATCH"
+     request.method
   );
 
   if (!permissionCheck.authorized) {
@@ -197,7 +197,7 @@ export async function DELETE(
   const permissionCheck = await checkApiPermission(
      session,
      "/api/integrations/:id",
-     "DELETE"
+     request.method
   );
 
   if (!permissionCheck.authorized) {

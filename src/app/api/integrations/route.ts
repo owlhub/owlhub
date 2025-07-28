@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   const session = await auth();
 
   // Check if the user has permission to access this API route
-  const permissionCheck = await checkApiPermission(session, "/api/integrations", "GET");
+  const permissionCheck = await checkApiPermission(session, "/api/integrations", request.method);
 
   if (!permissionCheck.authorized) {
     console.log(`API Route: Permission denied for GET /api/integrations - ${permissionCheck.message}`);
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
   const session = await auth();
 
   // Check if the user has permission to access this API route
-  const permissionCheck = await checkApiPermission(session, "/api/integrations", "POST");
+  const permissionCheck = await checkApiPermission(session, "/api/integrations", request.method);
 
   if (!permissionCheck.authorized) {
     console.log(`API Route: Permission denied for POST /api/integrations - ${permissionCheck.message}`);

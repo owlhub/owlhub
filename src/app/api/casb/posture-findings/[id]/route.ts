@@ -22,7 +22,7 @@ export async function GET(
     const session = await auth();
 
     // Check if the user has permission to access this API route
-    const permissionCheck = await checkApiPermission(session, "/api/casb/posture-findings/:id", "GET");
+    const permissionCheck = await checkApiPermission(session, "/api/casb/posture-findings/:id", request.method);
 
     // Get the integration finding ID from the route parameters
     const { id } = await params;
