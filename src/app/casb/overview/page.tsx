@@ -220,23 +220,31 @@ export default function CASBPage() {
       {/* Recent Findings Section */}
       <div className="mb-8">
         <h2 className="text-xl font-bold mb-4">Recent Findings (Last 7 Days)</h2>
-        <div className="bg-card rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm overflow-hidden border border-border" style={{ backgroundColor: 'var(--card-bg)' }}>
           {overview.recentFindings.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="px-4 py-3 text-left">Finding</th>
-                    <th className="px-4 py-3 text-left">Integration</th>
-                    <th className="px-4 py-3 text-left">Severity</th>
-                    <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-left">Detected</th>
+                  <tr className="border-b border-border" style={{ backgroundColor: 'var(--muted, rgba(0,0,0,0.02))' }}>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Finding</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Integration</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Severity</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Status</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Detected</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {overview.recentFindings.map((finding: RecentFinding) => (
-                    <tr key={finding.id} className="border-b border-border hover:bg-muted/50">
-                      <td className="px-4 py-3">{finding.description}</td>
+                  {overview.recentFindings.map((finding: RecentFinding, index: number) => (
+                    <tr 
+                      key={finding.id} 
+                      className="border-b border-border hover:bg-muted/50 transition-colors"
+                      style={{ backgroundColor: index % 2 === 0 ? 'var(--card-bg)' : 'var(--muted-light, rgba(0,0,0,0.01))' }}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>
+                          {finding.description}
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center">
                           <AppIcon 
@@ -244,28 +252,58 @@ export default function CASBPage() {
                             size={20} 
                             className="mr-2" 
                           />
-                          {finding.integration.name}
+                          <div>
+                            <div className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>
+                              {finding.integration.name}
+                            </div>
+                            <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                              {finding.integration.app.name}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          finding.finding.severity === 'critical' ? 'bg-red-100 text-red-800' :
-                          finding.finding.severity === 'high' ? 'bg-orange-100 text-orange-800' :
-                          finding.finding.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          finding.finding.severity === 'critical' ? 'bg-red-100 text-red-800 border border-red-200 shadow-sm' :
+                          finding.finding.severity === 'high' ? 'bg-orange-100 text-orange-800 border border-orange-200 shadow-sm' :
+                          finding.finding.severity === 'medium' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200 shadow-sm' :
+                          'bg-blue-100 text-blue-800 border border-blue-200 shadow-sm'
+                        }`} style={{
+                          backgroundColor: finding.finding.severity === 'critical' ? 'var(--error-light, #FEE2E2)' : 
+                                          finding.finding.severity === 'high' ? 'var(--warning-light, #FFEDD5)' : 
+                                          finding.finding.severity === 'medium' ? 'var(--caution-light, #FEF9C3)' : 
+                                          'var(--info-light, #DBEAFE)',
+                          color: finding.finding.severity === 'critical' ? 'var(--error-dark, #991B1B)' : 
+                                finding.finding.severity === 'high' ? 'var(--warning-dark, #9A3412)' : 
+                                finding.finding.severity === 'medium' ? 'var(--caution-dark, #854D0E)' : 
+                                'var(--info-dark, #1E40AF)',
+                          borderColor: finding.finding.severity === 'critical' ? 'var(--error, #EF4444)' : 
+                                      finding.finding.severity === 'high' ? 'var(--warning, #F97316)' : 
+                                      finding.finding.severity === 'medium' ? 'var(--caution, #EAB308)' : 
+                                      'var(--info, #3B82F6)'
+                        }}>
                           {finding.finding.severity.charAt(0).toUpperCase() + finding.finding.severity.slice(1)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          finding.hidden ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          finding.hidden ? 'bg-gray-100 text-gray-800 border border-gray-200 shadow-sm' : 'bg-green-100 text-green-800 border border-green-200 shadow-sm'
+                        }`} style={{
+                          backgroundColor: finding.hidden ? 'var(--muted-light, #F3F4F6)' : 'var(--success-light, #DCFCE7)',
+                          color: finding.hidden ? 'var(--muted-dark, #4B5563)' : 'var(--success-dark, #166534)',
+                          borderColor: finding.hidden ? 'var(--muted, #9CA3AF)' : 'var(--success, #22C55E)'
+                        }}>
                           {finding.hidden ? 'Hidden' : 'Active'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm">
-                        {new Date(finding.lastDetectedAt).toLocaleDateString()}
+                      <td className="px-4 py-3">
+                        <div className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                          {new Date(finding.lastDetectedAt).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -273,8 +311,10 @@ export default function CASBPage() {
               </table>
             </div>
           ) : (
-            <div className="p-4 text-center text-muted-foreground">
-              No recent findings in the last 7 days.
+            <div className="p-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
+              <div className="mb-2 text-3xl opacity-30">📊</div>
+              <p className="font-medium mb-1">No Recent Findings</p>
+              <p className="text-sm">No findings have been detected in the last 7 days.</p>
             </div>
           )}
         </div>
