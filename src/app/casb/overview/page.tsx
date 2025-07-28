@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { prisma } from "@/src/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 export default async function CASBPage() {
@@ -12,7 +12,7 @@ export default async function CASBPage() {
   // Check if the user is authenticated
   if (!session?.user) {
     // Redirect to home page with the current URL as a parameter
-    redirect("/login?redirect=/casb");
+    redirect("/login?redirect=/casb/overview");
   }
 
   // Fetch security data for dashboard widgets
@@ -81,42 +81,6 @@ export default async function CASBPage() {
           <h2 className="text-lg font-semibold mb-2">High Risk Findings</h2>
           <p className="text-3xl font-bold">{highRiskFindingsCount}</p>
         </div>
-      </div>
-
-      {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link href="/casb/vulnerabilities" className="block">
-          <div className="p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4" style={{ 
-            background: 'var(--card-bg)', 
-            borderLeftColor: 'var(--primary-blue)',
-            color: 'var(--foreground)'
-          }}>
-            <h2 className="text-xl font-bold mb-2">Vulnerabilities</h2>
-            <p style={{ color: 'var(--foreground)', opacity: 0.7 }}>View and manage security vulnerabilities</p>
-          </div>
-        </Link>
-
-        <Link href="/casb/scans" className="block">
-          <div className="p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4" style={{ 
-            background: 'var(--card-bg)', 
-            borderLeftColor: 'var(--accent-orange)',
-            color: 'var(--foreground)'
-          }}>
-            <h2 className="text-xl font-bold mb-2">Scans</h2>
-            <p style={{ color: 'var(--foreground)', opacity: 0.7 }}>View security scan history and results</p>
-          </div>
-        </Link>
-
-        <Link href="/casb/reports" className="block">
-          <div className="p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4" style={{ 
-            background: 'var(--card-bg)', 
-            borderLeftColor: 'var(--accent-green)',
-            color: 'var(--foreground)'
-          }}>
-            <h2 className="text-xl font-bold mb-2">Reports</h2>
-            <p style={{ color: 'var(--foreground)', opacity: 0.7 }}>Generate and view security reports</p>
-          </div>
-        </Link>
       </div>
     </div>
   );

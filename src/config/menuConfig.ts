@@ -40,7 +40,7 @@ const baseTopbarMenus: Omit<TopbarMenu, 'path'>[] = [
     name: "CASB",
     requiredRole: "any", // Visible to all authenticated users
     sidebarItems: [
-      { name: "Overview",  path: "/casb" },
+      { name: "Overview",  path: "/casb/overview" },
       { name: "Posture Findings", path: "/casb/posture-findings", icon: "🔒" },
       { name: "Integrations", path: "/integrations", icon: "🔌" }
     ]
