@@ -129,7 +129,6 @@ export const apiRoutePermissions: ApiRoutePermission[] = [
     method: "GET",
     requiredPermissions: [
       { resource: "casb", action: "read" },
-      { resource: "integration", action: "read" }
     ]
   },
   {
@@ -137,7 +136,6 @@ export const apiRoutePermissions: ApiRoutePermission[] = [
     method: "GET",
     requiredPermissions: [
       { resource: "casb", action: "read" },
-      { resource: "integration", action: "read" }
     ]
   },
   {
@@ -152,7 +150,6 @@ export const apiRoutePermissions: ApiRoutePermission[] = [
     method: "GET",
     requiredPermissions: [
       { resource: "casb", action: "read" },
-      { resource: "integration", action: "read" }
     ]
   },
   {
@@ -160,7 +157,6 @@ export const apiRoutePermissions: ApiRoutePermission[] = [
     method: "GET",
     requiredPermissions: [
       { resource: "casb", action: "read" },
-      { resource: "integration", action: "read" }
     ]
   },
   {
@@ -169,7 +165,6 @@ export const apiRoutePermissions: ApiRoutePermission[] = [
     requiredPermissions: [
       { resource: "casb", action: "read" },
       { resource: "casb", action: "edit" },
-      { resource: "integration", action: "read" }
     ]
   }
   // Add more API routes as needed
