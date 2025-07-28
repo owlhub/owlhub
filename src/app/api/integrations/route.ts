@@ -10,6 +10,13 @@ interface ConfigField {
   [key: string]: unknown;
 }
 
+// Define interface for integration where clause
+interface IntegrationWhereClause {
+  appId?: string;
+  isEnabled?: boolean;
+  [key: string]: unknown;
+}
+
 // GET: Fetch all integrations (application-wide)
 export async function GET(request: NextRequest) {
   // Get the session
@@ -32,7 +39,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Build where clause based on query parameters
-    const whereClause: any = {};
+    const whereClause: IntegrationWhereClause = {};
 
     // Filter by appId if provided
     if (appId) {
