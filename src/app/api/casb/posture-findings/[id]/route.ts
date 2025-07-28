@@ -15,7 +15,7 @@ import { checkApiPermission } from "@/lib/api-permissions";
  */
 export async function GET(
    request: NextRequest,
-   { params }: { params: { id: string } }
+   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get the session
@@ -24,15 +24,18 @@ export async function GET(
     // Check if the user has permission to access this API route
     const permissionCheck = await checkApiPermission(session, "/api/casb/posture-findings/:id", "GET");
 
+    // Get the integration finding ID from the route parameters
+    const { id } = await params;
+
     if (!permissionCheck.authorized) {
-      console.log(`API Route: Permission denied for GET /api/posture-findings/${params.id} - ${permissionCheck.message}`);
+      console.log(`API Route: Permission denied for GET /api/posture-findings/${id} - ${permissionCheck.message}`);
       return NextResponse.json({
         error: permissionCheck.message
       }, { status: 403 });
     }
 
-    // Get the integration finding ID from the route parameters
-    const integrationFindingId = params.id;
+    // Use the integration finding ID
+    const integrationFindingId = id;
 
     if (!integrationFindingId) {
       return NextResponse.json({ error: "Integration Finding ID is required" }, { status: 400 });

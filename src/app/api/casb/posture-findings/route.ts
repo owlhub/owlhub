@@ -12,7 +12,6 @@ interface WhereClause {
   [key: string]: unknown;
 }
 
-
 export async function GET(request: NextRequest) {
   try {
     // Get the session
@@ -104,23 +103,9 @@ export async function GET(request: NextRequest) {
       lastDetectedAt: finding.lastDetectedAt ? finding.lastDetectedAt.toISOString() : null
     }));
 
-    // Extract unique integrations for the filter
-    const uniqueIntegrations = Array.from(
-       new Map(
-          findings.map(finding => [
-            finding.integration.id,
-            {
-              id: finding.integration.id,
-              name: finding.integration.name
-            }
-          ])
-       ).values()
-    );
-
     return NextResponse.json({
       success: true,
       findings: formattedFindings,
-      integrations: uniqueIntegrations
     });
   } catch (error) {
     console.error("Error fetching findings:", error);
