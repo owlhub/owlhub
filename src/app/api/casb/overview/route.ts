@@ -26,17 +26,6 @@ import { checkApiPermission } from "@/lib/api-permissions";
  *         total: number
  *       }
  *     },
- *     integrationCounts: [
- *       {
- *         integrationId: string,
- *         integrationName: string,
- *         appName: string,
- *         appIcon: string | null,
- *         active: number,
- *         hidden: number,
- *         total: number
- *       }
- *     ],
  *     recentFindings: [
  *       {
  *         id: string,
@@ -101,47 +90,7 @@ export async function GET(request: NextRequest) {
     const totalHidden = severityCounts.reduce((sum, item) => sum + (item._sum.hiddenCount || 0), 0);
     const totalFindings = totalActive + totalHidden;
 
-    // Get counts by integration
-    const integrationCounts = await prisma.integrationFinding.groupBy({
-      by: ['integrationId'],
-      _sum: {
-        activeCount: true,
-        hiddenCount: true
-      }
-    });
-
-    // Get integration details
-    const integrations = await prisma.integration.findMany({
-      where: {
-        id: {
-          in: integrationCounts.map(item => item.integrationId)
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        app: {
-          select: {
-            name: true,
-            icon: true
-          }
-        }
-      }
-    });
-
-    // Format integration counts
-    const formattedIntegrationCounts = integrationCounts.map(item => {
-      const integration = integrations.find(i => i.id === item.integrationId);
-      return {
-        integrationId: item.integrationId,
-        integrationName: integration?.name || 'Unknown',
-        appName: integration?.app.name || 'Unknown',
-        appIcon: integration?.app.icon || null,
-        active: item._sum.activeCount || 0,
-        hidden: item._sum.hiddenCount || 0,
-        total: (item._sum.activeCount || 0) + (item._sum.hiddenCount || 0)
-      };
-    }).sort((a, b) => b.total - a.total); // Sort by total count descending
+    // No longer getting counts by integration
 
     // Get recent findings (last 7 days)
     const sevenDaysAgo = new Date();
@@ -208,7 +157,6 @@ export async function GET(request: NextRequest) {
         totalActive,
         totalHidden,
         severityCounts: formattedSeverityCounts,
-        integrationCounts: formattedIntegrationCounts,
         recentFindings: formattedRecentFindings
       }
     });

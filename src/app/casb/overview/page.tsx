@@ -6,16 +6,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 // Define interfaces for API response data
-interface IntegrationCount {
-  integrationId: string;
-  integrationName: string;
-  appName: string;
-  appIcon: string | null;
-  active: number;
-  hidden: number;
-  total: number;
-}
-
 interface RecentFinding {
   id: string;
   key: string;
@@ -65,7 +55,6 @@ interface OverviewData {
       total: number;
     };
   };
-  integrationCounts: IntegrationCount[];
   recentFindings: RecentFinding[];
 }
 
@@ -162,8 +151,7 @@ export default function CASBPage() {
   const mediumCount = overview.severityCounts.medium?.total || 0;
   const lowCount = overview.severityCounts.low?.total || 0;
 
-  // Get integration count
-  const integrationsCount = overview.integrationCounts.length;
+  // No longer using integrationCounts
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -178,8 +166,12 @@ export default function CASBPage() {
           borderTopColor: 'var(--primary-blue)',
           color: 'var(--foreground)'
         }}>
-          <h2 className="text-lg font-semibold mb-2">Enabled Integrations</h2>
-          <p className="text-3xl font-bold">{integrationsCount}</p>
+          <h2 className="text-lg font-semibold mb-2">Medium Risk Findings</h2>
+          <p className="text-3xl font-bold">{mediumCount}</p>
+          <div className="text-sm mt-2">
+            <span className="mr-3">Active: {overview.severityCounts.medium?.active || 0}</span>
+            <span>Hidden: {overview.severityCounts.medium?.hidden || 0}</span>
+          </div>
         </div>
 
         <div className="p-6 rounded-lg shadow-sm border-t-4" style={{ 
@@ -287,43 +279,6 @@ export default function CASBPage() {
         </div>
       </div>
 
-      {/* Integration Findings Section */}
-      <div>
-        <h2 className="text-xl font-bold mb-4">Findings by Integration</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {overview.integrationCounts.map((integration: IntegrationCount) => (
-            <div key={integration.integrationId} className="bg-card rounded-lg shadow-sm p-4">
-              <div className="flex items-center mb-2">
-                {integration.appIcon && (
-                  <img 
-                    src={integration.appIcon} 
-                    alt={integration.appName} 
-                    className="w-6 h-6 mr-2" 
-                  />
-                )}
-                <h3 className="font-semibold">{integration.integrationName}</h3>
-              </div>
-              <div className="text-sm text-muted-foreground mb-2">
-                {integration.appName}
-              </div>
-              <div className="flex justify-between mt-2">
-                <div>
-                  <div className="text-2xl font-bold">{integration.total}</div>
-                  <div className="text-xs text-muted-foreground">Total Findings</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm">
-                    <span className="text-green-600">{integration.active} Active</span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-gray-500">{integration.hidden} Hidden</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
