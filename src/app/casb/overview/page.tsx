@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useSession } from "next-auth/react";
 import AppIcon from "@/components/AppIcon";
 
 // Define interfaces for API response data
@@ -62,37 +61,31 @@ interface OverviewData {
 }
 
 export default function CASBPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession({
+    required: true,
+    onUnauthenticated: () => router.push('/login?redirect=/casb/overview'),
+  });
   const router = useRouter();
   const [overview, setOverview] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if the user is authenticated
-    if (status === "unauthenticated") {
-      router.push("/login?redirect=/casb/overview");
-      return;
-    }
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchCASBOverview();
+        setOverview(data.overview);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching CASB overview:", err);
+        setError("Failed to fetch CASB overview data. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Only fetch data if the user is authenticated
-    if (status === "authenticated") {
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          const data = await fetchCASBOverview();
-          setOverview(data.overview);
-          setError(null);
-        } catch (err) {
-          console.error("Error fetching CASB overview:", err);
-          setError("Failed to fetch CASB overview data. Please try again later.");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchData();
-    }
+    fetchData();
   }, [status, router]);
 
   // Show loading state
@@ -151,8 +144,6 @@ export default function CASBPage() {
   // Get counts by severity
   const criticalCount = overview.severityCounts.critical?.total || 0;
   const highCount = overview.severityCounts.high?.total || 0;
-  const mediumCount = overview.severityCounts.medium?.total || 0;
-  const lowCount = overview.severityCounts.low?.total || 0;
 
   // Get integration count
   const enabledIntegrationsCount = overview.enabledIntegrationsCount;

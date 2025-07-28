@@ -1,12 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import ClientWrapper from "./ClientWrapper";
-import { useRouter } from "next/navigation";
 
 export default function PostureFindingsPage() {
   const router = useRouter();
-  const { data: session, status } = useSession({
+  const { status } = useSession({
     required: true,
     onUnauthenticated: () => router.push('/login?redirect=/casb/posture-findings'),
   });

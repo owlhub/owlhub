@@ -49,8 +49,7 @@ enum FormStep {
 
 export default function NewIntegrationPage() {
   const router = useRouter();
-
-  const { data: session, status } = useSession({
+  const { status } = useSession({
     required: true,
     onUnauthenticated: () => router.push('/login?redirect=/integrations/new'),
   });
@@ -102,11 +101,6 @@ export default function NewIntegrationPage() {
 
   // Fetch apps
   useEffect(() => {
-    // if (!session?.user) {
-    //   router.push('/?redirect=/integrations/new');
-    //   return;
-    // }
-
     const fetchApps = async () => {
       try {
         const response = await fetch('/api/apps');
@@ -123,12 +117,8 @@ export default function NewIntegrationPage() {
       }
     };
 
-    if (session?.user?.isSuperUser) {
-      fetchApps();
-    } else {
-      setLoading(false);
-    }
-  }, [session, router]);
+    fetchApps();
+  }, [router]);
 
   // Get the selected app
   const selectedApp = apps.find(app => app.id === selectedAppId);
@@ -300,15 +290,6 @@ export default function NewIntegrationPage() {
   if (status === "loading") {
     return (
        <></>
-    );
-  }
-
-  if (!session?.user?.isSuperUser) {
-    return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-        <p>You do not have permission to view this page.</p>
-      </div>
     );
   }
 

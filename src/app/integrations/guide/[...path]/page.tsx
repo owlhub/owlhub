@@ -17,7 +17,7 @@ interface CodeComponentProps {
 export default function GuidePage() {
   const router = useRouter();
 
-  const { data: session, status } = useSession({
+  const { status } = useSession({
     required: true,
     onUnauthenticated: () => router.push('/login?redirect=/integrations/new'),
   });
@@ -52,7 +52,7 @@ export default function GuidePage() {
     if (guidePath) {
       fetchMarkdown();
     }
-  }, [session, router, guidePath]);
+  }, [guidePath]);
 
   if (status === "loading") {
     return (

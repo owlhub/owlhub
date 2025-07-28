@@ -29,7 +29,7 @@ interface Integration {
 
 export default function IntegrationsPage() {
   const router = useRouter();
-  const { data: session, status } = useSession({
+  const { status } = useSession({
     required: true,
     onUnauthenticated: () => router.push('/?redirect=/integrations'),
   });
@@ -266,25 +266,12 @@ export default function IntegrationsPage() {
       }
     };
 
-    if (session?.user?.isSuperUser) {
-      fetchIntegrations();
-    } else {
-      setLoading(false);
-    }
-  }, [session, router]);
+    fetchIntegrations();
+  }, [router]);
 
   if (status === "loading") {
     return (
        <></>
-    );
-  }
-
-  if (!session?.user?.isSuperUser) {
-    return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-        <p>You do not have permission to view this page.</p>
-      </div>
     );
   }
 
