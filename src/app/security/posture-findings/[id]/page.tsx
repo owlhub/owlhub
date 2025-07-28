@@ -57,7 +57,7 @@ export default async function PostureFindingDetailsPage({
     }
   };
 
-  const severityStyle = getSeverityStyle(integrationSecurityFinding.appFinding.severity);
+  const severityStyle = getSeverityStyle(integrationSecurityFinding.severity);
 
   return (
     <div className="p-8 max-w-6xl mx-auto">

@@ -16,6 +16,7 @@ const formatDate = (date: Date): string => {
 
 interface Finding {
   id: string;
+  severity: string;
   activeCount: number;
   hiddenCount: number;
   lastDetectedAt: string | null;
@@ -82,23 +83,23 @@ export default function FindingsTable({ findings, filters }: FindingsTableProps)
         <span 
           className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
           style={{ 
-            background: finding.appFinding.severity === 'critical' 
+            background: finding.severity === 'critical'
               ? 'rgba(220, 38, 38, 0.1)' 
-              : finding.appFinding.severity === 'high'
+              : finding.severity === 'high'
               ? 'rgba(234, 88, 12, 0.1)'
-              : finding.appFinding.severity === 'medium'
+              : finding.severity === 'medium'
               ? 'rgba(234, 179, 8, 0.1)'
               : 'rgba(34, 197, 94, 0.1)',
-            color: finding.appFinding.severity === 'critical' 
+            color: finding.severity === 'critical'
               ? 'rgb(220, 38, 38)' 
-              : finding.appFinding.severity === 'high'
+              : finding.severity === 'high'
               ? 'rgb(234, 88, 12)'
-              : finding.appFinding.severity === 'medium'
+              : finding.severity === 'medium'
               ? 'rgb(234, 179, 8)'
               : 'rgb(34, 197, 94)'
           }}
         >
-          {finding.appFinding.severity.charAt(0).toUpperCase() + finding.appFinding.severity.slice(1)}
+          {finding.severity.charAt(0).toUpperCase() + finding.severity.slice(1)}
         </span>
       ),
       sortable: true,

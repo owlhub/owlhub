@@ -8,6 +8,7 @@ interface IntegrationFinding {
   id: string;
   integrationId: string;
   appFindingId: string;
+  severity: string;
   integration: {
     name: string;
     app: {
@@ -61,6 +62,7 @@ export default function IntegrationFindingDetails({ id }: IntegrationFindingDeta
 
         setIntegrationFinding({
           id: data.integrationFinding.id,
+          severity: data.integrationFinding.severity,
           integrationId: data.integrationFinding.integration.id,
           appFindingId: data.integrationFinding.appFinding.id,
           integration: {
@@ -143,7 +145,7 @@ export default function IntegrationFindingDetails({ id }: IntegrationFindingDeta
     return null;
   }
 
-  const severityStyle = getSeverityStyle(integrationFinding.appFinding.severity);
+  const severityStyle = getSeverityStyle(integrationFinding.severity);
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -166,8 +168,8 @@ export default function IntegrationFindingDetails({ id }: IntegrationFindingDeta
               color: severityStyle.color
             }}
           >
-            {integrationFinding.appFinding.severity.charAt(0).toUpperCase() +
-               integrationFinding.appFinding.severity.slice(1)}
+            {integrationFinding.severity.charAt(0).toUpperCase() +
+               integrationFinding.severity.slice(1)}
           </span>
         </div>
       </header>

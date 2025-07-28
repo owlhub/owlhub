@@ -64,12 +64,6 @@ export default function ClientWrapper() {
         throw new Error(`Failed to fetch integrations: ${response.statusText}`);
       }
 
-      // Check if the response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Expected JSON response but got ${contentType}`);
-      }
-
       const data = await response.json();
 
       // Update state with new data
@@ -122,12 +116,6 @@ export default function ClientWrapper() {
 
       if (!response.ok) {
         throw new Error(`Failed to fetch findings: ${response.statusText}`);
-      }
-
-      // Check if the response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Expected JSON response but got ${contentType}`);
       }
 
       const data = await response.json();
