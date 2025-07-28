@@ -162,6 +162,15 @@ export const apiRoutePermissions: ApiRoutePermission[] = [
       { resource: "casb", action: "read" },
       { resource: "integration", action: "read" }
     ]
+  },
+  {
+    path: "/api/casb/posture-findings/:id/findings",
+    method: "PATCH",
+    requiredPermissions: [
+      { resource: "casb", action: "read" },
+      { resource: "casb", action: "edit" },
+      { resource: "integration", action: "read" }
+    ]
   }
   // Add more API routes as needed
 ];

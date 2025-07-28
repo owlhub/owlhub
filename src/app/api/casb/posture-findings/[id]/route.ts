@@ -45,6 +45,7 @@ export async function GET(
         id: true,
         integrationId: true,
         appFindingId: true,
+        lastDetectedAt: true,
         integration: {
           select: {
             name: true,
@@ -70,9 +71,6 @@ export async function GET(
       return NextResponse.json({ error: "Integration Finding not found" }, { status: 404 });
     }
 
-    // Get the hidden parameter from the request URL
-    const hiddenParam = request.nextUrl.searchParams.get('hidden');
-
     // Count active and hidden findings
     const [activeCount, hiddenCount] = await Promise.all([
       prisma.integrationFindingDetail.count({
@@ -96,6 +94,7 @@ export async function GET(
       success: true,
       integrationFinding: {
         id: integrationFinding.id,
+        lastDetectedAt: integrationFinding.lastDetectedAt,
         integration: {
           id: integrationFinding.integrationId,
           name: integrationFinding.integration.name,

@@ -12,18 +12,16 @@ interface FindingDetail {
 }
 
 interface ClientWrapperProps {
-  integrationId: string;
-  appFindingId: string;
+  integrationFindingId: string;
   initialActiveCount: number;
   initialHiddenCount: number;
 }
 
 type TabType = 'active' | 'hidden';
 
-export default function ClientWrapper({ 
-  integrationId, 
-  appFindingId,
-  initialActiveCount, 
+export default function ClientWrapper({
+  integrationFindingId,
+  initialActiveCount,
   initialHiddenCount 
 }: ClientWrapperProps) {
   const [activeCount, setActiveCount] = useState(initialActiveCount);
@@ -41,38 +39,31 @@ export default function ClientWrapper({
       setError(null);
 
       // Create a URL object to ensure proper URL construction
-      const url = new URL('/api/security/posture-findings', window.location.origin);
+      const url = new URL(`/api/casb/posture-findings/${integrationFindingId}/findings`, window.location.origin);
       // Add query parameters
-      url.searchParams.set('integrationId', integrationId);
-      url.searchParams.set('appFindingId', appFindingId);
       url.searchParams.set('hidden', hidden.toString());
 
       const response = await fetch(
         url.toString(),
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
       );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch ${hidden ? 'hidden' : 'active'} findings`);
       }
 
-      // Check if the response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Expected JSON response but got ${contentType}`);
-      }
-
       const data = await response.json();
 
-      if (hidden) {
-        setHiddenFindings(data.findings);
-      } else {
-        setActiveFindings(data.findings);
+      if (data.success && data.findings) {
+        // Update the appropriate state based on the hidden parameter
+        if (hidden) {
+          setHiddenFindings(data.findings);
+          // Update the hidden count based on the length of the findings array
+          setHiddenCount(data.findings.length);
+        } else {
+          setActiveFindings(data.findings);
+          // Update the active count based on the length of the findings array
+          setActiveCount(data.findings.length);
+        }
       }
     } catch (err) {
       console.error(`Error fetching ${hidden ? 'hidden' : 'active'} findings:`, err);
@@ -80,7 +71,7 @@ export default function ClientWrapper({
     } finally {
       setIsLoading(false);
     }
-  }, [integrationId, appFindingId]);
+  }, [integrationFindingId]);
 
   // Fetch active findings on initial load
   useEffect(() => {
@@ -92,9 +83,9 @@ export default function ClientWrapper({
     setActiveTab(tab);
 
     // Fetch data for the selected tab if we haven't loaded it yet
-    if (tab === 'hidden' && hiddenFindings.length === 0) {
+    if (tab === 'hidden') {
       fetchFindings(true);
-    } else if (tab === 'active' && activeFindings.length === 0) {
+    } else if (tab === 'active') {
       fetchFindings(false);
     }
   };
@@ -150,13 +141,12 @@ export default function ClientWrapper({
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary-blue)]"></div>
         </div>
       ) : (
-        <FindingDetailsSlider 
+        <FindingDetailsSlider
+          integrationFindingId={integrationFindingId}
           findingDetails={activeTab === 'active' ? activeFindings : hiddenFindings} 
-          integrationId={integrationId}
-          appFindingId={appFindingId}
           onCountsUpdate={updateCounts}
           activeTab={activeTab}
-          onRefreshData={() => fetchFindings(activeTab === 'hidden' ? true : false)}
+          onRefreshData={() => fetchFindings(activeTab === 'hidden')}
         />
       )}
     </div>

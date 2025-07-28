@@ -12,20 +12,16 @@ interface FindingDetail {
 }
 
 interface FindingDetailsSliderProps {
+  integrationFindingId: string;
   findingDetails: Array<FindingDetail>;
-  integrationId: string;
-  appFindingId: string;
   onCountsUpdate: (activeCount: number, hiddenCount: number) => void;
   activeTab: 'active' | 'hidden';
   onRefreshData: () => Promise<void>;
 }
 
-export default function FindingDetailsSlider({ 
+export default function FindingDetailsSlider({
+  integrationFindingId,
   findingDetails: initialFindingDetails,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  integrationId,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  appFindingId,
   onCountsUpdate,
   activeTab,
   onRefreshData
@@ -113,29 +109,20 @@ export default function FindingDetailsSlider({
         setSelectedFinding({ ...selectedFinding, hidden: newHiddenStatus });
       }
 
-      // Then make the API call
+      // Then make the API call to the new PATCH endpoint
       // Create a URL object to ensure proper URL construction
-      const url = new URL('/api/security/posture-findings', window.location.origin);
+      const url = new URL(`/api/casb/posture-findings/${integrationFindingId}/findings`, window.location.origin);
 
       const response = await fetch(url.toString(), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: 'PATCH',
         body: JSON.stringify({
-          findingId: finding.id,
+          findingIds: [finding.id],
           hidden: newHiddenStatus,
         }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to update finding status');
-      }
-
-      // Check if the response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Expected JSON response but got ${contentType}`);
       }
 
       const data = await response.json();
@@ -177,12 +164,12 @@ export default function FindingDetailsSlider({
         setSelectedFinding({ ...selectedFinding, hidden: toHidden });
       }
 
-      // Make the API call
+      // Make the API call to the new PATCH endpoint
       // Create a URL object to ensure proper URL construction
-      const url = new URL('/api/security/posture-findings', window.location.origin);
+      const url = new URL(`/api/casb/posture-findings/${integrationFindingId}/findings`, window.location.origin);
 
       const response = await fetch(url.toString(), {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
