@@ -42,16 +42,13 @@ const baseTopbarMenus: Omit<TopbarMenu, 'path'>[] = [
     sidebarItems: [
       { name: "Overview",  path: "/casb" },
       { name: "Posture Findings", path: "/casb/posture-findings", icon: "🔒" },
-      { name: "Vulnerabilities", path: "/casb/vulnerabilities", icon: "🛡️" },
-      { name: "Scans", path: "/casb/scans", icon: "🔍" },
-      { name: "Reports", path: "/casb/reports", icon: "📋" }
+      { name: "Integrations", path: "/integrations", icon: "🔌" }
     ]
   },
   {
     name: "Settings",
     requiredRole: "superuser", // Only visible to superusers
     sidebarItems: [
-      { name: "Integrations", path: "/integrations", icon: "🔌" },
       { name: "Admin", path: "/admin", icon: "⚙️", requiredRole: "admin" },
       { name: "User Management", path: "/settings/users", icon: "👤" },
       { name: "System", path: "/settings/system", icon: "🖥️" }
