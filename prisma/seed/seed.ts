@@ -690,6 +690,13 @@ async function main() {
         "description": "Detects Elastic Load Balancers (Classic, ALB, or NLB) that have no registered targets or have served zero or minimal traffic over a defined period (e.g., 7–30 days). Idle ELBs still incur hourly charges and may indicate abandoned infrastructure. These should be reviewed and deleted if no longer required.",
         "type": "cost"
       },
+      {
+        "key": "aws_route53_public_hosted_zone_not_resolvable",
+        "name": "Route 53 Public Hosted Zone Is Not Resolvable via Public DNS",
+        "severity": "high",
+        "description": "Detects Route 53 public hosted zones that are not resolvable via public DNS resolvers such as 8.8.8.8 or 1.1.1.1. This may indicate missing or incorrect delegation, expired domain registration, or propagation delays. Public hosted zones should be properly configured to ensure DNS resolution works globally.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",
