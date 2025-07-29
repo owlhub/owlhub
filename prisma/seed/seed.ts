@@ -656,6 +656,20 @@ async function main() {
         "type": "cost"
       },
       {
+        "key": "aws_rds_instance_publicly_accessible",
+        "name": "RDS Instance Is Publicly Accessible",
+        "severity": "high",
+        "description": "Detects Amazon RDS instances with the 'PubliclyAccessible' flag set to true. Publicly accessible databases are exposed to the internet, increasing the risk of unauthorized access, data breaches, and denial-of-service attacks. RDS instances should be deployed in private subnets and accessed through secure, internal mechanisms.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_rds_credentials_not_in_secrets_manager",
+        "name": "RDS Root or Master Credentials Not Managed by AWS Secrets Manager",
+        "severity": "high",
+        "description": "Detects RDS instances where the master (root) database credentials are not stored or rotated using AWS Secrets Manager. Managing credentials manually increases the risk of credential sprawl, unauthorized access, and audit non-compliance. Secrets Manager enables secure storage, access control, and automated rotation of RDS credentials.",
+        "type": "posture"
+      },
+      {
         "key": "aws_elb_idle",
         "name": "Elastic Load Balancer (ELB) Is Idle and Should Be Deleted",
         "severity": "medium",
