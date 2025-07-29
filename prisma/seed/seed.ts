@@ -670,6 +670,20 @@ async function main() {
         "type": "posture"
       },
       {
+        "key": "aws_rds_instance_without_deletion_protection",
+        "name": "RDS Instance Does Not Have Deletion Protection Enabled",
+        "severity": "high",
+        "description": "Detects Amazon RDS instances that do not have deletion protection enabled. Without this safeguard, databases can be accidentally or maliciously deleted, leading to data loss, service downtime, and compliance violations. Deletion protection is especially critical for production environments.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_rds_cluster_without_deletion_protection",
+        "name": "RDS Cluster Does Not Have Deletion Protection Enabled",
+        "severity": "high",
+        "description": "Detects RDS clusters (including Amazon Aurora) that do not have deletion protection enabled. Without this setting, the entire cluster—including all DB instances and shared storage—can be accidentally or maliciously deleted. Deletion protection is essential for production and business-critical workloads to prevent data loss and downtime.",
+        "type": "posture"
+      },
+      {
         "key": "aws_elb_idle",
         "name": "Elastic Load Balancer (ELB) Is Idle and Should Be Deleted",
         "severity": "medium",

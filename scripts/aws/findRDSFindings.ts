@@ -15,7 +15,7 @@ import { DescribeRegionsCommand, EC2Client } from '@aws-sdk/client-ec2';
  */
 export async function findRDSFindings(credentials: any, region: string, accountId: string | null = null) {
   try {
-    console.log('Finding RDS issues (Reserved Instances, Public Accessibility, Secrets Manager)');
+    console.log('Finding RDS issues (Reserved Instances, Public Accessibility, Secrets Manager, Deletion Protection)');
 
     // Get all AWS regions
     const regions = await getAllRegions(credentials, region);
@@ -25,6 +25,8 @@ export async function findRDSFindings(credentials: any, region: string, accountI
     const rdsWithoutRIFindings: any[] = [];
     const rdsPubliclyAccessibleFindings: any[] = [];
     const rdsWithoutSecretsManagerFindings: any[] = [];
+    const rdsWithoutDeletionProtectionFindings: any[] = [];
+    const rdsClustersWithoutDeletionProtectionFindings: any[] = [];
 
     // Check each region for RDS issues
     for (const regionName of regions) {
@@ -144,11 +146,67 @@ export async function findRDSFindings(credentials: any, region: string, accountI
           findings.push(finding);
         }
       }
+
+      // Find RDS instances without deletion protection enabled
+      const instancesWithoutDeletionProtection = await findRDSInstancesWithoutDeletionProtection(rdsClient);
+
+      if (instancesWithoutDeletionProtection.length > 0) {
+        for (const instance of instancesWithoutDeletionProtection) {
+          const finding = {
+            id: 'aws_rds_instance_without_deletion_protection',
+            key: `aws-rds-instance-without-deletion-protection-${accountId}-${regionName}-${instance.DBInstanceIdentifier}`,
+            title: `RDS Instance Does Not Have Deletion Protection Enabled in Region ${regionName}`,
+            description: `RDS instance (${instance.DBInstanceIdentifier}) in region ${regionName} does not have deletion protection enabled. Without this safeguard, databases can be accidentally or maliciously deleted, leading to data loss, service downtime, and compliance violations. Deletion protection is especially critical for production environments.`,
+            additionalInfo: {
+              instanceId: instance.DBInstanceIdentifier,
+              region: regionName,
+              instanceType: instance.DBInstanceClass,
+              engine: instance.Engine,
+              engineVersion: instance.EngineVersion,
+              availabilityZone: instance.AvailabilityZone,
+              multiAZ: instance.MultiAZ,
+              deletionProtection: instance.DeletionProtection,
+              ...(accountId && { accountId })
+            }
+          };
+
+          rdsWithoutDeletionProtectionFindings.push(finding);
+          findings.push(finding);
+        }
+      }
+
+      // Find RDS clusters without deletion protection enabled
+      const clustersWithoutDeletionProtection = await findRDSClustersWithoutDeletionProtection(rdsClient);
+
+      if (clustersWithoutDeletionProtection.length > 0) {
+        for (const cluster of clustersWithoutDeletionProtection) {
+          const finding = {
+            id: 'aws_rds_cluster_without_deletion_protection',
+            key: `aws-rds-cluster-without-deletion-protection-${accountId}-${regionName}-${cluster.DBClusterIdentifier}`,
+            title: `RDS Cluster Does Not Have Deletion Protection Enabled in Region ${regionName}`,
+            description: `RDS cluster (${cluster.DBClusterIdentifier}) in region ${regionName} does not have deletion protection enabled. Without this setting, the entire cluster—including all DB instances and shared storage—can be accidentally or maliciously deleted. Deletion protection is essential for production and business-critical workloads to prevent data loss and downtime.`,
+            additionalInfo: {
+              clusterId: cluster.DBClusterIdentifier,
+              region: regionName,
+              engine: cluster.Engine,
+              engineVersion: cluster.EngineVersion,
+              availabilityZones: cluster.AvailabilityZones,
+              deletionProtection: cluster.DeletionProtection,
+              ...(accountId && { accountId })
+            }
+          };
+
+          rdsClustersWithoutDeletionProtectionFindings.push(finding);
+          findings.push(finding);
+        }
+      }
     }
 
     console.log(`Found ${rdsWithoutRIFindings.length} RDS instances/clusters without matching Reserved Instances across all regions`);
     console.log(`Found ${rdsPubliclyAccessibleFindings.length} publicly accessible RDS instances across all regions`);
     console.log(`Found ${rdsWithoutSecretsManagerFindings.length} RDS instances without AWS Secrets Manager for master credentials across all regions`);
+    console.log(`Found ${rdsWithoutDeletionProtectionFindings.length} RDS instances without deletion protection enabled across all regions`);
+    console.log(`Found ${rdsClustersWithoutDeletionProtectionFindings.length} RDS clusters without deletion protection enabled across all regions`);
     return findings;
   } catch (error) {
     console.error('Error finding RDS issues:', error);
@@ -350,6 +408,54 @@ async function findRDSInstancesWithoutSecretsManager(rdsClient: RDSClient) {
     return instancesWithoutSecrets;
   } catch (error) {
     console.error('Error finding RDS instances without Secrets Manager:', error);
+    return [];
+  }
+}
+
+/**
+ * Find RDS instances that do not have deletion protection enabled
+ * @param rdsClient - RDS client
+ * @returns Array of RDS instances without deletion protection enabled
+ */
+async function findRDSInstancesWithoutDeletionProtection(rdsClient: RDSClient) {
+  try {
+    // Get all RDS instances
+    const instancesCommand = new DescribeDBInstancesCommand({});
+    const instancesResponse = await rdsClient.send(instancesCommand);
+    const allInstances = instancesResponse.DBInstances || [];
+
+    // Filter instances that have DeletionProtection flag set to false
+    const instancesWithoutDeletionProtection = allInstances.filter(instance => 
+      instance.DeletionProtection === false
+    );
+
+    return instancesWithoutDeletionProtection;
+  } catch (error) {
+    console.error('Error finding RDS instances without deletion protection:', error);
+    return [];
+  }
+}
+
+/**
+ * Find RDS clusters that do not have deletion protection enabled
+ * @param rdsClient - RDS client
+ * @returns Array of RDS clusters without deletion protection enabled
+ */
+async function findRDSClustersWithoutDeletionProtection(rdsClient: RDSClient) {
+  try {
+    // Get all RDS clusters
+    const clustersCommand = new DescribeDBClustersCommand({});
+    const clustersResponse = await rdsClient.send(clustersCommand);
+    const allClusters = clustersResponse.DBClusters || [];
+
+    // Filter clusters that have DeletionProtection flag set to false
+    const clustersWithoutDeletionProtection = allClusters.filter(cluster => 
+      cluster.DeletionProtection === false
+    );
+
+    return clustersWithoutDeletionProtection;
+  } catch (error) {
+    console.error('Error finding RDS clusters without deletion protection:', error);
     return [];
   }
 }
