@@ -78,25 +78,28 @@ export async function findVPCFindings(credentials: any, region: string, accountI
       for (const vpc of allVpcs) {
         if (!vpc.VpcId) continue;
 
-        const hasFlowLogs = await checkVpcHasFlowLogs(ec2Client, vpc.VpcId);
+        if (vpc.OwnerId === accountId) {
+          const hasFlowLogs = await checkVpcHasFlowLogs(ec2Client, vpc.VpcId);
 
-        if (!hasFlowLogs) {
-          const finding = {
-            id: 'aws_vpc_flow_logs_not_enabled',
-            key: `aws-vpc-flow-logs-not-enabled-${accountId}-${regionName}-${vpc.VpcId}`,
-            title: `VPC Flow Logs Not Enabled in Region ${regionName}`,
-            description: `VPC (${vpc.VpcId}) in region ${regionName} does not have Flow Logs enabled, reducing the ability to monitor and audit network activity.`,
-            additionalInfo: {
-              vpcId: vpc.VpcId,
-              region: regionName,
-              cidrBlock: vpc.CidrBlock,
-              ...(accountId && { accountId })
-            }
-          };
+          if (!hasFlowLogs) {
+            const finding = {
+              id: 'aws_vpc_flow_logs_not_enabled',
+              key: `aws-vpc-flow-logs-not-enabled-${accountId}-${regionName}-${vpc.VpcId}`,
+              title: `VPC Flow Logs Not Enabled in Region ${regionName}`,
+              description: `VPC (${vpc.VpcId}) in region ${regionName} does not have Flow Logs enabled, reducing the ability to monitor and audit network activity.`,
+              additionalInfo: {
+                vpcId: vpc.VpcId,
+                region: regionName,
+                cidrBlock: vpc.CidrBlock,
+                ...(accountId && { accountId })
+              }
+            };
 
-          flowLogsNotEnabledFindings.push(finding);
-          findings.push(finding);
+            flowLogsNotEnabledFindings.push(finding);
+            findings.push(finding);
+          }
         }
+
 
         // Check if the VPC has any subnets
         const hasSubnets = await checkVpcHasSubnets(ec2Client, vpc.VpcId);
@@ -140,8 +143,8 @@ export async function findVPCFindings(credentials: any, region: string, accountI
           findings.push(finding);
         }
 
-        // Skip gateway endpoint check for VPCs without ENI resources
-        if (hasEniResources) {
+        // Skip gateway endpoint check for VPCs if owner is different
+        if (vpc.OwnerId === accountId) {
           // Get all Gateway Endpoints in the region
           const gatewayEndpoints = await findGatewayEndpoints(ec2Client);
 

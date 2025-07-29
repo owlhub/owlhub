@@ -95,6 +95,9 @@ async function processIntegrations() {
         },
         include: {
           app: true
+        },
+        orderBy: {
+          createdAt: 'asc',
         }
       });
 
