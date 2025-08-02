@@ -4,22 +4,22 @@ import {
   DescribeDBClustersCommand,
   DescribeReservedDBInstancesCommand
 } from '@aws-sdk/client-rds';
-import { getAllRegions } from './utils';
 
 /**
  * Find RDS instances or clusters running without matching Reserved Instances
  * @param credentials - AWS credentials
  * @param region - AWS region (used to initialize RDS client for listing regions)
  * @param accountId - AWS account ID
+ * @param activeRegions - Array of active regions to use
  * @returns Array of security findings
  */
-export async function findRDSFindings(credentials: any, region: string, accountId: string | null = null) {
+export async function findRDSFindings(credentials: any, region: string, accountId: string | null = null, activeRegions: string[]) {
   try {
     console.log('Finding RDS issues (Reserved Instances, Public Accessibility, Secrets Manager, Deletion Protection)');
 
-    // Get all AWS regions
-    const regions = await getAllRegions(credentials, region);
-    console.log(`Found ${regions.length} AWS regions`);
+    // Use provided active regions or get all AWS regions, excluding disabled ones
+    const regions = activeRegions;
+    console.log(`Using ${regions.length} AWS regions`);
 
     const findings: any[] = [];
     const rdsWithoutRIFindings: any[] = [];

@@ -18,10 +18,12 @@ const dnsResolve = promisify(dns.resolve);
 /**
  * Find Route 53 public hosted zones that are not resolvable via public DNS
  * @param credentials - AWS credentials
- * @param region - AWS region (used to initialize EC2 client for listing regions)
+ * @param region - AWS region (used to initialize Route53 client)
+ * @param accountId - AWS account ID
+ * @param activeRegions - Array of active regions to use
  * @returns Array of security findings
  */
-export async function findRoute53Findings(credentials: any, region: string, accountId: string | null = null) {
+export async function findRoute53Findings(credentials: any, region: string, accountId: string | null = null, activeRegions: string[]) {
   try {
     console.log('Finding Route 53 public hosted zones that are not resolvable via public DNS');
 

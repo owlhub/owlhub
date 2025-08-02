@@ -4,22 +4,22 @@ import {
   GetLifecyclePolicyCommand,
   LifecyclePolicyNotFoundException
 } from '@aws-sdk/client-ecr';
-import { getAllRegions } from './utils';
 
 /**
  * Find ECR issues in all AWS regions
  * @param credentials - AWS credentials
  * @param region - AWS region (used to initialize EC2 client for listing regions)
  * @param accountId - AWS account ID
+ * @param activeRegions - Array of active regions to use
  * @returns Array of security findings
  */
-export async function findECRFindings(credentials: any, region: string, accountId: string | null = null) {
+export async function findECRFindings(credentials: any, region: string, accountId: string | null = null, activeRegions: string[]) {
   try {
     console.log('Finding ECR issues in all AWS regions');
 
-    // Get all AWS regions
-    const regions = await getAllRegions(credentials, region);
-    console.log(`Found ${regions.length} AWS regions`);
+    // Use the provided active regions
+    const regions = activeRegions;
+    console.log(`Using ${regions.length} AWS regions`);
 
     const findings: any[] = [];
     const nonImmutableRepositoryFindings: any[] = [];

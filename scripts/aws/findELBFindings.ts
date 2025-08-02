@@ -24,9 +24,10 @@ import {
  * @param credentials - AWS credentials
  * @param region - AWS region
  * @param accountId - AWS account ID
+ * @param activeRegions - Array of active regions to use
  * @returns Array of security findings
  */
-export async function findELBFindings(credentials: any, region: string, accountId: string | null = null) {
+export async function findELBFindings(credentials: any, region: string, accountId: string | null = null, activeRegions: string[]) {
   try {
     console.log('Finding Elastic Load Balancers (ELBs) that are idle and should be deleted');
 
@@ -81,7 +82,7 @@ export async function findELBFindings(credentials: any, region: string, accountI
 
       // Check if the load balancer has no registered targets
       const hasNoTargets = await checkELBv2HasNoTargets(elbv2Client, loadBalancerArn);
-      
+
       // Check if the load balancer has minimal traffic
       const hasMinimalTraffic = await checkELBv2HasMinimalTraffic(cloudWatchClient, loadBalancerName, loadBalancerType);
 
@@ -113,10 +114,10 @@ export async function findELBFindings(credentials: any, region: string, accountI
       if (!loadBalancer.LoadBalancerName) continue;
 
       const loadBalancerName = loadBalancer.LoadBalancerName;
-      
+
       // Check if the Classic load balancer has no registered instances
       const hasNoInstances = loadBalancer.Instances?.length === 0;
-      
+
       // Check if the Classic load balancer has minimal traffic
       const hasMinimalTraffic = await checkClassicELBHasMinimalTraffic(cloudWatchClient, loadBalancerName);
 
@@ -166,13 +167,13 @@ async function getAllELBv2LoadBalancers(elbv2Client: ElasticLoadBalancingV2Clien
       const command = new DescribeLoadBalancersCommand({
         Marker: nextMarker
       });
-      
+
       const response = await elbv2Client.send(command);
-      
+
       if (response.LoadBalancers && response.LoadBalancers.length > 0) {
         loadBalancers.push(...response.LoadBalancers);
       }
-      
+
       nextMarker = response.NextMarker;
     } while (nextMarker);
 
@@ -197,13 +198,13 @@ async function getAllClassicLoadBalancers(elbClient: ElasticLoadBalancingClient)
       const command = new DescribeClassicLoadBalancersCommand({
         Marker: nextMarker
       });
-      
+
       const response = await elbClient.send(command);
-      
+
       if (response.LoadBalancerDescriptions && response.LoadBalancerDescriptions.length > 0) {
         loadBalancers.push(...response.LoadBalancerDescriptions);
       }
-      
+
       nextMarker = response.NextMarker;
     } while (nextMarker);
 
@@ -226,9 +227,9 @@ async function checkELBv2HasNoTargets(elbv2Client: ElasticLoadBalancingV2Client,
     const targetGroupsCommand = new DescribeTargetGroupsCommand({
       LoadBalancerArn: loadBalancerArn
     });
-    
+
     const targetGroupsResponse = await elbv2Client.send(targetGroupsCommand);
-    
+
     if (!targetGroupsResponse.TargetGroups || targetGroupsResponse.TargetGroups.length === 0) {
       // No target groups means no targets
       return true;
@@ -241,9 +242,9 @@ async function checkELBv2HasNoTargets(elbv2Client: ElasticLoadBalancingV2Client,
       const targetHealthCommand = new DescribeTargetHealthCommand({
         TargetGroupArn: targetGroup.TargetGroupArn
       });
-      
+
       const targetHealthResponse = await elbv2Client.send(targetHealthCommand);
-      
+
       if (targetHealthResponse.TargetHealthDescriptions && 
           targetHealthResponse.TargetHealthDescriptions.length > 0) {
         // This target group has at least one target
@@ -281,7 +282,7 @@ async function checkELBv2HasMinimalTraffic(
     const metricName = loadBalancerType.toLowerCase() === 'network' ? 'ActiveFlowCount' : 'RequestCount';
     const namespace = loadBalancerType.toLowerCase() === 'network' ? 'AWS/NetworkELB' : 'AWS/ApplicationELB';
     const dimensionName = 'LoadBalancer';
-    
+
     // For ALB, the dimension value is the last part of the ARN
     // For simplicity, we'll just use the name which should work in most cases
     const dimensionValue = loadBalancerName;
@@ -311,7 +312,7 @@ async function checkELBv2HasMinimalTraffic(
     // Check if all data points have minimal traffic
     // For this example, we'll consider "minimal" as less than 10 requests/flows per day
     const minimalTrafficThreshold = 10;
-    
+
     const hasSignificantTraffic = response.Datapoints.some(datapoint => 
       (datapoint.Sum || 0) > minimalTrafficThreshold
     );
@@ -364,7 +365,7 @@ async function checkClassicELBHasMinimalTraffic(
     // Check if all data points have minimal traffic
     // For this example, we'll consider "minimal" as less than 10 requests per day
     const minimalTrafficThreshold = 10;
-    
+
     const hasSignificantTraffic = response.Datapoints.some(datapoint => 
       (datapoint.Sum || 0) > minimalTrafficThreshold
     );

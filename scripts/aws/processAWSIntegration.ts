@@ -117,48 +117,59 @@ export async function processAWSIntegration(integration: any, appId: string, pri
       console.error('Error getting AWS account ID or discovering accounts:', error);
     }
 
+    // Get disabled regions from the integration configuration
+    let disabledRegions: string[] = [];
+    if (config.disabledRegions) {
+      disabledRegions = config.disabledRegions.split(',').filter((r: string) => r.trim() !== '');
+      console.log(`Found ${disabledRegions.length} disabled regions in integration configuration: ${disabledRegions.join(', ')}`);
+    }
+
+    // Get all active regions once to pass to all finding functions
+    const activeRegions = await getAllRegions(credentials, region, disabledRegions);
+    console.log(`Found ${activeRegions.length} active AWS regions`);
+
     // Find IAM users with access keys not rotated for more than 90 days, inactive access keys, passwords older than 90 days, console users without MFA enabled, and root user access key usage within the last 90 days
-    const iamFindings = await findIAMFindings(credentials, region, accountId);
+    const iamFindings = await findIAMFindings(credentials, region, accountId, activeRegions);
     console.log(`Found ${iamFindings.length} IAM findings in AWS`);
 
     // Find ACM certificate issues (expired or expiring within 30 days) in all regions
-    const acmFindings = await findACMFindings(credentials, region, accountId);
+    const acmFindings = await findACMFindings(credentials, region, accountId, activeRegions);
     console.log(`Found ${acmFindings.length} ACM findings in AWS`);
 
     // Find S3 bucket issues (publicly accessible buckets)
-    const s3Findings = await findS3Findings(credentials, region, accountId);
+    const s3Findings = await findS3Findings(credentials, region, accountId, activeRegions);
     console.log(`Found ${s3Findings.length} S3 findings in AWS`);
 
     // Find VPC issues (default VPCs)
-    const vpcFindings = await findVPCFindings(credentials, region, accountId);
+    const vpcFindings = await findVPCFindings(credentials, region, accountId, activeRegions);
     console.log(`Found ${vpcFindings.length} VPC findings in AWS`);
 
     // Find EC2 issues (unattached ENIs)
-    const ec2Findings = await findEC2Findings(credentials, region, accountId);
+    const ec2Findings = await findEC2Findings(credentials, region, accountId, activeRegions);
     console.log(`Found ${ec2Findings.length} EC2 findings in AWS`);
 
     // Find RDS issues (instances and clusters without matching Reserved Instances)
-    const rdsFindings = await findRDSFindings(credentials, region, accountId);
+    const rdsFindings = await findRDSFindings(credentials, region, accountId, activeRegions);
     console.log(`Found ${rdsFindings.length} RDS findings in AWS`);
 
     // Find CloudFront issues (distributions without compression enabled)
-    const cloudFrontFindings = await findCloudFrontFindings(credentials, region, accountId);
+    const cloudFrontFindings = await findCloudFrontFindings(credentials, region, accountId, activeRegions);
     console.log(`Found ${cloudFrontFindings.length} CloudFront findings in AWS`);
 
     // Find EBS issues (volumes using gp2 instead of gp3)
-    const ebsFindings = await findEBSFindings(credentials, region, accountId);
+    const ebsFindings = await findEBSFindings(credentials, region, accountId, activeRegions);
     console.log(`Found ${ebsFindings.length} EBS findings in AWS`);
 
     // Find ELB issues (idle load balancers)
-    const elbFindings = await findELBFindings(credentials, region, accountId);
+    const elbFindings = await findELBFindings(credentials, region, accountId, activeRegions);
     console.log(`Found ${elbFindings.length} ELB findings in AWS`);
 
     // Find Route 53 issues (public hosted zones not resolvable via public DNS)
-    const route53Findings = await findRoute53Findings(credentials, region, accountId);
+    const route53Findings = await findRoute53Findings(credentials, region, accountId, activeRegions);
     console.log(`Found ${route53Findings.length} Route 53 findings in AWS`);
 
     // Find ECR issues (repositories without image tag immutability enabled)
-    const ecrFindings = await findECRFindings(credentials, region, accountId);
+    const ecrFindings = await findECRFindings(credentials, region, accountId, activeRegions);
     console.log(`Found ${ecrFindings.length} ECR findings in AWS`);
 
     // Combine all findings

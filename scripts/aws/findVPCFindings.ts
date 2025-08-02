@@ -9,22 +9,22 @@ import {
   DescribeVpcEndpointsCommand,
   DescribeVpcPeeringConnectionsCommand
 } from '@aws-sdk/client-ec2';
-import { getAllRegions } from './utils';
 
 /**
  * Find VPC issues in all AWS regions
  * @param credentials - AWS credentials
  * @param region - AWS region (used to initialize EC2 client for listing regions)
  * @param accountId - AWS account ID
+ * @param activeRegions - Array of active regions to use
  * @returns Array of security findings
  */
-export async function findVPCFindings(credentials: any, region: string, accountId: string | null = null) {
+export async function findVPCFindings(credentials: any, region: string, accountId: string | null = null, activeRegions: string[]) {
   try {
     console.log('Finding VPC issues in all AWS regions');
 
-    // Get all AWS regions
-    const regions = await getAllRegions(credentials, region);
-    console.log(`Found ${regions.length} AWS regions`);
+    // Use provided active regions or get all AWS regions, excluding disabled ones
+    const regions = activeRegions;
+    console.log(`Using ${regions.length} AWS regions`);
 
     const findings: any[] = [];
     const defaultVpcFindings: any[] = [];

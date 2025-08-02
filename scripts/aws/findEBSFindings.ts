@@ -3,22 +3,22 @@ import {
   DescribeVolumesCommand,
   Volume
 } from '@aws-sdk/client-ec2';
-import { getAllRegions } from './utils';
 
 /**
  * Find EBS volumes using gp2 instead of gp3 in all AWS regions
  * @param credentials - AWS credentials
  * @param region - AWS region (used to initialize EC2 client for listing regions)
  * @param accountId - AWS account ID
+ * @param activeRegions - Array of active regions to use
  * @returns Array of findings
  */
-export async function findEBSFindings(credentials: any, region: string, accountId: string | null = null) {
+export async function findEBSFindings(credentials: any, region: string, accountId: string | null = null, activeRegions: string[]) {
   try {
     console.log('Finding EBS volumes using gp2 instead of gp3 in all AWS regions');
 
-    // Get all AWS regions
-    const regions = await getAllRegions(credentials, region);
-    console.log(`Found ${regions.length} AWS regions`);
+    // Use the provided active regions
+    const regions = activeRegions;
+    console.log(`Using ${regions.length} AWS regions`);
 
     const findings: any[] = [];
     const gp2VolumeFindings: any[] = [];

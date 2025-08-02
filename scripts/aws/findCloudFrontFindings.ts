@@ -12,9 +12,10 @@ import {
  * @param credentials - AWS credentials
  * @param region - AWS region (CloudFront is a global service, but we need a region for the client)
  * @param accountId - AWS account ID
+ * @param activeRegions - Array of active regions to use
  * @returns Array of security findings
  */
-export async function findCloudFrontFindings(credentials: any, region: string, accountId: string | null = null) {
+export async function findCloudFrontFindings(credentials: any, region: string, accountId: string | null = null, activeRegions: string[]) {
   try {
     console.log('Finding CloudFront distributions without compression enabled');
 

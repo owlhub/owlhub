@@ -38,9 +38,10 @@ type S3Command =
  * @param credentials - AWS credentials
  * @param region - AWS region
  * @param accountId - AWS account ID
+ * @param activeRegions - Array of active regions to use
  * @returns Array of security findings
  */
-export async function findS3Findings(credentials: any, region: string, accountId: string | null = null) {
+export async function findS3Findings(credentials: any, region: string, accountId: string | null = null, activeRegions: string[]) {
   try {
     console.log('Finding S3 buckets that are publicly accessible, have versioning disabled, have replication disabled, have server-side encryption disabled, have access logging disabled, have lifecycle policies disabled, or have no bucket policy');
 

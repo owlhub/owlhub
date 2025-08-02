@@ -49,9 +49,10 @@ export async function assumeRole(roleArn: string, externalId?: string, region: s
  * Get all AWS regions
  * @param credentials - AWS credentials
  * @param region - AWS region to initialize the EC2 client
+ * @param disabledRegions - Optional array of disabled regions to exclude
  * @returns Array of region names
  */
-export async function getAllRegions(credentials: any, region: string): Promise<string[]> {
+export async function getAllRegions(credentials: any, region: string, disabledRegions: string[] = []): Promise<string[]> {
   try {
     const ec2Client = new EC2Client({
       region,
@@ -67,15 +68,37 @@ export async function getAllRegions(credentials: any, region: string): Promise<s
 
     if (!response.Regions || response.Regions.length === 0) {
       console.log('No regions found, using default region');
+      // Check if the default region is disabled
+      if (disabledRegions.includes(region)) {
+        console.log(`Default region ${region} is disabled, returning empty array`);
+        return [];
+      }
       return [region];
     }
 
-    return response.Regions
+    // Get all regions and filter out disabled ones
+    const allRegions = response.Regions
       .filter(r => r.RegionName)
       .map(r => r.RegionName as string);
+
+    if (disabledRegions.length === 0) {
+      return allRegions;
+    }
+
+    const enabledRegions = allRegions.filter(r => !disabledRegions.includes(r));
+
+    if (disabledRegions.length > 0) {
+      console.log(`Filtered out ${disabledRegions.length} disabled regions, using ${enabledRegions.length} enabled regions`);
+    }
+
+    return enabledRegions;
   } catch (error) {
     console.error('Error getting AWS regions:', error);
-    // Return the provided region as fallback
+    // Return the provided region as fallback, unless it's disabled
+    if (disabledRegions.includes(region)) {
+      console.log(`Default region ${region} is disabled, returning empty array`);
+      return [];
+    }
     return [region];
   }
 }

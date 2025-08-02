@@ -33,10 +33,11 @@ import {
  * and check for IAM roles with cross-account access
  * @param credentials - AWS credentials
  * @param region - AWS region
- * @param accountId
+ * @param accountId - AWS account ID
+ * @param activeRegions - Array of active regions to use
  * @returns Array of security findings
  */
-export async function findIAMFindings(credentials: any, region: string, accountId: string | null = null) {
+export async function findIAMFindings(credentials: any, region: string, accountId: string | null = null, activeRegions: string[]) {
   try {
     console.log('Finding IAM users with access keys not rotated for more than 90 days, inactive access keys over 90 days, passwords older than 90 days, console users without MFA enabled, root user access key usage within the last 90 days, checking if IAM account password policy exists, checking if IAM account password policy minimum length is less than 8, checking if IAM account password policy max age is greater than 90 days, checking if IAM account password policy re-use prevention is less than 5, and checking for IAM roles with cross-account access');
 
