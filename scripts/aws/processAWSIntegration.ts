@@ -12,9 +12,14 @@ import { findELBFindings } from './findELBFindings';
 import { findRoute53Findings } from './findRoute53Findings';
 import { findECRFindings } from './findECRFindings';
 import {
-  assumeRole
+  assumeRole,
+  getAllRegions
 } from './utils'
-import { discoverAWSAccounts, createIntegrationsForAccounts } from './discoverAWSAccounts';
+import { 
+  discoverAWSAccounts,
+  createOrUpdateIntegrationsForAccounts,
+  checkControlTowerAndGetDisabledRegions
+} from './discoverAWSAccounts';
 import {
   addIntegrationFindingDetails
 } from "../utils/common";
@@ -84,22 +89,26 @@ export async function processAWSIntegration(integration: any, appId: string, pri
       if (orgMode) {
         console.log(`Organization mode is enabled for integration: ${integration.name}. Discovering AWS accounts...`);
 
+        // Check if AWS Control Tower is enabled and fetch disabled regions
+        const disabledRegions = await checkControlTowerAndGetDisabledRegions(credentials, region);
+
         // Discover AWS accounts in the organization
         const accounts = await discoverAWSAccounts(roleArn, externalId, region);
 
         if (accounts.length > 0) {
           console.log(`Discovered ${accounts.length} AWS accounts in the organization`);
 
-          // Create integrations for discovered accounts
-          const createdIntegrationIds = await createIntegrationsForAccounts(
+          // Create or update integrations for discovered accounts
+          const processedIntegrationIds = await createOrUpdateIntegrationsForAccounts(
             accounts,
             roleArn,
             externalId,
             appId,
-            prisma
+            prisma,
+            disabledRegions
           );
 
-          console.log(`Created ${createdIntegrationIds.length} new integrations for discovered AWS accounts`);
+          console.log(`Created or updated ${processedIntegrationIds.length} integrations for discovered AWS accounts`);
         } else {
           console.log('No AWS accounts discovered in the organization');
         }

@@ -18,9 +18,11 @@ interface App {
     label: string;
     type: string;
     required: boolean;
+    editable?: boolean;
     placeholder?: string;
     description?: string;
     default?: boolean | string | number;
+    options?: string[];
   }[];
 }
 
@@ -606,6 +608,7 @@ export default function NewIntegrationPage() {
                       role="switch"
                       aria-checked={configValues[field.name] === 'true'}
                       id={field.name}
+                      disabled={submitting || field.editable === false}
                     >
                       <span
                         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -617,6 +620,67 @@ export default function NewIntegrationPage() {
                       {configValues[field.name] === 'true' ? 'Enabled' : 'Disabled'}
                     </span>
                   </div>
+                ) : field.type === 'multiselect' ? (
+                  <div className="border rounded-md p-2">
+                    {field.options && field.options.length > 0 ? (
+                      <div className="max-h-40 overflow-y-auto">
+                        {field.options.map(option => {
+                          const isSelected = configValues[field.name]?.includes(option) || false;
+                          return (
+                            <div key={option} className="flex items-center mb-1 last:mb-0">
+                              <input
+                                type="checkbox"
+                                id={`${field.name}-${option}`}
+                                checked={isSelected}
+                                onChange={() => {
+                                  const currentValues = configValues[field.name] ? configValues[field.name].split(',') : [];
+                                  let newValues;
+                                  if (isSelected) {
+                                    newValues = currentValues.filter(val => val !== option);
+                                  } else {
+                                    newValues = [...currentValues, option];
+                                  }
+                                  handleConfigChange(field.name, newValues.join(','));
+                                }}
+                                className="mr-2"
+                                disabled={submitting || field.editable === false}
+                              />
+                              <label htmlFor={`${field.name}-${option}`} className="text-sm">
+                                {option}
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : configValues[field.name] && configValues[field.name].length > 0 ? (
+                      <div className="max-h-40 overflow-y-auto">
+                        {configValues[field.name].split(',').map(option => {
+                          const trimmedOption = option.trim();
+                          if (!trimmedOption) return null;
+                          return (
+                            <div key={trimmedOption} className="flex items-center mb-1 last:mb-0">
+                              <input
+                                type="checkbox"
+                                id={`${field.name}-${trimmedOption}`}
+                                checked={true}
+                                onChange={() => {
+                                  const currentValues = configValues[field.name].split(',').filter(val => val.trim() !== trimmedOption);
+                                  handleConfigChange(field.name, currentValues.join(','));
+                                }}
+                                className="mr-2"
+                                disabled={submitting || field.editable === false}
+                              />
+                              <label htmlFor={`${field.name}-${trimmedOption}`} className="text-sm">
+                                {trimmedOption}
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">No options available</p>
+                    )}
+                  </div>
                 ) : (
                   <input
                     type={field.type === 'password' && !visiblePasswords[field.name] ? 'password' : 'text'}
@@ -625,6 +689,7 @@ export default function NewIntegrationPage() {
                     onChange={(e) => handleConfigChange(field.name, e.target.value)}
                     className={`w-full p-2 border rounded-md ${formErrors[field.name] ? 'border-red-500' : 'border-gray-300'} ${field.type === 'password' ? 'pr-10' : ''}`}
                     placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                    disabled={submitting || field.editable === false}
                   />
                 )}
                 {field.type === 'password' && (

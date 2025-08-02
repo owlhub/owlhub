@@ -1,12 +1,16 @@
 import { 
   OrganizationsClient, 
   ListAccountsCommand,
-  Account
+  Account,
+  ListPoliciesCommand,
+  DescribePolicyCommand,
+  PolicyType
 } from '@aws-sdk/client-organizations';
 import { PrismaClient } from '@prisma/client';
 
 import {
-  assumeRole
+  assumeRole,
+  getAllRegions
 } from './utils'
 
 /**
@@ -69,22 +73,24 @@ export async function discoverAWSAccounts(
 }
 
 /**
- * Create integrations for discovered AWS accounts
+ * Create or update integrations for discovered AWS accounts
  * @param accounts - The discovered AWS accounts
  * @param managementRoleArn - The ARN of the role in the management account
  * @param externalId - The external ID to use when assuming roles
  * @param appId - The ID of the AWS app
  * @param prisma - The Prisma client instance
- * @returns Array of created integration IDs
+ * @param disabledRegions - Optional array of disabled regions to add to the integration config
+ * @returns Array of created or updated integration IDs
  */
-export async function createIntegrationsForAccounts(
+export async function createOrUpdateIntegrationsForAccounts(
   accounts: Account[],
   managementRoleArn: string,
   externalId: string,
   appId: string,
-  prisma: PrismaClient
+  prisma: PrismaClient,
+  disabledRegions: string[] = []
 ): Promise<string[]> {
-  const createdIntegrationIds: string[] = [];
+  const processedIntegrationIds: string[] = [];
 
   for (const account of accounts) {
     if (!account.Id || !account.Name) {
@@ -104,7 +110,28 @@ export async function createIntegrationsForAccounts(
       });
 
       if (existingIntegration) {
-        console.log(`Integration for account ${account.Id} (${account.Name}) already exists, skipping`);
+        console.log(`Integration for account ${account.Id} (${account.Name}) already exists, updating if needed`);
+
+        // Always update existing integration with disabled regions (even if empty)
+        try {
+          // Parse the current config
+          const existingConfig = JSON.parse(existingIntegration.config);
+
+          // Add or update the disabledRegions field
+          existingConfig.disabledRegions = disabledRegions.length > 0 ? disabledRegions.join(',') : '';
+
+          // Update the integration in the database
+          await prisma.integration.update({
+            where: { id: existingIntegration.id },
+            data: { config: JSON.stringify(existingConfig) }
+          });
+
+          console.log(`Updated integration ${existingIntegration.name} with disabled regions: ${disabledRegions.length > 0 ? disabledRegions.join(',') : 'none'}`);
+        } catch (error) {
+          console.error(`Error updating integration ${existingIntegration.name} with disabled regions:`, error);
+        }
+
+        processedIntegrationIds.push(existingIntegration.id);
         continue;
       }
 
@@ -122,26 +149,152 @@ export async function createIntegrationsForAccounts(
       // Create a unique external ID for this account by appending the account ID
       const accountExternalId = `${externalId}-${account.Id}`;
 
+      // Prepare the config object
+      const configObj = {
+        roleArn: accountRoleArn,
+        externalId: accountExternalId,
+        region: 'us-east-1', // Default region
+        disabledRegions: disabledRegions.length > 0 ? disabledRegions.join(',') : ''
+      };
+
       // Create integration for this account
       const integration = await prisma.integration.create({
         data: {
           name: `AWS - ${account.Name} (${account.Id})`,
           appId,
-          config: JSON.stringify({
-            roleArn: accountRoleArn,
-            externalId: accountExternalId,
-            region: 'us-east-1' // Default region
-          }),
+          config: JSON.stringify(configObj),
           isEnabled: true
         }
       });
 
       console.log(`Created integration for account ${account.Id} (${account.Name})`);
-      createdIntegrationIds.push(integration.id);
+      processedIntegrationIds.push(integration.id);
     } catch (error) {
-      console.error(`Error creating integration for account ${account.Id} (${account.Name}):`, error);
+      console.error(`Error creating/updating integration for account ${account.Id} (${account.Name}):`, error);
     }
   }
 
-  return createdIntegrationIds;
+  return processedIntegrationIds;
+}
+
+/**
+ * Check if AWS Control Tower is enabled and fetch disabled regions
+ * @param credentials - AWS credentials
+ * @param region - AWS region
+ * @returns Array of disabled regions
+ */
+export async function checkControlTowerAndGetDisabledRegions(credentials: any, region: string): Promise<string[]> {
+  try {
+    console.log('Checking if AWS Control Tower is enabled and fetching disabled regions...');
+
+    // Create Organizations client with the assumed credentials
+    const organizationsClient = new OrganizationsClient({
+      region,
+      credentials: {
+        accessKeyId: credentials.accessKeyId,
+        secretAccessKey: credentials.secretAccessKey,
+        sessionToken: credentials.sessionToken
+      }
+    });
+
+    // Get all available AWS regions
+    const allRegions = await getAllRegions(credentials, region);
+    console.log(`Found ${allRegions.length} AWS regions`);
+
+    // List all service control policies (SCPs) in the organization
+    const listPoliciesCommand = new ListPoliciesCommand({
+      Filter: PolicyType.SERVICE_CONTROL_POLICY
+    });
+
+    const policiesResponse = await organizationsClient.send(listPoliciesCommand);
+
+    if (!policiesResponse.Policies || policiesResponse.Policies.length === 0) {
+      console.log('No service control policies found, Control Tower may not be enabled');
+      return [];
+    }
+
+    // Look for Control Tower SCPs that deny access to specific regions
+    const controlTowerPolicies = policiesResponse.Policies.filter(policy => 
+      policy.Name && (
+        policy.Name.includes('aws-guardrails') ||
+        policy.Name.includes('aws-control-tower') ||
+        policy.Name.includes('AWS-Control-Tower') ||
+        policy.Name.includes('Deny-') || 
+        policy.Name.includes('Region')
+      )
+    );
+
+    if (controlTowerPolicies.length === 0) {
+      console.log('No Control Tower policies found, Control Tower may not be enabled');
+      return [];
+    }
+
+    console.log(`Found ${controlTowerPolicies.length} potential Control Tower policies`);
+
+    // Get the content of each policy and extract disabled regions
+    const disabledRegions = new Set<string>();
+
+    for (const policy of controlTowerPolicies) {
+      if (!policy.Id) continue;
+
+      try {
+        const describePolicyCommand = new DescribePolicyCommand({
+          PolicyId: policy.Id
+        });
+
+        const policyResponse = await organizationsClient.send(describePolicyCommand);
+
+        if (!policyResponse.Policy || !policyResponse.Policy.Content) continue;
+
+        const policyContent = JSON.parse(policyResponse.Policy.Content);
+
+        // Look for statements that deny access to specific regions
+        if (policyContent.Statement) {
+          for (const statement of Array.isArray(policyContent.Statement) ? policyContent.Statement : [policyContent.Statement]) {
+            // Only process statements with Sid: GRREGIONDENY
+            if (statement.Sid !== "GRREGIONDENY") continue;
+
+            if (statement.Effect === 'Deny' && statement.Condition && statement.Condition.StringNotEquals) {
+              const regionCondition = statement.Condition.StringNotEquals['aws:RequestedRegion'];
+
+              if (regionCondition) {
+                // The regions listed in the condition are the allowed regions
+                // All other regions are disabled
+                const allowedRegions = Array.isArray(regionCondition) ? regionCondition : [regionCondition];
+
+                // Add regions that are in allRegions but not in allowedRegions to disabledRegions
+                for (const r of allRegions) {
+                  if (!allowedRegions.includes(r)) {
+                    disabledRegions.add(r);
+                  }
+                }
+              }
+            } else if (statement.Effect === 'Deny' && statement.Condition && statement.Condition.StringEquals) {
+              const regionCondition = statement.Condition.StringEquals['aws:RequestedRegion'];
+
+              if (regionCondition) {
+                // The regions listed in the condition are explicitly denied
+                const deniedRegions = Array.isArray(regionCondition) ? regionCondition : [regionCondition];
+
+                // Add denied regions to disabledRegions
+                for (const r of deniedRegions) {
+                  disabledRegions.add(r);
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error getting policy content for policy ${policy.Id}:`, error);
+      }
+    }
+
+    const disabledRegionsArray = Array.from(disabledRegions);
+    console.log(`Found ${disabledRegionsArray.length} disabled regions: ${disabledRegionsArray.join(', ')}`);
+
+    return disabledRegionsArray;
+  } catch (error) {
+    console.error('Error checking Control Tower and getting disabled regions:', error);
+    return [];
+  }
 }

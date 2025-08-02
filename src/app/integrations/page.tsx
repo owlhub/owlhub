@@ -461,6 +461,31 @@ export default function IntegrationsPage() {
                           );
                         })}
                       </div>
+                    ) : configValues[field.name] && configValues[field.name].length > 0 ? (
+                      <div className="max-h-40 overflow-y-auto">
+                        {configValues[field.name].split(',').map(option => {
+                          const trimmedOption = option.trim();
+                          if (!trimmedOption) return null;
+                          return (
+                            <div key={trimmedOption} className="flex items-center mb-1 last:mb-0">
+                              <input
+                                type="checkbox"
+                                id={`${field.name}-${trimmedOption}`}
+                                checked={true}
+                                onChange={() => {
+                                  const currentValues = configValues[field.name].split(',').filter(val => val.trim() !== trimmedOption);
+                                  handleConfigChange(field.name, currentValues.join(','));
+                                }}
+                                className="mr-2"
+                                disabled={updatingConfig || field.editable === false}
+                              />
+                              <label htmlFor={`${field.name}-${trimmedOption}`} className="text-sm">
+                                {trimmedOption}
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
                     ) : (
                       <p className="text-sm text-gray-500">No options available</p>
                     )}
