@@ -1,7 +1,6 @@
 import { 
   EC2Client, 
   DescribeVpcsCommand, 
-  DescribeRegionsCommand,
   DescribeFlowLogsCommand,
   DescribeInternetGatewaysCommand,
   DescribeRouteTablesCommand,
@@ -9,6 +8,7 @@ import {
   DescribeNetworkInterfacesCommand,
   DescribeVpcEndpointsCommand
 } from '@aws-sdk/client-ec2';
+import { getAllRegions } from './utils';
 
 /**
  * Find VPC issues in all AWS regions
@@ -35,6 +35,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     const blackholeRouteFindings: any[] = [];
     const noEniResourcesFindings: any[] = [];
     const missingGatewayEndpointFindings: any[] = [];
+    const publicSubnetFindings: any[] = [];
 
     // Check each region for VPC issues
     for (const regionName of regions) {
@@ -296,6 +297,31 @@ export async function findVPCFindings(credentials: any, region: string, accountI
           findings.push(finding);
         }
       }
+
+      // Find subnets with auto-assign public IPv4 addresses enabled
+      const publicSubnets = await findSubnetsWithAutoAssignPublicIP(ec2Client);
+
+      if (publicSubnets.length > 0) {
+        for (const subnet of publicSubnets) {
+          const finding = {
+            id: 'aws_vpc_subnet_auto_assign_public_ip',
+            key: `aws-vpc-subnet-auto-assign-public-ip-${accountId}-${regionName}-${subnet.SubnetId}`,
+            title: `VPC Subnet Is Configured to Auto-Assign Public IPv4 Addresses in Region ${regionName}`,
+            description: `Subnet (${subnet.SubnetId}) in region ${regionName} has the auto-assign public IPv4 address setting enabled. This setting causes EC2 instances launched into the subnet to receive a public IP by default, which may expose them to the internet unless security groups and route tables are tightly controlled. It is recommended to disable this setting for private subnets.`,
+            additionalInfo: {
+              subnetId: subnet.SubnetId,
+              vpcId: subnet.VpcId,
+              region: regionName,
+              availabilityZone: subnet.AvailabilityZone,
+              cidrBlock: subnet.CidrBlock,
+              ...(accountId && { accountId })
+            }
+          };
+
+          publicSubnetFindings.push(finding);
+          findings.push(finding);
+        }
+      }
     }
 
     console.log(`Found ${defaultVpcFindings.length} default VPCs across all regions`);
@@ -307,6 +333,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     console.log(`Found ${igwNotRoutedFindings.length} Internet Gateways not properly routed across all regions`);
     console.log(`Found ${unusedRouteTableFindings.length} unused route tables across all regions`);
     console.log(`Found ${blackholeRouteFindings.length} route tables with blackhole routes across all regions`);
+    console.log(`Found ${publicSubnetFindings.length} subnets with auto-assign public IPv4 addresses enabled across all regions`);
     return findings;
   } catch (error) {
     console.error('Error finding VPC issues:', error);
@@ -314,40 +341,6 @@ export async function findVPCFindings(credentials: any, region: string, accountI
   }
 }
 
-/**
- * Get all AWS regions
- * @param credentials - AWS credentials
- * @param region - AWS region to initialize the EC2 client
- * @returns Array of region names
- */
-async function getAllRegions(credentials: any, region: string): Promise<string[]> {
-  try {
-    const ec2Client = new EC2Client({
-      region,
-      credentials: {
-        accessKeyId: credentials.accessKeyId,
-        secretAccessKey: credentials.secretAccessKey,
-        sessionToken: credentials.sessionToken
-      }
-    });
-
-    const command = new DescribeRegionsCommand({});
-    const response = await ec2Client.send(command);
-
-    if (!response.Regions || response.Regions.length === 0) {
-      console.log('No regions found, using default region');
-      return [region];
-    }
-
-    return response.Regions
-      .filter(r => r.RegionName)
-      .map(r => r.RegionName as string);
-  } catch (error) {
-    console.error('Error getting AWS regions:', error);
-    // Return the provided region as fallback
-    return [region];
-  }
-}
 
 /**
  * Find default VPCs in a region
@@ -665,6 +658,28 @@ async function findGatewayEndpoints(ec2Client: EC2Client) {
     return response.VpcEndpoints || [];
   } catch (error) {
     console.error('Error finding Gateway Endpoints:', error);
+    return [];
+  }
+}
+
+/**
+ * Find subnets with auto-assign public IPv4 addresses enabled
+ * @param ec2Client - EC2 client
+ * @returns Array of subnets with auto-assign public IPv4 addresses enabled
+ */
+async function findSubnetsWithAutoAssignPublicIP(ec2Client: EC2Client) {
+  try {
+    const command = new DescribeSubnetsCommand({});
+    const response = await ec2Client.send(command);
+
+    // Filter subnets where MapPublicIpOnLaunch is true (auto-assign public IPv4 is enabled)
+    const publicSubnets = (response.Subnets || []).filter(subnet => 
+      subnet.MapPublicIpOnLaunch === true
+    );
+
+    return publicSubnets;
+  } catch (error) {
+    console.error('Error finding subnets with auto-assign public IPv4 addresses enabled:', error);
     return [];
   }
 }

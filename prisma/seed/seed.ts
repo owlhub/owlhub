@@ -327,6 +327,34 @@ async function main() {
     ],
     'AWS': [
       {
+        "key": "aws_ecr_repository_tag_immutability_disabled",
+        "name": "ECR Repository Does Not Have Image Tag Immutability Enabled",
+        "severity": "high",
+        "description": "Detects private Amazon ECR repositories where image tag immutability is disabled. When immutability is off, tags like 'latest' or versioned tags can be overwritten, making it difficult to trace what code is running. Enabling tag immutability prevents tampering and ensures auditability of container deployments.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_ecr_repository_no_lifecycle_policy",
+        "name": "ECR Repository Does Not Have a Lifecycle Policy Configured",
+        "severity": "medium",
+        "description": "Detects private Amazon ECR repositories that do not have a lifecycle policy configured. Without lifecycle rules, outdated and unused images may accumulate, leading to unnecessary storage costs and difficulty managing image versions. It is recommended to configure policies to expire untagged or old images regularly.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_security_group_not_attached",
+        "name": "Security Group Is Not Attached to Any Resource",
+        "severity": "low",
+        "description": "Detects security groups that are not associated with any active resource such as EC2 instances, ENIs, Load Balancers, RDS instances, or Lambda functions. Unused security groups create unnecessary clutter and may cause confusion or lead to accidental reuse of insecure rules. These should be reviewed and deleted if not needed.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_vpc_subnet_auto_assign_public_ip",
+        "name": "VPC Subnet Is Configured to Auto-Assign Public IPv4 Addresses",
+        "severity": "high",
+        "description": "Detects subnets where the auto-assign public IPv4 address setting is enabled. This setting causes EC2 instances launched into the subnet to receive a public IP by default, which may expose them to the internet unless security groups and route tables are tightly controlled. It is recommended to disable this setting for private subnets.",
+        "type": "posture"
+      },
+      {
         "key": "aws_acm_certificate_expired",
         "name": "ACM Certificate Expired",
         "severity": "critical",

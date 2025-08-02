@@ -4,7 +4,7 @@ import {
   DescribeDBClustersCommand,
   DescribeReservedDBInstancesCommand
 } from '@aws-sdk/client-rds';
-import { DescribeRegionsCommand, EC2Client } from '@aws-sdk/client-ec2';
+import { getAllRegions } from './utils';
 
 /**
  * Find RDS instances or clusters running without matching Reserved Instances
@@ -214,40 +214,6 @@ export async function findRDSFindings(credentials: any, region: string, accountI
   }
 }
 
-/**
- * Get all AWS regions
- * @param credentials - AWS credentials
- * @param region - AWS region to initialize the EC2 client
- * @returns Array of region names
- */
-async function getAllRegions(credentials: any, region: string): Promise<string[]> {
-  try {
-    const ec2Client = new EC2Client({
-      region,
-      credentials: {
-        accessKeyId: credentials.accessKeyId,
-        secretAccessKey: credentials.secretAccessKey,
-        sessionToken: credentials.sessionToken
-      }
-    });
-
-    const command = new DescribeRegionsCommand({});
-    const response = await ec2Client.send(command);
-
-    if (!response.Regions || response.Regions.length === 0) {
-      console.log('No regions found, using default region');
-      return [region];
-    }
-
-    return response.Regions
-      .filter(r => r.RegionName)
-      .map(r => r.RegionName as string);
-  } catch (error) {
-    console.error('Error getting AWS regions:', error);
-    // Return the provided region as fallback
-    return [region];
-  }
-}
 
 /**
  * Find RDS instances without matching Reserved Instances

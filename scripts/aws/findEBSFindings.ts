@@ -1,9 +1,9 @@
 import { 
   EC2Client, 
   DescribeVolumesCommand,
-  DescribeRegionsCommand,
   Volume
 } from '@aws-sdk/client-ec2';
+import { getAllRegions } from './utils';
 
 /**
  * Find EBS volumes using gp2 instead of gp3 in all AWS regions
@@ -79,40 +79,6 @@ export async function findEBSFindings(credentials: any, region: string, accountI
   }
 }
 
-/**
- * Get all AWS regions
- * @param credentials - AWS credentials
- * @param region - AWS region to initialize the EC2 client
- * @returns Array of region names
- */
-async function getAllRegions(credentials: any, region: string): Promise<string[]> {
-  try {
-    const ec2Client = new EC2Client({
-      region,
-      credentials: {
-        accessKeyId: credentials.accessKeyId,
-        secretAccessKey: credentials.secretAccessKey,
-        sessionToken: credentials.sessionToken
-      }
-    });
-
-    const command = new DescribeRegionsCommand({});
-    const response = await ec2Client.send(command);
-
-    if (!response.Regions || response.Regions.length === 0) {
-      console.log('No regions found, using default region');
-      return [region];
-    }
-
-    return response.Regions
-      .filter(r => r.RegionName)
-      .map(r => r.RegionName as string);
-  } catch (error) {
-    console.error('Error getting AWS regions:', error);
-    // Return the provided region as fallback
-    return [region];
-  }
-}
 
 /**
  * Find EBS volumes using gp2 in a region
@@ -136,11 +102,11 @@ async function findGP2Volumes(ec2Client: EC2Client): Promise<Volume[]> {
       });
 
       const response = await ec2Client.send(command);
-      
+
       if (response.Volumes && response.Volumes.length > 0) {
         gp2Volumes.push(...response.Volumes);
       }
-      
+
       nextToken = response.NextToken;
     } while (nextToken);
 

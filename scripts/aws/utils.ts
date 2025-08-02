@@ -1,4 +1,5 @@
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
+import { EC2Client, DescribeRegionsCommand } from '@aws-sdk/client-ec2';
 
 /**
  * Assume an AWS role
@@ -41,5 +42,40 @@ export async function assumeRole(roleArn: string, externalId?: string, region: s
   } catch (error) {
     console.error('Error assuming role:', error);
     return null;
+  }
+}
+
+/**
+ * Get all AWS regions
+ * @param credentials - AWS credentials
+ * @param region - AWS region to initialize the EC2 client
+ * @returns Array of region names
+ */
+export async function getAllRegions(credentials: any, region: string): Promise<string[]> {
+  try {
+    const ec2Client = new EC2Client({
+      region,
+      credentials: {
+        accessKeyId: credentials.accessKeyId,
+        secretAccessKey: credentials.secretAccessKey,
+        sessionToken: credentials.sessionToken
+      }
+    });
+
+    const command = new DescribeRegionsCommand({});
+    const response = await ec2Client.send(command);
+
+    if (!response.Regions || response.Regions.length === 0) {
+      console.log('No regions found, using default region');
+      return [region];
+    }
+
+    return response.Regions
+      .filter(r => r.RegionName)
+      .map(r => r.RegionName as string);
+  } catch (error) {
+    console.error('Error getting AWS regions:', error);
+    // Return the provided region as fallback
+    return [region];
   }
 }

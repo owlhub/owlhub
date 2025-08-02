@@ -6,7 +6,7 @@ import {
   DescribeCertificateCommandOutput,
   CertificateDetail
 } from '@aws-sdk/client-acm';
-import { EC2Client, DescribeRegionsCommand } from '@aws-sdk/client-ec2';
+import { getAllRegions } from './utils';
 
 /**
  * Find ACM certificate issues (expired, expiring within 30 days, or having domain wildcards) in all AWS regions
@@ -151,40 +151,6 @@ export async function findACMFindings(credentials: any, region: string, accountI
   }
 }
 
-/**
- * Get all AWS regions
- * @param credentials - AWS credentials
- * @param region - AWS region to initialize the EC2 client
- * @returns Array of region names
- */
-async function getAllRegions(credentials: any, region: string): Promise<string[]> {
-  try {
-    const ec2Client = new EC2Client({
-      region,
-      credentials: {
-        accessKeyId: credentials.accessKeyId,
-        secretAccessKey: credentials.secretAccessKey,
-        sessionToken: credentials.sessionToken
-      }
-    });
-
-    const command = new DescribeRegionsCommand({});
-    const response = await ec2Client.send(command);
-
-    if (!response.Regions || response.Regions.length === 0) {
-      console.log('No regions found, using default region');
-      return [region];
-    }
-
-    return response.Regions
-      .filter(r => r.RegionName)
-      .map(r => r.RegionName as string);
-  } catch (error) {
-    console.error('Error getting AWS regions:', error);
-    // Return the provided region as fallback
-    return [region];
-  }
-}
 
 /**
  * Get all certificates in a region

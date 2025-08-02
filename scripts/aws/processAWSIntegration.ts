@@ -10,6 +10,7 @@ import { findCloudFrontFindings } from './findCloudFrontFindings';
 import { findEBSFindings } from './findEBSFindings';
 import { findELBFindings } from './findELBFindings';
 import { findRoute53Findings } from './findRoute53Findings';
+import { findECRFindings } from './findECRFindings';
 import {
   assumeRole
 } from './utils'
@@ -147,6 +148,10 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const route53Findings = await findRoute53Findings(credentials, region, accountId);
     console.log(`Found ${route53Findings.length} Route 53 findings in AWS`);
 
+    // Find ECR issues (repositories without image tag immutability enabled)
+    const ecrFindings = await findECRFindings(credentials, region, accountId);
+    console.log(`Found ${ecrFindings.length} ECR findings in AWS`);
+
     // Combine all findings
     const foundAppFindings = [
       ...iamFindings,
@@ -158,7 +163,8 @@ export async function processAWSIntegration(integration: any, appId: string, pri
       ...cloudFrontFindings,
       ...ebsFindings,
       ...elbFindings,
-      ...route53Findings
+      ...route53Findings,
+      ...ecrFindings
     ];
 
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);

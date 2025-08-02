@@ -1,9 +1,10 @@
 import { 
   EC2Client, 
   DescribeNetworkInterfacesCommand,
-  DescribeRegionsCommand,
-  DescribeAddressesCommand
+  DescribeAddressesCommand,
+  DescribeSecurityGroupsCommand
 } from '@aws-sdk/client-ec2';
+import { getAllRegions } from './utils';
 
 /**
  * Find EC2 issues in all AWS regions
@@ -23,6 +24,7 @@ export async function findEC2Findings(credentials: any, region: string, accountI
     const findings: any[] = [];
     const unattachedEniFindings: any[] = [];
     const unattachedEipFindings: any[] = [];
+    const unattachedSecurityGroupFindings: any[] = [];
 
     // Check each region for EC2 issues
     for (const regionName of regions) {
@@ -88,10 +90,36 @@ export async function findEC2Findings(credentials: any, region: string, accountI
           findings.push(finding);
         }
       }
+
+      // Find security groups that are not attached to any resource
+      const unattachedSecurityGroups = await findUnattachedSecurityGroups(ec2Client);
+
+      if (unattachedSecurityGroups.length > 0) {
+        for (const sg of unattachedSecurityGroups) {
+          const finding = {
+            id: 'aws_security_group_not_attached',
+            key: `aws-security-group-not-attached-${accountId}-${regionName}-${sg.GroupId}`,
+            title: `Security Group Not Attached to Any Resource in Region ${regionName}`,
+            description: `Security Group (${sg.GroupId}) in region ${regionName} is not associated with any active resource such as EC2 instances, ENIs, Load Balancers, RDS instances, or Lambda functions. Unused security groups create unnecessary clutter and may cause confusion or lead to accidental reuse of insecure rules. These should be reviewed and deleted if not needed.`,
+            additionalInfo: {
+              securityGroupId: sg.GroupId,
+              securityGroupName: sg.GroupName,
+              vpcId: sg.VpcId,
+              region: regionName,
+              description: sg.Description,
+              ...(accountId && { accountId })
+            }
+          };
+
+          unattachedSecurityGroupFindings.push(finding);
+          findings.push(finding);
+        }
+      }
     }
 
     console.log(`Found ${unattachedEniFindings.length} unattached ENIs across all regions`);
     console.log(`Found ${unattachedEipFindings.length} unattached Elastic IPs across all regions`);
+    console.log(`Found ${unattachedSecurityGroupFindings.length} unattached security groups across all regions`);
     return findings;
   } catch (error) {
     console.error('Error finding EC2 issues:', error);
@@ -99,40 +127,6 @@ export async function findEC2Findings(credentials: any, region: string, accountI
   }
 }
 
-/**
- * Get all AWS regions
- * @param credentials - AWS credentials
- * @param region - AWS region to initialize the EC2 client
- * @returns Array of region names
- */
-async function getAllRegions(credentials: any, region: string): Promise<string[]> {
-  try {
-    const ec2Client = new EC2Client({
-      region,
-      credentials: {
-        accessKeyId: credentials.accessKeyId,
-        secretAccessKey: credentials.secretAccessKey,
-        sessionToken: credentials.sessionToken
-      }
-    });
-
-    const command = new DescribeRegionsCommand({});
-    const response = await ec2Client.send(command);
-
-    if (!response.Regions || response.Regions.length === 0) {
-      console.log('No regions found, using default region');
-      return [region];
-    }
-
-    return response.Regions
-      .filter(r => r.RegionName)
-      .map(r => r.RegionName as string);
-  } catch (error) {
-    console.error('Error getting AWS regions:', error);
-    // Return the provided region as fallback
-    return [region];
-  }
-}
 
 /**
  * Find unattached ENIs in a region
@@ -176,6 +170,37 @@ async function findUnattachedElasticIPs(ec2Client: EC2Client) {
     return unattachedEIPs;
   } catch (error) {
     console.error('Error finding unattached Elastic IPs:', error);
+    return [];
+  }
+}
+
+/**
+ * Find security groups that are not attached to any resource
+ * @param ec2Client - EC2 client
+ * @returns Array of unattached security groups
+ */
+async function findUnattachedSecurityGroups(ec2Client: EC2Client) {
+  try {
+    const command = new DescribeSecurityGroupsCommand({});
+    const response = await ec2Client.send(command);
+
+    // Filter out security groups that are not associated with any resource
+    // A security group is considered unattached if it has no references in its usage
+    const unattachedSecurityGroups = (response.SecurityGroups || []).filter(sg => {
+      // Skip the default security group which is always present
+      if (sg.GroupName === 'default') {
+        return false;
+      }
+
+      // Check if the security group has any references
+      // If a security group is in use, it will have references in its usage
+      return !sg.IpPermissions?.some(perm => perm.UserIdGroupPairs && perm.UserIdGroupPairs.length > 0) &&
+             !sg.IpPermissionsEgress?.some(perm => perm.UserIdGroupPairs && perm.UserIdGroupPairs.length > 0);
+    });
+
+    return unattachedSecurityGroups;
+  } catch (error) {
+    console.error('Error finding unattached security groups:', error);
     return [];
   }
 }
