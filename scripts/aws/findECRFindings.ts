@@ -24,6 +24,7 @@ export async function findECRFindings(credentials: any, region: string, accountI
     const findings: any[] = [];
     const nonImmutableRepositoryFindings: any[] = [];
     const noLifecyclePolicyFindings: any[] = [];
+    const imageScanningDisabledFindings: any[] = [];
 
     // Check each region for ECR issues
     for (const regionName of regions) {
@@ -85,10 +86,35 @@ export async function findECRFindings(credentials: any, region: string, accountI
           findings.push(finding);
         }
       }
+
+      // Find repositories without image scanning enabled
+      const repositoriesWithoutImageScanning = await findRepositoriesWithoutImageScanning(ecrClient);
+
+      if (repositoriesWithoutImageScanning.length > 0) {
+        for (const repo of repositoriesWithoutImageScanning) {
+          const finding = {
+            id: 'aws_ecr_repository_image_scanning_disabled',
+            key: `aws-ecr-repository-image-scanning-disabled-${accountId}-${regionName}-${repo.repositoryName}`,
+            title: `ECR Repository Does Not Have Image Scanning Enabled in Region ${regionName}`,
+            description: `ECR Repository (${repo.repositoryName}) in region ${regionName} does not have image scanning enabled. Without this feature, vulnerabilities in container images may go undetected before deployment. Enabling image scanning on push helps identify security issues early in the CI/CD pipeline and supports compliance with container security best practices.`,
+            additionalInfo: {
+              repositoryName: repo.repositoryName,
+              repositoryArn: repo.repositoryArn,
+              region: regionName,
+              createdAt: repo.createdAt?.toISOString(),
+              ...(accountId && { accountId })
+            }
+          };
+
+          imageScanningDisabledFindings.push(finding);
+          findings.push(finding);
+        }
+      }
     }
 
     console.log(`Found ${nonImmutableRepositoryFindings.length} ECR repositories without tag immutability enabled across all regions`);
     console.log(`Found ${noLifecyclePolicyFindings.length} ECR repositories without lifecycle policies configured across all regions`);
+    console.log(`Found ${imageScanningDisabledFindings.length} ECR repositories without image scanning enabled across all regions`);
     return findings;
   } catch (error) {
     console.error('Error finding ECR issues:', error);
@@ -115,6 +141,28 @@ async function findRepositoriesWithoutTagImmutability(ecrClient: ECRClient) {
     return nonImmutableRepositories;
   } catch (error) {
     console.error('Error finding repositories without tag immutability:', error);
+    return [];
+  }
+}
+
+/**
+ * Find ECR repositories without image scanning enabled
+ * @param ecrClient - ECR client
+ * @returns Array of repositories without image scanning enabled
+ */
+async function findRepositoriesWithoutImageScanning(ecrClient: ECRClient) {
+  try {
+    const command = new DescribeRepositoriesCommand({});
+    const response = await ecrClient.send(command);
+
+    // Filter repositories where imageScanningConfiguration.scanOnPush is not true
+    const repositoriesWithoutImageScanning = (response.repositories || []).filter(repo => 
+      !repo.imageScanningConfiguration?.scanOnPush
+    );
+
+    return repositoriesWithoutImageScanning;
+  } catch (error) {
+    console.error('Error finding repositories without image scanning enabled:', error);
     return [];
   }
 }

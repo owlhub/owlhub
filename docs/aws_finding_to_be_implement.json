@@ -326,6 +326,19 @@
       "description": "Detects subnets where the auto-assign public IPv4 address setting is enabled. This setting causes EC2 instances launched into the subnet to receive a public IP by default, which may expose them to the internet unless security groups and route tables are tightly controlled. It is recommended to disable this setting for private subnets.",
       "vendor": "Amazon Web Services",
       "severity": "High"
+    },
+    {
+      "id": 449,
+      "name": "ECR Repository Does Not Have Image Scanning Enabled",
+      "category": {
+        "product": "ECR",
+        "type": "Posture",
+        "observation": "Visibility"
+      },
+      "description": "Detects private Amazon ECR repositories that do not have image scanning enabled. Without this feature, vulnerabilities in container images may go undetected before deployment. Enabling image scanning on push helps identify security issues early in the CI/CD pipeline and supports compliance with container security best practices.",
+      "vendor": "Amazon Web Services",
+      "severity": "High"
     }
+
   ]
 }

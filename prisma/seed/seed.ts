@@ -113,6 +113,7 @@ async function main() {
           name: 'gitlabUrl',
           label: 'GitLab URL',
           type: 'text',
+          editable: true,
           placeholder: 'https://gitlab.com',
           description: 'The URL of your GitLab instance'
         },
@@ -121,6 +122,7 @@ async function main() {
           label: 'Personal Access Token',
           type: 'password',
           required: true,
+          editable: true,
           placeholder: 'glpat-xxxxxxxxxx',
           description: 'Your GitLab personal access token with API access'
         }
@@ -138,6 +140,7 @@ async function main() {
           label: 'Jira Site URL',
           type: 'text',
           required: true,
+          editable: true,
           placeholder: 'https://your-domain.atlassian.net',
           description: 'The URL of your Jira instance'
         },
@@ -146,6 +149,7 @@ async function main() {
           label: 'Access Token',
           type: 'password',
           required: true,
+          editable: true,
           placeholder: '',
           description: 'Your Jira API token or access token'
         }
@@ -163,6 +167,7 @@ async function main() {
           label: 'IAM Role ARN',
           type: 'text',
           required: true,
+          editable: true,
           placeholder: 'arn:aws:iam::123456789012:role/OwlHub-Integration-Role',
           description: 'The ARN of the IAM role that grants OwlHub access to your AWS account. See the AWS Integration Guide for details on how to create this role.'
         },
@@ -171,6 +176,7 @@ async function main() {
           label: 'External ID',
           type: 'text',
           required: true,
+          editable: true,
           placeholder: '',
           description: 'The External ID used to establish a secure trust relationship between your AWS account and OwlHub. This should match the External ID used when creating the IAM role.'
         },
@@ -179,8 +185,18 @@ async function main() {
           label: 'Organization Mode',
           type: 'boolean',
           required: false,
+          editable: true,
           default: false,
           description: 'Enable to automatically discover and add all AWS accounts in your organization. The IAM Role ARN should be for the organization management account with permissions to list accounts.'
+        },
+        {
+          name: 'disabledRegions',
+          label: 'Disabled Regions',
+          type: 'multiselect',
+          required: false,
+          editable: false,
+          description: 'AWS regions that are disabled. This field is automatically filled/changed based on control tower.',
+          options: []
         }
       ])
     }
@@ -338,6 +354,13 @@ async function main() {
         "name": "ECR Repository Does Not Have a Lifecycle Policy Configured",
         "severity": "medium",
         "description": "Detects private Amazon ECR repositories that do not have a lifecycle policy configured. Without lifecycle rules, outdated and unused images may accumulate, leading to unnecessary storage costs and difficulty managing image versions. It is recommended to configure policies to expire untagged or old images regularly.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_ecr_repository_image_scanning_disabled",
+        "name": "ECR Repository Does Not Have Image Scanning Enabled",
+        "severity": "high",
+        "description": "Detects private Amazon ECR repositories that do not have image scanning enabled. Without this feature, vulnerabilities in container images may go undetected before deployment. Enabling image scanning on push helps identify security issues early in the CI/CD pipeline and supports compliance with container security best practices.",
         "type": "posture"
       },
       {
