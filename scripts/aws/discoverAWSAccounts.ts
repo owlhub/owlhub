@@ -92,10 +92,29 @@ export async function createOrUpdateIntegrationsForAccounts(
 ): Promise<string[]> {
   const processedIntegrationIds: string[] = [];
 
+  // Extract management account ID from the management role ARN
+  let managementAccountId = '';
+  if (managementRoleArn.startsWith('arn:aws:iam::')) {
+    const match = managementRoleArn.match(/arn:aws:iam::(\d+):/);
+    if (match && match[1]) {
+      managementAccountId = match[1];
+    }
+  }
+
   for (const account of accounts) {
     if (!account.Id || !account.Name) {
       console.warn('Account missing ID or Name, skipping');
       continue;
+    }
+
+    // Determine if this is the management account
+    const isManagementAccount = account.Id === managementAccountId;
+
+    // For management accounts, always use empty disabled regions
+    const accountDisabledRegions = isManagementAccount ? [] : disabledRegions;
+
+    if (isManagementAccount) {
+      console.log(`Account ${account.Id} (${account.Name}) is the management account. Setting disabled regions to empty.`);
     }
 
     try {
@@ -118,7 +137,7 @@ export async function createOrUpdateIntegrationsForAccounts(
           const existingConfig = JSON.parse(existingIntegration.config);
 
           // Add or update the disabledRegions field
-          existingConfig.disabledRegions = disabledRegions.length > 0 ? disabledRegions.join(',') : '';
+          existingConfig.disabledRegions = isManagementAccount ? '' : (accountDisabledRegions.length > 0 ? accountDisabledRegions.join(',') : '');
 
           // Update the integration in the database
           await prisma.integration.update({
@@ -126,7 +145,7 @@ export async function createOrUpdateIntegrationsForAccounts(
             data: { config: JSON.stringify(existingConfig) }
           });
 
-          console.log(`Updated integration ${existingIntegration.name} with disabled regions: ${disabledRegions.length > 0 ? disabledRegions.join(',') : 'none'}`);
+          console.log(`Updated integration ${existingIntegration.name} with disabled regions: ${isManagementAccount ? 'none (management account)' : (accountDisabledRegions.length > 0 ? accountDisabledRegions.join(',') : 'none')}`);
         } catch (error) {
           console.error(`Error updating integration ${existingIntegration.name} with disabled regions:`, error);
         }
@@ -154,7 +173,7 @@ export async function createOrUpdateIntegrationsForAccounts(
         roleArn: accountRoleArn,
         externalId: accountExternalId,
         region: 'us-east-1', // Default region
-        disabledRegions: disabledRegions.length > 0 ? disabledRegions.join(',') : ''
+        disabledRegions: isManagementAccount ? '' : (accountDisabledRegions.length > 0 ? accountDisabledRegions.join(',') : '')
       };
 
       // Create integration for this account
