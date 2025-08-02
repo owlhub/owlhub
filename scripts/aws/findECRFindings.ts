@@ -2,7 +2,10 @@ import {
   ECRClient, 
   DescribeRepositoriesCommand,
   GetLifecyclePolicyCommand,
-  LifecyclePolicyNotFoundException
+  GetRepositoryPolicyCommand,
+  LifecyclePolicyNotFoundException,
+  RepositoryPolicyNotFoundException,
+  Repository
 } from '@aws-sdk/client-ecr';
 
 /**
@@ -25,6 +28,7 @@ export async function findECRFindings(credentials: any, region: string, accountI
     const nonImmutableRepositoryFindings: any[] = [];
     const noLifecyclePolicyFindings: any[] = [];
     const imageScanningDisabledFindings: any[] = [];
+    const publiclyAccessibleRepositoryFindings: any[] = [];
 
     // Check each region for ECR issues
     for (const regionName of regions) {
@@ -39,8 +43,12 @@ export async function findECRFindings(credentials: any, region: string, accountI
         }
       });
 
+      // Get all repositories in the region once
+      const allRepositories = await getAllRepositories(ecrClient);
+      console.log(`Found ${allRepositories.length} ECR repositories in region ${regionName}`);
+
       // Find repositories without image tag immutability enabled
-      const nonImmutableRepositories = await findRepositoriesWithoutTagImmutability(ecrClient);
+      const nonImmutableRepositories = findRepositoriesWithoutTagImmutability(allRepositories);
 
       if (nonImmutableRepositories.length > 0) {
         for (const repo of nonImmutableRepositories) {
@@ -64,7 +72,7 @@ export async function findECRFindings(credentials: any, region: string, accountI
       }
 
       // Find repositories without lifecycle policies configured
-      const repositories = await findRepositoriesWithoutLifecyclePolicy(ecrClient);
+      const repositories = await findRepositoriesWithoutLifecyclePolicy(ecrClient, allRepositories);
 
       if (repositories.length > 0) {
         for (const repo of repositories) {
@@ -88,7 +96,7 @@ export async function findECRFindings(credentials: any, region: string, accountI
       }
 
       // Find repositories without image scanning enabled
-      const repositoriesWithoutImageScanning = await findRepositoriesWithoutImageScanning(ecrClient);
+      const repositoriesWithoutImageScanning = findRepositoriesWithoutImageScanning(allRepositories);
 
       if (repositoriesWithoutImageScanning.length > 0) {
         for (const repo of repositoriesWithoutImageScanning) {
@@ -110,11 +118,36 @@ export async function findECRFindings(credentials: any, region: string, accountI
           findings.push(finding);
         }
       }
+
+      // Find publicly accessible repositories
+      const publiclyAccessibleRepositories = await findPubliclyAccessibleRepositories(ecrClient, allRepositories);
+
+      if (publiclyAccessibleRepositories.length > 0) {
+        for (const repo of publiclyAccessibleRepositories) {
+          const finding = {
+            id: 'aws_ecr_repository_publicly_accessible',
+            key: `aws-ecr-repository-publicly-accessible-${accountId}-${regionName}-${repo.repositoryName}`,
+            title: `Amazon ECR Repository Is Publicly Accessible in Region ${regionName}`,
+            description: `ECR Repository (${repo.repositoryName}) in region ${regionName} is publicly accessible. Public repositories allow anyone on the internet to pull container images, which may expose sensitive code, internal tooling, or proprietary base images. Only repositories explicitly intended for public use should have this configuration.`,
+            additionalInfo: {
+              repositoryName: repo.repositoryName,
+              repositoryArn: repo.repositoryArn,
+              region: regionName,
+              createdAt: repo.createdAt?.toISOString(),
+              ...(accountId && { accountId })
+            }
+          };
+
+          publiclyAccessibleRepositoryFindings.push(finding);
+          findings.push(finding);
+        }
+      }
     }
 
     console.log(`Found ${nonImmutableRepositoryFindings.length} ECR repositories without tag immutability enabled across all regions`);
     console.log(`Found ${noLifecyclePolicyFindings.length} ECR repositories without lifecycle policies configured across all regions`);
     console.log(`Found ${imageScanningDisabledFindings.length} ECR repositories without image scanning enabled across all regions`);
+    console.log(`Found ${publiclyAccessibleRepositoryFindings.length} publicly accessible ECR repositories across all regions`);
     return findings;
   } catch (error) {
     console.error('Error finding ECR issues:', error);
@@ -125,16 +158,13 @@ export async function findECRFindings(credentials: any, region: string, accountI
 
 /**
  * Find ECR repositories without image tag immutability enabled
- * @param ecrClient - ECR client
+ * @param repositories - List of ECR repositories
  * @returns Array of repositories without tag immutability enabled
  */
-async function findRepositoriesWithoutTagImmutability(ecrClient: ECRClient) {
+function findRepositoriesWithoutTagImmutability(repositories: Repository[]) {
   try {
-    const command = new DescribeRepositoriesCommand({});
-    const response = await ecrClient.send(command);
-
     // Filter repositories where imageTagMutability is not 'IMMUTABLE'
-    const nonImmutableRepositories = (response.repositories || []).filter(repo => 
+    const nonImmutableRepositories = repositories.filter(repo => 
       repo.imageTagMutability !== 'IMMUTABLE'
     );
 
@@ -147,16 +177,13 @@ async function findRepositoriesWithoutTagImmutability(ecrClient: ECRClient) {
 
 /**
  * Find ECR repositories without image scanning enabled
- * @param ecrClient - ECR client
+ * @param repositories - List of ECR repositories
  * @returns Array of repositories without image scanning enabled
  */
-async function findRepositoriesWithoutImageScanning(ecrClient: ECRClient) {
+function findRepositoriesWithoutImageScanning(repositories: Repository[]) {
   try {
-    const command = new DescribeRepositoriesCommand({});
-    const response = await ecrClient.send(command);
-
     // Filter repositories where imageScanningConfiguration.scanOnPush is not true
-    const repositoriesWithoutImageScanning = (response.repositories || []).filter(repo => 
+    const repositoriesWithoutImageScanning = repositories.filter(repo => 
       !repo.imageScanningConfiguration?.scanOnPush
     );
 
@@ -170,13 +197,11 @@ async function findRepositoriesWithoutImageScanning(ecrClient: ECRClient) {
 /**
  * Find ECR repositories without lifecycle policies configured
  * @param ecrClient - ECR client
+ * @param repositories - List of ECR repositories
  * @returns Array of repositories without lifecycle policies
  */
-async function findRepositoriesWithoutLifecyclePolicy(ecrClient: ECRClient) {
+async function findRepositoriesWithoutLifecyclePolicy(ecrClient: ECRClient, repositories: Repository[]) {
   try {
-    const command = new DescribeRepositoriesCommand({});
-    const response = await ecrClient.send(command);
-    const repositories = response.repositories || [];
     const repositoriesWithoutLifecyclePolicy = [];
 
     // Check each repository for a lifecycle policy
@@ -203,6 +228,128 @@ async function findRepositoriesWithoutLifecyclePolicy(ecrClient: ECRClient) {
     return repositoriesWithoutLifecyclePolicy;
   } catch (error) {
     console.error('Error finding repositories without lifecycle policies:', error);
+    return [];
+  }
+}
+
+/**
+ * Find ECR repositories that are publicly accessible
+ * @param ecrClient - ECR client
+ * @param repositories - List of ECR repositories
+ * @returns Array of publicly accessible repositories
+ */
+async function findPubliclyAccessibleRepositories(ecrClient: ECRClient, repositories: Repository[]) {
+  try {
+    const publiclyAccessibleRepositories = [];
+
+    // Check each repository for public access
+    for (const repo of repositories) {
+      if (!repo.repositoryName) continue;
+
+      try {
+        // Try to get the repository policy
+        const policyCommand = new GetRepositoryPolicyCommand({
+          repositoryName: repo.repositoryName
+        });
+        const policyResponse = await ecrClient.send(policyCommand);
+
+        // If we have a policy, check if it allows public access
+        if (policyResponse.policyText) {
+          const policy = JSON.parse(policyResponse.policyText);
+
+          // Check if the policy allows public access
+          // This is a simplified check - in a real implementation, you might want to do more thorough analysis
+          const isPublic = isRepositoryPolicyPublic(policy);
+
+          if (isPublic) {
+            publiclyAccessibleRepositories.push(repo);
+          }
+        }
+      } catch (error) {
+        // If we get a RepositoryPolicyNotFoundException, the repository doesn't have a policy
+        // which means it's not publicly accessible
+        if (!(error instanceof RepositoryPolicyNotFoundException)) {
+          console.error(`Error checking repository policy for ${repo.repositoryName}:`, error);
+        }
+      }
+    }
+
+    return publiclyAccessibleRepositories;
+  } catch (error) {
+    console.error('Error finding publicly accessible repositories:', error);
+    return [];
+  }
+}
+
+/**
+ * Check if a repository policy allows public access
+ * @param policy - The repository policy
+ * @returns boolean indicating if the policy allows public access
+ */
+function isRepositoryPolicyPublic(policy: any): boolean {
+  // Check if the policy has statements
+  if (!policy.Statement || !Array.isArray(policy.Statement)) {
+    return false;
+  }
+
+  // Check each statement for public access
+  for (const statement of policy.Statement) {
+    // Skip if the statement effect is not "Allow"
+    if (statement.Effect !== 'Allow') {
+      continue;
+    }
+
+    // Check if the principal allows public access
+    if (
+      statement.Principal === '*' || 
+      (typeof statement.Principal === 'object' && statement.Principal.AWS === '*') ||
+      (Array.isArray(statement.Principal) && statement.Principal.includes('*'))
+    ) {
+      return true;
+    }
+
+    // Check if the principal is a public AWS account or organization
+    if (typeof statement.Principal === 'object' && statement.Principal.AWS) {
+      const principals = Array.isArray(statement.Principal.AWS) 
+        ? statement.Principal.AWS 
+        : [statement.Principal.AWS];
+
+      for (const principal of principals) {
+        // Check if the principal is a public AWS account or organization
+        if (principal === '*' || principal.includes('arn:aws:iam::*')) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Get all ECR repositories in a region
+ * @param ecrClient - ECR client
+ * @returns Array of repositories
+ */
+async function getAllRepositories(ecrClient: ECRClient): Promise<Repository[]> {
+  try {
+    const repositories: Repository[] = [];
+    let nextToken;
+
+    do {
+      const command: DescribeRepositoriesCommand = new DescribeRepositoriesCommand({ nextToken });
+      const response = await ecrClient.send(command);
+
+      if (response.repositories) {
+        repositories.push(...response.repositories);
+      }
+
+      nextToken = response.nextToken;
+    } while (nextToken);
+
+    return repositories;
+  } catch (error) {
+    console.error('Error getting ECR repositories:', error);
     return [];
   }
 }

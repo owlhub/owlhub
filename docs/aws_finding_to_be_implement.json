@@ -328,14 +328,35 @@
       "severity": "High"
     },
     {
-      "id": 449,
-      "name": "ECR Repository Does Not Have Image Scanning Enabled",
+      "name": "EC2 Instance Does Not Have Any Tags",
+      "category": {
+        "product": "EC2",
+        "type": "Posture",
+        "observation": "Governance"
+      },
+      "description": "Detects Amazon EC2 instances that have no tags assigned. Tags are essential for cost tracking, ownership identification, automation, and access controls. Instances without tags reduce operational visibility and violate tagging policies required for resource management and compliance.",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "name": "AWS Account Does Not Have Security Questions Registered",
+      "category": {
+        "product": "Account",
+        "type": "Posture",
+        "observation": "Recovery Risk"
+      },
+      "description": "Detects AWS accounts that do not have security questions registered. Security questions are used as part of the identity verification process when contacting AWS Support for sensitive operations or account recovery. Not having them set up can delay support resolution and introduce operational risk.",
+      "vendor": "Amazon Web Services",
+      "severity": "Medium"
+    },
+    {
+      "name": "Amazon ECR Repository Is Publicly Accessible",
       "category": {
         "product": "ECR",
         "type": "Posture",
-        "observation": "Visibility"
+        "observation": "Exposure"
       },
-      "description": "Detects private Amazon ECR repositories that do not have image scanning enabled. Without this feature, vulnerabilities in container images may go undetected before deployment. Enabling image scanning on push helps identify security issues early in the CI/CD pipeline and supports compliance with container security best practices.",
+      "description": "Detects Amazon ECR repositories that are publicly accessible. Public repositories allow anyone on the internet to pull container images, which may expose sensitive code, internal tooling, or proprietary base images. Only repositories explicitly intended for public use should have this configuration.",
       "vendor": "Amazon Web Services",
       "severity": "High"
     }

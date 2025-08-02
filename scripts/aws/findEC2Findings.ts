@@ -2,7 +2,8 @@ import {
   EC2Client, 
   DescribeNetworkInterfacesCommand,
   DescribeAddressesCommand,
-  DescribeSecurityGroupsCommand
+  DescribeSecurityGroupsCommand,
+  DescribeInstancesCommand
 } from '@aws-sdk/client-ec2';
 
 /**
@@ -25,6 +26,7 @@ export async function findEC2Findings(credentials: any, region: string, accountI
     const unattachedEniFindings: any[] = [];
     const unattachedEipFindings: any[] = [];
     const unattachedSecurityGroupFindings: any[] = [];
+    const instancesWithoutTagsFindings: any[] = [];
 
     // Check each region for EC2 issues
     for (const regionName of regions) {
@@ -115,11 +117,40 @@ export async function findEC2Findings(credentials: any, region: string, accountI
           findings.push(finding);
         }
       }
+
+      // Find EC2 instances without tags
+      const instancesWithoutTags = await findEC2InstancesWithoutTags(ec2Client);
+
+      if (instancesWithoutTags.length > 0) {
+        for (const instance of instancesWithoutTags) {
+          const finding = {
+            id: 'aws_ec2_instance_without_tags',
+            key: `aws-ec2-instance-without-tags-${accountId}-${regionName}-${instance.InstanceId}`,
+            title: `EC2 Instance Does Not Have Any Tags in Region ${regionName}`,
+            description: `EC2 instance (${instance.InstanceId}) in region ${regionName} does not have any tags assigned. Tags are essential for cost tracking, ownership identification, automation, and access controls. Instances without tags reduce operational visibility and violate tagging policies required for resource management and compliance.`,
+            additionalInfo: {
+              instanceId: instance.InstanceId,
+              instanceType: instance.InstanceType,
+              state: instance.State,
+              vpcId: instance.VpcId,
+              subnetId: instance.SubnetId,
+              availabilityZone: instance.AvailabilityZone,
+              launchTime: instance.LaunchTime,
+              region: regionName,
+              ...(accountId && { accountId })
+            }
+          };
+
+          instancesWithoutTagsFindings.push(finding);
+          findings.push(finding);
+        }
+      }
     }
 
     console.log(`Found ${unattachedEniFindings.length} unattached ENIs across all regions`);
     console.log(`Found ${unattachedEipFindings.length} unattached Elastic IPs across all regions`);
     console.log(`Found ${unattachedSecurityGroupFindings.length} unattached security groups across all regions`);
+    console.log(`Found ${instancesWithoutTagsFindings.length} EC2 instances without tags across all regions`);
     return findings;
   } catch (error) {
     console.error('Error finding EC2 issues:', error);
@@ -201,6 +232,52 @@ async function findUnattachedSecurityGroups(ec2Client: EC2Client) {
     return unattachedSecurityGroups;
   } catch (error) {
     console.error('Error finding unattached security groups:', error);
+    return [];
+  }
+}
+
+/**
+ * Find EC2 instances that don't have any tags
+ * @param ec2Client - EC2 client
+ * @returns Array of EC2 instances without tags
+ */
+async function findEC2InstancesWithoutTags(ec2Client: EC2Client) {
+  try {
+    const command = new DescribeInstancesCommand({});
+    const response = await ec2Client.send(command);
+
+    const instancesWithoutTags: any[] = [];
+
+    // Process each reservation and its instances
+    if (response.Reservations) {
+      for (const reservation of response.Reservations) {
+        if (reservation.Instances) {
+          for (const instance of reservation.Instances) {
+            // Skip terminated instances
+            if (instance.State?.Name === 'terminated') {
+              continue;
+            }
+
+            // Check if the instance has no tags or empty tags array
+            if (!instance.Tags || instance.Tags.length === 0) {
+              instancesWithoutTags.push({
+                InstanceId: instance.InstanceId,
+                InstanceType: instance.InstanceType,
+                State: instance.State?.Name,
+                VpcId: instance.VpcId,
+                SubnetId: instance.SubnetId,
+                AvailabilityZone: instance.Placement?.AvailabilityZone,
+                LaunchTime: instance.LaunchTime
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return instancesWithoutTags;
+  } catch (error) {
+    console.error('Error finding EC2 instances without tags:', error);
     return [];
   }
 }

@@ -364,6 +364,20 @@ async function main() {
         "type": "posture"
       },
       {
+        "key": "aws_ecr_repository_publicly_accessible",
+        "name": "Amazon ECR Repository Is Publicly Accessible",
+        "severity": "high",
+        "description": "Detects Amazon ECR repositories that are publicly accessible. Public repositories allow anyone on the internet to pull container images, which may expose sensitive code, internal tooling, or proprietary base images. Only repositories explicitly intended for public use should have this configuration.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_sqs_queue_publicly_accessible",
+        "name": "Amazon SQS Queue Is Publicly Accessible",
+        "severity": "high",
+        "description": "Detects Amazon SQS queues with policies that allow unrestricted access to the public or wide principals (e.g., '*'). Publicly accessible queues can be read from or written to by unauthorized users, which may lead to data leakage, spam, or denial-of-service attacks. Queue policies should follow the principle of least privilege and be limited to known IAM principals or services.",
+        "type": "posture"
+      },
+      {
         "key": "aws_security_group_not_attached",
         "name": "Security Group Is Not Attached to Any Resource",
         "severity": "low",
@@ -740,6 +754,20 @@ async function main() {
         "severity": "medium",
         "description": "Detects Elastic Load Balancers (Classic, ALB, or NLB) that have no registered targets or have served zero or minimal traffic over a defined period (e.g., 7–30 days). Idle ELBs still incur hourly charges and may indicate abandoned infrastructure. These should be reviewed and deleted if no longer required.",
         "type": "cost"
+      },
+      {
+        "key": "aws_ec2_instance_without_tags",
+        "name": "EC2 Instance Does Not Have Any Tags",
+        "severity": "medium",
+        "description": "Detects Amazon EC2 instances that have no tags assigned. Tags are essential for cost tracking, ownership identification, automation, and access controls. Instances without tags reduce operational visibility and violate tagging policies required for resource management and compliance.",
+        "type": "posture"
+      },
+      {
+        "key": "aws_account_security_questions_not_registered",
+        "name": "AWS Account Does Not Have Security Questions Registered",
+        "severity": "medium",
+        "description": "Detects AWS accounts that do not have security questions registered. Security questions are used as part of the identity verification process when contacting AWS Support for sensitive operations or account recovery. Not having them set up can delay support resolution and introduce operational risk.",
+        "type": "posture"
       },
       {
         "key": "aws_route53_public_hosted_zone_not_resolvable",
