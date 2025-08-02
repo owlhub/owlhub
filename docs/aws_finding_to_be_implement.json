@@ -326,20 +326,6 @@
       "description": "Detects subnets where the auto-assign public IPv4 address setting is enabled. This setting causes EC2 instances launched into the subnet to receive a public IP by default, which may expose them to the internet unless security groups and route tables are tightly controlled. It is recommended to disable this setting for private subnets.",
       "vendor": "Amazon Web Services",
       "severity": "High"
-    },
-    {
-      "id": 17,
-      "name": "ECR Repository Does Not Have a Lifecycle Policy Configured",
-      "category": {
-        "product": "ECR",
-        "type": "Posture",
-        "observation": "Waste"
-      },
-      "description": "Detects private Amazon ECR repositories that do not have a lifecycle policy configured. Without lifecycle rules, outdated and unused images may accumulate, leading to unnecessary storage costs and difficulty managing image versions. It is recommended to configure policies to expire untagged or old images regularly.",
-      "vendor": "Amazon Web Services",
-      "severity": "Medium"
     }
-
-
   ]
 }

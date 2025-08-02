@@ -6,7 +6,8 @@ import {
   DescribeRouteTablesCommand,
   DescribeSubnetsCommand,
   DescribeNetworkInterfacesCommand,
-  DescribeVpcEndpointsCommand
+  DescribeVpcEndpointsCommand,
+  DescribeVpcPeeringConnectionsCommand
 } from '@aws-sdk/client-ec2';
 import { getAllRegions } from './utils';
 
@@ -36,6 +37,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     const noEniResourcesFindings: any[] = [];
     const missingGatewayEndpointFindings: any[] = [];
     const publicSubnetFindings: any[] = [];
+    const peeringDnsResolutionDisabledFindings: any[] = [];
 
     // Check each region for VPC issues
     for (const regionName of regions) {
@@ -322,6 +324,33 @@ export async function findVPCFindings(credentials: any, region: string, accountI
           findings.push(finding);
         }
       }
+
+      // Find VPC peering connections without DNS resolution enabled on both sides
+      const peeringConnectionsWithoutDnsResolution = await findVpcPeeringConnectionsWithoutDnsResolution(ec2Client);
+
+      if (peeringConnectionsWithoutDnsResolution.length > 0) {
+        for (const peeringConnection of peeringConnectionsWithoutDnsResolution) {
+          const finding = {
+            id: 'aws_vpc_peering_dns_resolution_disabled',
+            key: `aws-vpc-peering-dns-resolution-disabled-${accountId}-${regionName}-${peeringConnection.VpcPeeringConnectionId}`,
+            title: `VPC Peering Connection Does Not Have DNS Resolution Enabled on Both Sides in Region ${regionName}`,
+            description: `VPC Peering Connection (${peeringConnection.VpcPeeringConnectionId}) in region ${regionName} does not have DNS resolution enabled for either the requester or acceptor VPC. Without this setting, private DNS names from one VPC cannot resolve to IP addresses in the peered VPC, which may break internal service discovery and name resolution for applications.`,
+            additionalInfo: {
+              peeringConnectionId: peeringConnection.VpcPeeringConnectionId,
+              region: regionName,
+              requesterVpcId: peeringConnection.RequesterVpcInfo?.VpcId,
+              accepterVpcId: peeringConnection.AccepterVpcInfo?.VpcId,
+              requesterDnsResolutionEnabled: peeringConnection.RequesterVpcInfo?.PeeringOptions?.AllowDnsResolutionFromRemoteVpc,
+              accepterDnsResolutionEnabled: peeringConnection.AccepterVpcInfo?.PeeringOptions?.AllowDnsResolutionFromRemoteVpc,
+              status: peeringConnection.Status?.Code,
+              ...(accountId && { accountId })
+            }
+          };
+
+          peeringDnsResolutionDisabledFindings.push(finding);
+          findings.push(finding);
+        }
+      }
     }
 
     console.log(`Found ${defaultVpcFindings.length} default VPCs across all regions`);
@@ -334,6 +363,7 @@ export async function findVPCFindings(credentials: any, region: string, accountI
     console.log(`Found ${unusedRouteTableFindings.length} unused route tables across all regions`);
     console.log(`Found ${blackholeRouteFindings.length} route tables with blackhole routes across all regions`);
     console.log(`Found ${publicSubnetFindings.length} subnets with auto-assign public IPv4 addresses enabled across all regions`);
+    console.log(`Found ${peeringDnsResolutionDisabledFindings.length} VPC peering connections without DNS resolution enabled on both sides across all regions`);
     return findings;
   } catch (error) {
     console.error('Error finding VPC issues:', error);
@@ -680,6 +710,39 @@ async function findSubnetsWithAutoAssignPublicIP(ec2Client: EC2Client) {
     return publicSubnets;
   } catch (error) {
     console.error('Error finding subnets with auto-assign public IPv4 addresses enabled:', error);
+    return [];
+  }
+}
+
+/**
+ * Find VPC peering connections without DNS resolution enabled on both sides
+ * @param ec2Client - EC2 client
+ * @returns Array of VPC peering connections without DNS resolution enabled on both sides
+ */
+async function findVpcPeeringConnectionsWithoutDnsResolution(ec2Client: EC2Client) {
+  try {
+    const command = new DescribeVpcPeeringConnectionsCommand({});
+    const response = await ec2Client.send(command);
+
+    // Filter peering connections where DNS resolution is not enabled for either the requester or acceptor VPC
+    // Only consider active peering connections
+    const peeringConnectionsWithoutDnsResolution = (response.VpcPeeringConnections || []).filter(peering => {
+      // Only consider active peering connections
+      if (peering.Status?.Code !== 'active') {
+        return false;
+      }
+
+      // Check if DNS resolution is enabled for both requester and acceptor VPCs
+      const requesterDnsResolutionEnabled = peering.RequesterVpcInfo?.PeeringOptions?.AllowDnsResolutionFromRemoteVpc;
+      const accepterDnsResolutionEnabled = peering.AccepterVpcInfo?.PeeringOptions?.AllowDnsResolutionFromRemoteVpc;
+
+      // If either side doesn't have DNS resolution enabled, include this peering connection in the results
+      return !requesterDnsResolutionEnabled || !accepterDnsResolutionEnabled;
+    });
+
+    return peeringConnectionsWithoutDnsResolution;
+  } catch (error) {
+    console.error('Error finding VPC peering connections without DNS resolution enabled:', error);
     return [];
   }
 }

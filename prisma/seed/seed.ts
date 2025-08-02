@@ -725,6 +725,13 @@ async function main() {
         "description": "Detects Route 53 public hosted zones that are not resolvable via public DNS resolvers such as 8.8.8.8 or 1.1.1.1. This may indicate missing or incorrect delegation, expired domain registration, or propagation delays. Public hosted zones should be properly configured to ensure DNS resolution works globally.",
         "type": "posture"
       },
+      {
+        "key": "aws_vpc_peering_dns_resolution_disabled",
+        "name": "VPC Peering Connection Does Not Have DNS Resolution Enabled on Both Sides",
+        "severity": "medium",
+        "description": "Detects VPC peering connections where DNS resolution is not enabled for either the requester or acceptor VPC. Without this setting, private DNS names from one VPC cannot resolve to IP addresses in the peered VPC, which may break internal service discovery and name resolution for applications.",
+        "type": "posture"
+      },
       // {
       //   "key": "aws_unencrypted_ebs_volume",
       //   "name": "Unencrypted EBS Volume",
