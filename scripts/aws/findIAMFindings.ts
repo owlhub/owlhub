@@ -50,6 +50,16 @@ export async function findIAMFindings(credentials: any, region: string, accountI
       }
     });
 
+    // Get credential report once and reuse it for all checks
+    let credentialReport: string | null = null;
+    try {
+      credentialReport = await getCredentialReport(iamClient);
+      console.log('Successfully retrieved credential report');
+    } catch (error) {
+      console.error('Error retrieving credential report:', error);
+      // Continue with other checks even if credential report fails
+    }
+
     // Get all IAM users
     const users = await getAllIAMUsers(iamClient);
     console.log(`Found ${users.length} IAM users`);
@@ -196,59 +206,64 @@ export async function findIAMFindings(credentials: any, region: string, accountI
       }
     }
 
-    // Check for root user access key usage within the last 90 days
-    try {
-      const rootUserFindings = await checkRootUserAccessKeyUsage(iamClient, ninetyDaysAgo, accountId);
-      if (rootUserFindings) {
-        rootUserAccessKeyUsedFindings.push(rootUserFindings);
-        findings.push(rootUserFindings);
+    // Only perform checks that require credential report if it's available
+    if (credentialReport) {
+      // Check for root user access key usage within the last 90 days
+      try {
+        const rootUserFindings = await checkRootUserAccessKeyUsage(iamClient, ninetyDaysAgo, accountId, credentialReport);
+        if (rootUserFindings) {
+          rootUserAccessKeyUsedFindings.push(rootUserFindings);
+          findings.push(rootUserFindings);
+        }
+      } catch (rootError) {
+        console.error('Error checking root user access key usage:', rootError);
       }
-    } catch (rootError) {
-      console.error('Error checking root user access key usage:', rootError);
-    }
 
-    // Check if root user has MFA enabled
-    try {
-      const rootUserMFAFinding = await checkRootUserMFADisabled(iamClient, accountId);
-      if (rootUserMFAFinding) {
-        rootUserMFADisabledFindings.push(rootUserMFAFinding);
-        findings.push(rootUserMFAFinding);
+      // Check if root user has MFA enabled
+      try {
+        const rootUserMFAFinding = await checkRootUserMFADisabled(iamClient, accountId, credentialReport);
+        if (rootUserMFAFinding) {
+          rootUserMFADisabledFindings.push(rootUserMFAFinding);
+          findings.push(rootUserMFAFinding);
+        }
+      } catch (rootMFAError) {
+        console.error('Error checking root user MFA status:', rootMFAError);
       }
-    } catch (rootMFAError) {
-      console.error('Error checking root user MFA status:', rootMFAError);
-    }
 
-    // Check if root user has access keys
-    try {
-      const rootUserHasAccessKeysFinding = await checkRootUserHasAccessKeys(iamClient, accountId);
-      if (rootUserHasAccessKeysFinding) {
-        rootUserHasAccessKeysFindings.push(rootUserHasAccessKeysFinding);
-        findings.push(rootUserHasAccessKeysFinding);
+      // Check if root user has access keys
+      try {
+        const rootUserHasAccessKeysFinding = await checkRootUserHasAccessKeys(iamClient, accountId, credentialReport);
+        if (rootUserHasAccessKeysFinding) {
+          rootUserHasAccessKeysFindings.push(rootUserHasAccessKeysFinding);
+          findings.push(rootUserHasAccessKeysFinding);
+        }
+      } catch (rootAccessKeysError) {
+        console.error('Error checking if root user has access keys:', rootAccessKeysError);
       }
-    } catch (rootAccessKeysError) {
-      console.error('Error checking if root user has access keys:', rootAccessKeysError);
-    }
 
-    // Check if root user has logged in within the last 90 days
-    try {
-      const rootUserLoggedInFinding = await checkRootUserLoggedInWithin90Days(iamClient, ninetyDaysAgo, accountId);
-      if (rootUserLoggedInFinding) {
-        rootUserLoggedInFindings.push(rootUserLoggedInFinding);
-        findings.push(rootUserLoggedInFinding);
+      // Check if root user has logged in within the last 90 days
+      try {
+        const rootUserLoggedInFinding = await checkRootUserLoggedInWithin90Days(iamClient, ninetyDaysAgo, accountId, credentialReport);
+        if (rootUserLoggedInFinding) {
+          rootUserLoggedInFindings.push(rootUserLoggedInFinding);
+          findings.push(rootUserLoggedInFinding);
+        }
+      } catch (rootLoggedInError) {
+        console.error('Error checking if root user has logged in within the last 90 days:', rootLoggedInError);
       }
-    } catch (rootLoggedInError) {
-      console.error('Error checking if root user has logged in within the last 90 days:', rootLoggedInError);
-    }
 
-    // Check for IAM users with console logins inactive over 90 days
-    try {
-      const inactiveConsoleLogins = await checkIAMUserConsoleLoginInactive(iamClient, ninetyDaysAgo, accountId);
-      if (inactiveConsoleLogins.length > 0) {
-        inactiveConsoleLoginFindings.push(...inactiveConsoleLogins);
-        findings.push(...inactiveConsoleLogins);
+      // Check for IAM users with console logins inactive over 90 days
+      try {
+        const inactiveConsoleLogins = await checkIAMUserConsoleLoginInactive(iamClient, ninetyDaysAgo, accountId, credentialReport);
+        if (inactiveConsoleLogins.length > 0) {
+          inactiveConsoleLoginFindings.push(...inactiveConsoleLogins);
+          findings.push(...inactiveConsoleLogins);
+        }
+      } catch (inactiveConsoleLoginError) {
+        console.error('Error checking for IAM users with console logins inactive over 90 days:', inactiveConsoleLoginError);
       }
-    } catch (inactiveConsoleLoginError) {
-      console.error('Error checking for IAM users with console logins inactive over 90 days:', inactiveConsoleLoginError);
+    } else {
+      console.log('Skipping checks that require credential report as it could not be retrieved');
     }
 
     // Check if IAM account password policy exists
@@ -898,12 +913,12 @@ async function checkPasswordPolicyRequireExpiration(iamClient: IAMClient, accoun
  * Check if the root user has MFA enabled
  * @param iamClient - IAM client
  * @param accountId - AWS account ID
+ * @param credentialReport - AWS credential report
  * @returns A finding object if the root user does not have MFA enabled, null otherwise
  */
-async function checkRootUserMFADisabled(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+async function checkRootUserMFADisabled(iamClient: IAMClient, accountId: string | null = null, credentialReport: string): Promise<any | null> {
   try {
-    // Get the credential report
-    const reportCsv = await getCredentialReport(iamClient);
+    const reportCsv = credentialReport;
 
     // Parse the CSV report
     const lines = reportCsv.split('\n');
@@ -962,12 +977,12 @@ async function checkRootUserMFADisabled(iamClient: IAMClient, accountId: string 
  * Check if the root user has access keys
  * @param iamClient - IAM client
  * @param accountId - AWS account ID
+ * @param credentialReport - AWS credential report
  * @returns A finding object if the root user has access keys, null otherwise
  */
-async function checkRootUserHasAccessKeys(iamClient: IAMClient, accountId: string | null = null): Promise<any | null> {
+async function checkRootUserHasAccessKeys(iamClient: IAMClient, accountId: string | null = null, credentialReport: string): Promise<any | null> {
   try {
-    // Get the credential report
-    const reportCsv = await getCredentialReport(iamClient);
+    const reportCsv = credentialReport;
 
     // Parse the CSV report
     const lines = reportCsv.split('\n');
@@ -1030,12 +1045,12 @@ async function checkRootUserHasAccessKeys(iamClient: IAMClient, accountId: strin
  * @param iamClient - IAM client
  * @param ninetyDaysAgo - Date object representing 90 days ago
  * @param accountId - AWS account ID
+ * @param credentialReport - AWS credential report
  * @returns A finding object if the root user has logged in within the last 90 days, null otherwise
  */
-async function checkRootUserLoggedInWithin90Days(iamClient: IAMClient, ninetyDaysAgo: Date, accountId: string | null = null): Promise<any | null> {
+async function checkRootUserLoggedInWithin90Days(iamClient: IAMClient, ninetyDaysAgo: Date, accountId: string | null = null, credentialReport: string): Promise<any | null> {
   try {
-    // Get the credential report
-    const reportCsv = await getCredentialReport(iamClient);
+    const reportCsv = credentialReport;
 
     // Parse the CSV report
     const lines = reportCsv.split('\n');
@@ -1121,12 +1136,12 @@ async function checkRootUserLoggedInWithin90Days(iamClient: IAMClient, ninetyDay
  * @param iamClient - IAM client
  * @param ninetyDaysAgo - Date object representing 90 days ago
  * @param accountId - AWS account ID
+ * @param credentialReport - AWS credential report
  * @returns Array of findings for IAM users with console logins inactive over 90 days
  */
-async function checkIAMUserConsoleLoginInactive(iamClient: IAMClient, ninetyDaysAgo: Date, accountId: string | null = null): Promise<any[]> {
+async function checkIAMUserConsoleLoginInactive(iamClient: IAMClient, ninetyDaysAgo: Date, accountId: string | null = null, credentialReport: string): Promise<any[]> {
   try {
-    // Get the credential report
-    const reportCsv = await getCredentialReport(iamClient);
+    const reportCsv = credentialReport;
     const findings: any[] = [];
 
     // Parse the CSV report
@@ -1388,12 +1403,13 @@ function checkTrustPolicyForCrossAccountAccess(trustPolicy: any, currentAccountI
  * Check if the root user has access keys that have been used within the last 90 days
  * @param iamClient - IAM client
  * @param ninetyDaysAgo - Date object representing 90 days ago
+ * @param accountId - AWS account ID
+ * @param credentialReport - AWS credential report
  * @returns A finding object if the root user has access keys that have been used within the last 90 days, null otherwise
  */
-async function checkRootUserAccessKeyUsage(iamClient: IAMClient, ninetyDaysAgo: Date, accountId: string | null = null): Promise<any | null> {
+async function checkRootUserAccessKeyUsage(iamClient: IAMClient, ninetyDaysAgo: Date, accountId: string | null = null, credentialReport: string): Promise<any | null> {
   try {
-    // Get the credential report
-    const reportCsv = await getCredentialReport(iamClient);
+    const reportCsv = credentialReport;
 
     // Parse the CSV report
     const lines = reportCsv.split('\n');
