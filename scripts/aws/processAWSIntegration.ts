@@ -12,6 +12,7 @@ import { findELBFindings } from './findELBFindings';
 import { findRoute53Findings } from './findRoute53Findings';
 import { findECRFindings } from './findECRFindings';
 import { findSQSFindings } from './findSQSFindings';
+import { findSNSFindings } from './findSNSFindings';
 import {
   assumeRole,
   getAllRegions
@@ -177,6 +178,10 @@ export async function processAWSIntegration(integration: any, appId: string, pri
     const sqsFindings = await findSQSFindings(credentials, region, accountId, activeRegions);
     console.log(`Found ${sqsFindings.length} SQS findings in AWS`);
 
+    // Find SNS issues (publicly accessible topics)
+    const snsFindings = await findSNSFindings(credentials, region, accountId, activeRegions);
+    console.log(`Found ${snsFindings.length} SNS findings in AWS`);
+
     // Combine all findings
     const foundAppFindings = [
       ...iamFindings,
@@ -190,7 +195,8 @@ export async function processAWSIntegration(integration: any, appId: string, pri
       ...elbFindings,
       ...route53Findings,
       ...ecrFindings,
-      ...sqsFindings
+      ...sqsFindings,
+      ...snsFindings
     ];
 
     console.log(`Found ${foundAppFindings.length} total app findings in AWS`);

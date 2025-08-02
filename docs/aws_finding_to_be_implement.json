@@ -350,16 +350,17 @@
       "severity": "Medium"
     },
     {
-      "name": "Amazon ECR Repository Is Publicly Accessible",
+      "name": "Amazon SNS Topic Policy Is Publicly Accessible",
       "category": {
-        "product": "ECR",
+        "product": "SNS",
         "type": "Posture",
         "observation": "Exposure"
       },
-      "description": "Detects Amazon ECR repositories that are publicly accessible. Public repositories allow anyone on the internet to pull container images, which may expose sensitive code, internal tooling, or proprietary base images. Only repositories explicitly intended for public use should have this configuration.",
+      "description": "Detects Amazon SNS topics whose access policies allow public access via 'Principal': '*' or overly permissive conditions. This can allow unauthorized users to publish or subscribe to the topic, leading to spam, data leakage, or misuse. SNS policies should follow least privilege and restrict access to known AWS accounts or services only.",
       "vendor": "Amazon Web Services",
       "severity": "High"
     }
+
 
   ]
 }

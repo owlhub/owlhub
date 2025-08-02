@@ -378,6 +378,13 @@ async function main() {
         "type": "posture"
       },
       {
+        "key": "aws_sns_topic_publicly_accessible",
+        "name": "Amazon SNS Topic Policy Is Publicly Accessible",
+        "severity": "high",
+        "description": "Detects Amazon SNS topics whose access policies allow public access via 'Principal': '*' or overly permissive conditions. This can allow unauthorized users to publish or subscribe to the topic, leading to spam, data leakage, or misuse. SNS policies should follow least privilege and restrict access to known AWS accounts or services only.",
+        "type": "posture"
+      },
+      {
         "key": "aws_security_group_not_attached",
         "name": "Security Group Is Not Attached to Any Resource",
         "severity": "low",
