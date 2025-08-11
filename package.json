@@ -17,7 +17,7 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
     "@aws-sdk/client-acm": "^3.859.0",
-    "@aws-sdk/client-cloudfront": "^3.859.0",
+    "@aws-sdk/client-cloudfront": "^3.864.0",
     "@aws-sdk/client-cloudwatch": "^3.859.0",
     "@aws-sdk/client-ec2": "^3.859.0",
     "@aws-sdk/client-ecr": "^3.859.0",
