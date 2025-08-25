@@ -22,7 +22,7 @@
     "@aws-sdk/client-ec2": "^3.859.0",
     "@aws-sdk/client-ecr": "^3.859.0",
     "@aws-sdk/client-elastic-load-balancing": "^3.859.0",
-    "@aws-sdk/client-elastic-load-balancing-v2": "^3.859.0",
+    "@aws-sdk/client-elastic-load-balancing-v2": "^3.873.0",
     "@aws-sdk/client-iam": "^3.859.0",
     "@aws-sdk/client-organizations": "^3.859.0",
     "@aws-sdk/client-rds": "^3.859.0",
