@@ -42,7 +42,7 @@
     "bcryptjs": "^3.0.2",
     "crypto-browserify": "^3.12.1",
     "next": "^15.4.5",
-    "next-auth": "^5.0.0-beta.4",
+    "next-auth": "^5.0.0-beta.30",
     "pg": "^8.11.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
